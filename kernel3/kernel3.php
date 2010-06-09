@@ -105,6 +105,8 @@ class F extends FEventDispatcher
 
         set_exception_handler(Array($this, 'handleException'));
         set_error_handler(Array($this, 'logError'), E_ALL & ~(E_NOTICE | E_USER_NOTICE | E_STRICT));
+
+        $this->pool['LNG']->_Start();
     }
 
     public static function kernel($name = null)

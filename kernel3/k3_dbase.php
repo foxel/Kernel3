@@ -60,7 +60,7 @@ class FDataBase extends FEventDispatcher
         $query = $this->qc->simpleSelect($table, $fields, $where, $other, $flags);
         if ($result = $this->query($query, true))
         {
-            $ret = $this->fetchResult($result);
+            $ret = $this->fetchResult($result, $flags);
 
             $result->closeCursor();
 
@@ -109,6 +109,10 @@ class FDataBase extends FEventDispatcher
         $this->history[] = Array('query' => $query, 'time' => $query_time);
 
         return $this->qResult;
+    }
+
+    public function quote($string)
+    {        return $this->c->quote($string);
     }
 
     public function fetchResult (PDOStatement $result, $flags = 0)

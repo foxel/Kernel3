@@ -227,8 +227,8 @@ class FHTTPInterface extends FEventDispatcher
             $this->throwEventRef('HTML_parse', $this->buffer);
 
             $statstring = sprintf(F('LNG')->lang('FOOT_STATS_PAGETIME'), F('Timer')->timeSpent()).' ';
-            /*if (F('DBase')->num_queries)
-                $statstring.= sprintf(F('LNG')->lang('FOOT_STATS_SQLSTAT'), F('DBase')->num_queries, F('DBase')->queries_time).' ';*/
+            if (F('DBase')->queriesCount)
+                $statstring.= sprintf(F('LNG')->lang('FOOT_STATS_SQLSTAT'), F('DBase')->queriesCount, F('DBase')->queriesTime).' ';
 
             $this->buffer = str_replace('<!--Page-Stats-->', $statstring, $this->buffer);
             $c_type = (preg_match('#[\w\-]+/[\w\-]+#', $c_type)) ? $c_type : 'text/html';

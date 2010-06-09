@@ -19,9 +19,6 @@ class FDBaseQCmysql
         $where = $this->_parseWhere($where, $flags);
         $other = $this->_parseOther($other, $flags);
 
-        if ($this->auto_prefix && !($flags & FDataBase::SQL_NOPREFIX))
-            $table = $this->tbl_prefix.$table;
-
         $query = 'SELECT ';
 
         if (is_array($fields)) {
@@ -64,9 +61,6 @@ class FDBaseQCmysql
         $ti = 0;
         foreach ($tqueries as $table => $params)
         {
-            if ($this->auto_prefix && !($flags & FDataBase::SQL_NOPREFIX))
-                $table = $this->tbl_prefix.$table;
-
             $tl = 't'.$ti;
 
             if ($ti > 0)

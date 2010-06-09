@@ -174,7 +174,7 @@ class FMisc
         return mkdir($path, $chmod);
     }
 
-    static public function loadDatafile($path, $format = self::DF_PLAIN, $force_upcase = false, $explode_by = '')
+    static public function loadDatafile($filename, $format = self::DF_PLAIN, $force_upcase = false, $explode_by = '')
     {
         $indata = (file_exists($filename)) ? file_get_contents($filename) : false;
 
@@ -183,11 +183,11 @@ class FMisc
 
         switch ($format)
         {
-            case DF_SERIALIZED:
+            case self::DF_SERIALIZED:
                 return unserialize($indata);
-            case DF_SLINE:
-            case DF_MLINE:
-            case DF_BLOCK:
+            case self::DF_SLINE:
+            case self::DF_MLINE:
+            case self::DF_BLOCK:
                 $matches = Array();
                 $arr = Array();
                 preg_match_all(self::$dfMasks[$format], $indata, $matches);
@@ -293,6 +293,129 @@ class FMisc
         }
         else
             return false;
+    }
+
+}
+
+class F2DArray
+{
+    private function __construct() {}
+
+    static public function sort(&$array, $field, $rsort = false, $sort_flags = SORT_REGULAR)
+    {
+        if (!is_array($array))
+            return $array;
+        $resorter = Array();
+        foreach ($array as $key=>$val)
+        {
+            if (!is_array($val) || !isset($val[$field]))
+                $skey = 0;
+            else
+                $skey = $val[$field];
+
+            if (!isset($resorter[$skey]))
+                $resorter[$skey] = Array();
+            $resorter[$skey][$key] = $val;
+        }
+        if ($rsort)
+            krsort($resorter, $sort_flags);
+        else
+            ksort($resorter, $sort_flags);
+        $array = Array();
+        foreach ($resorter as $valblock)
+            $array+= $valblock;
+
+        return $array;
+    }
+
+    static public function keycol(&$array, $field)
+    {
+        if (!is_array($array))
+            return $array;
+        $narray = Array();
+        foreach ($array as $val)
+        {
+            if (!is_array($val) || !isset($val[$field]))
+                $skey = 0;
+            else
+                $skey = $val[$field];
+
+            if (!isset($narray[$skey]))
+                $narray[$skey] = $val;
+        }
+        $array = $narray;
+
+        return $array;
+    }
+
+    static public function cols($array, $fields)
+    {
+        if (!is_array($array))
+            return $array;
+
+        $get_one = false;
+        if (!is_array($fields))
+        {
+            $get_one = true;
+            $fields = Array(0 => $fields);
+        }
+
+        $result = Array();
+
+        foreach ($array as $key => $row)
+        {
+            foreach($fields as $fkey => $field)
+                if (isset($row[$field]))
+                    $result[$fkey][$key] = $row[$field];
+        }
+
+        if ($get_one)
+            $result = $result[0];
+
+        return $result;
+    }
+
+    static public function tree($array, $by_id = 'id', $by_par = 'parent', $root_id = 0, $by_lvl = 't_level')
+    {
+        $itm_pars = $itm_tmps = Array();
+
+        foreach ($array as $item) // temporary data dividing
+        {
+            $itm_pars[$item[$by_id]] = $item[$by_par];
+            $itm_tmps[$item[$by_id]] = $item;
+        }
+        unset ($array);
+
+        $out_tree = Array();
+        $cur_itm = $root_id;
+        $cstack = Array();
+        while (count($itm_pars)) // tree resorting
+        {
+            if ($childs = array_keys($itm_pars, $cur_itm))
+            {
+                array_push($cstack, $cur_itm);
+                $cur_itm = $childs[0];
+                $child = $itm_tmps[$cur_itm];
+                $child[$by_lvl] = count($cstack); // level
+                $out_tree[$cur_itm] = $child;
+                unset($itm_pars[$cur_itm]);
+            }
+            elseif (count ($cstack) && ($st_top = array_pop($cstack)) !== null)
+            {
+                // getting off the branch
+                $cur_itm = $st_top;
+            }
+            else // this will open looped parentship
+            {
+                reset($itm_pars);
+                $key = key($itm_pars);
+                $itm_tmps[$key][$by_par] = $root_id; // we'll link one item to root
+                $itm_pars[$key] = $root_id;
+            }
+        }
+
+        unset ($itm_pars, $itm_tmps);
+        return $out_tree;
     }
 }
 

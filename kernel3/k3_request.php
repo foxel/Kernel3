@@ -4,7 +4,8 @@
  * Requires PHP >= 5.1.0
  */
 
-// GPC files err-codes
+if (!defined('F_STARTED'))
+    die('Hacking attempt');
 
 class FGPC
 {

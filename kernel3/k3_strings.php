@@ -327,7 +327,7 @@ class FStr
 
     static private $SCHARS = null;
 
-    static public function smart_htmlschars($string)
+    static public function smartHTMLSchars($string)
     {
         if (is_null(self::$SCHARS))
         {
