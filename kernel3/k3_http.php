@@ -170,7 +170,7 @@ class FHTTPInterface extends FEventDispatcher
                     //  so in this part non-ASCII chars will be transliterated according to
                     //  selected language and all unknown chars will be replaced with '_'
                     //  if you want to send non-ASCII filename to FireFox you'll need to
-                    //  set 'QF_HTTP_FILE_RFC1522' flag
+                    //  set 'FHTTPInterface::FILE_RFC1522' flag
                     // Or you may use tricky_mode to force sending 8-bit UTF-8 filenames
                     //  via breaking some standarts. Opera will get it but IE not
                     //  so don't use it if you don't really need to
@@ -278,8 +278,6 @@ class FHTTPInterface extends FEventDispatcher
 
     public function sendBinary($data = '', $c_type = '', $force_cache = 0, $send_filename = '')
     {
-        Global $QF;
-
         if (headers_sent())
         {
             trigger_error('QuickFox HTTP error', E_USER_ERROR);

@@ -41,6 +41,7 @@ $base_modules_files = Array(
     F_KERNEL_DIR.'k3_cache.php',         // kernel 2 cacher class
     F_KERNEL_DIR.'k3_strings.php',       // kernel 2 strings parsing
     F_KERNEL_DIR.'k3_http.php',          // kernel 2 HTTP interface
+    F_KERNEL_DIR.'k3_request.php',       // kernel 2 GPC interface
     F_KERNEL_DIR.'k3_lang.php',          // kernel 2 LNG interface
     F_KERNEL_DIR.'k3_dbase.php',        // kernel 2 database interface
 );
@@ -98,6 +99,7 @@ class F extends FEventDispatcher
         $this->pool['Cache'] = new StaticInstance('FCache');
         $this->pool['Str']   = new StaticInstance('FStr');
         $this->pool['HTTP']  = FHTTPInterface::getInstance();
+        $this->pool['GPC']   = new StaticInstance('FGPC');
         $this->pool['LNG']   = FLNGData::getInstance();
         $this->pool['DBase'] = new FDataBase();
 
