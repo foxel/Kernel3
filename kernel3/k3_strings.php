@@ -399,7 +399,7 @@ class FStr
         list($url, $anchor) = explode('#', $url, 2);
         list($url, $query) = explode('?', $url, 2);
 
-        $query = preg_replace('#(&amp;|&)?'.preg_quote($pname, '#').'=[^&]*(&amp;|&)#', '$1', $query);
+        $query = preg_replace('#(&amp;|&)?'.preg_quote($pname, '#').'=[^&]*(&amp;|&)?#', '$1', $query);
         return $url.($query ? '?'.$query : '').($anchor ? '#'.$anchor : '');
     }
 
