@@ -22,7 +22,7 @@ define('F_SITE_INDEX', basename($_SERVER['PHP_SELF']));
 if (!defined('F_INTERNAL_ENCODING'))
     define('F_INTERNAL_ENCODING', 'utf-8');
 if (!defined('F_SITE_ROOT'))
-    define('F_SITE_ROOT', dirname($_SERVER['PHP_SELF']).DIRECTORY_SEPARATOR);
+    define('F_SITE_ROOT', dirname($_SERVER['SCRIPT_FILENAME']).DIRECTORY_SEPARATOR);
 if (!defined('F_DATA_ROOT'))
     define('F_DATA_ROOT', F_SITE_ROOT.'data'.DIRECTORY_SEPARATOR);
 
