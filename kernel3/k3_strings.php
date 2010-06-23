@@ -390,9 +390,17 @@ class FStr
         return $url;
     }
 
+    // TODO: rebuild add/drop param functions
     static public function urlDropParam($url, $pname)
     {
-        return preg_replace('#(\?|&amp;|&)'.preg_quote($pname, '#').'=[^&\#]*#', '', $url);
+        if (stristr($url, 'javascript'))
+            return $url;
+
+        list($url, $anchor) = explode('#', $url, 2);
+        list($url, $query) = explode('?', $url, 2);
+
+        $query = preg_replace('#(&amp;|&)?'.preg_quote($pname, '#').'=[^&]*(&amp;|&)#', '$1', $query);
+        return $url.($query ? '?'.$query : '').($anchor ? '#'.$anchor : '');
     }
 
     static public function urlDataPack($data)
