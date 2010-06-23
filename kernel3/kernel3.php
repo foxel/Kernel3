@@ -22,7 +22,7 @@ define('F_SITE_INDEX', basename($_SERVER['PHP_SELF']));
 if (!defined('F_INTERNAL_ENCODING'))
     define('F_INTERNAL_ENCODING', 'utf-8');
 if (!defined('F_SITE_ROOT'))
-    define('F_SITE_ROOT', getcwd().DIRECTORY_SEPARATOR);
+    define('F_SITE_ROOT', dirname($_SERVER['PHP_SELF']).DIRECTORY_SEPARATOR);
 if (!defined('F_DATA_ROOT'))
     define('F_DATA_ROOT', F_SITE_ROOT.'data'.DIRECTORY_SEPARATOR);
 
@@ -107,6 +107,15 @@ class F extends FEventDispatcher
         set_error_handler(Array($this, 'logError'), E_ALL & ~(E_NOTICE | E_USER_NOTICE | E_STRICT));
 
         $this->pool['LNG']->_Start();
+
+        if ($CL_Config = FMisc::loadDatafile(self::KERNEL_DIR.'modules.qfc', FMisc::DF_SLINE, false, '|'))
+        {
+            foreach ($CL_Config as $mod => $cfg)
+            {
+                $this->classes[$mod] = ($cfg[1]) ? array_shift($cfg) : 'F'.$mod;
+                $this->clfiles[$mod] = self::KERNEL_DIR.array_shift($cfg);
+            }
+        }
     }
 
     public static function kernel($name = null)
@@ -117,7 +126,7 @@ class F extends FEventDispatcher
             : self::$self->__get($name);
     }
 
-    public function Run_Module($mod_name)
+    public function runModule($mod_name)
     {
         if (preg_match('#\W#', $mod_name))
             return false;
@@ -188,14 +197,14 @@ class F extends FEventDispatcher
     protected function __get($name)
     {        if (isset($this->pool[$name]))
             return $this->pool[$name];
-        elseif (isset($this->classes[$name]) && $this->Run_Module($name))
+        elseif (isset($this->classes[$name]) && $this->runModule($name))
             return $this->pool[$name];
 
         return null;
     }
 
     protected function __call($name, $arguments)
-    {         if (isset($this->pool[$name]) || $this->Run_Module($name))
+    {         if (isset($this->pool[$name]) || $this->runModule($name))
              if (method_exists($this->pool[$name], '_Call'))
                  return call_user_func_array(Array(&$this->pool[$name],  '_Call'), $arguments);
          return null;

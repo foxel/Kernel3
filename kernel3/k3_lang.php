@@ -154,8 +154,7 @@ class FLNGData // extends FEventDispatcher
             if ($params)
             {
                 $params = is_array($params) ? array_values($params) : Array($params);
-                array_unshift($params, '');
-                $out = preg_replace('#\$\{\d+\}#e', 'isset(\$params[\\1]) ? \$params[\\1] : \'\'', $out);
+                $out = FStr::smartSprintf($out, $params);
             }
             return $out;
         }
@@ -170,20 +169,10 @@ class FLNGData // extends FEventDispatcher
 
     public function langParse($data, $prefix = 'L_')
     {
-        if (is_scalar($data))
-        {
-            if (preg_match('#^'.preg_quote($prefix, '#').'\w+$#D', $data))
-                $data = $this->lang(substr($data, strlen($prefix)));
-        }
-        elseif (is_array($data))
-        {
-            foreach ($data AS $key => $val)
-                $data[$key] = $this->langParse($val, $prefix);
-        }
-        elseif (is_object($data))
-        {
-            foreach ($data AS $key => $val)
-                $data->$key = $this->langParse($val, $prefix);
+        $linear = FMisc::linearize($data);
+        foreach ($linear as &$val)
+        {            if (preg_match('#^'.preg_quote($prefix, '#').'\w+$#D', $val))
+                $val = $this->lang(substr($val, strlen($prefix)));
         }
 
         return $data;

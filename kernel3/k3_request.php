@@ -55,28 +55,6 @@ class FGPC
         $QF->Config->Add_Listener('cookie_prefix', 'common', Array(&$this, 'renameCookies'));
     } */
 
-    // special function for chenging prefix without dropping down the session
-    public static function renameCookies($new_prefix)
-    {
-        if (!$new_prefix)
-            $new_prefix = self::DEF_COOKIE_PREFIX;
-
-        $new_cookies = Array();
-        $o_prefix = self::$CPrefix.'_';
-        foreach ($_COOKIE as $val => $var)
-        {
-            if (strpos($val, $o_prefix) === 0)
-            {
-                F('HTTP')->Set_Cookie($val, false, false, false, false, true);
-                $val = $new_prefix.'_'.substr($val, strlen($o_prefix));
-                F('HTTP')->Set_Cookie($val, $var, false, false, false, true);
-            }
-            $new_cookies[$val] = $var;
-        }
-        self::$CPrefix = $new_prefix;
-        $_COOKIE = $new_cookies;
-    }
-
     // useful for special inpur parsings
     public static function setRaws($datas, $set = self::GET)
     {
@@ -106,14 +84,15 @@ class FGPC
                     $source =& $_POST;
                     break;
                 case self::COOKIE:
-                    $svar_name = self::$CPrefix.'_'.$var_name;
-                    $source =& $_COOKIE;
+                    // do nothing, see "if" structure below
                     break;
                 default:
                     $source =& $_REQUEST;
             }
 
-            if (isset($source[$svar_name]))
+            if ($from == self::COOKIE)
+                $val = F('HTTP')->getCookie($svar_name);
+            elseif (isset($source[$svar_name]))
                 $val = $source[$svar_name];
             else
                 $val = null;

@@ -9,7 +9,7 @@ if (!defined('F_STARTED'))
     die('Hacking attempt');
 
 // HTTP interface
-// Outputs data to user
+// Outputs data to user and manages cookies data
 class FHTTPInterface extends FEventDispatcher
 {
     const DEF_COOKIE_PREFIX = 'F3';
@@ -18,12 +18,12 @@ class FHTTPInterface extends FEventDispatcher
     const FILE_RFC1522    = 8;
     const FILE_TRICKY     = 16;
 
-    private static $self = null;
-
     private $buffer = '';
 
     public $doHTML = true;
     public $doGZIP = true;
+
+    private static $self = null;
 
     public static function getInstance()
     {
@@ -79,12 +79,32 @@ class FHTTPInterface extends FEventDispatcher
         //F()->Config->Add_Listener('cookie_prefix', 'common', Array(&$this, 'setCPrefix'));
     }
 
-    public function setCPrefix($new_prefix)
+    public function setCPrefix($new_prefix = false, $do_rename = false)
     {
-        if (!$new_prefix)
+        if (!$new_prefix || !is_string($new_prefix))
             $new_prefix = self::DEF_COOKIE_PREFIX;
 
+        // special for chenging prefix without dropping down the session
+        if ($do_rename)
+        {            $o_prefix = $this->pool['cPrefix'].'_';
+            foreach ($_COOKIE as $val => $var)
+            {
+                if (strpos($val, $o_prefix) === 0)
+                {
+                    $this->Set_Cookie($val, false, false, false, false, true);
+                    $val = $new_prefix.'_'.substr($val, strlen($o_prefix));
+                    $this->Set_Cookie($val, $var, false, false, false, true);
+                }
+                $_COOKIE[$val] = $var;
+            }
+        }
         $this->pool['cPrefix'] = (string) $new_prefix;
+    }
+
+    public function getCookie($name)
+    {        $name = $this->pool['cPrefix'].'_'.$name;
+
+        return (isset($_COOKIE[$name])) ? $_COOKIE[$name] : null;
     }
 
     public function write($text, $no_nl = false)

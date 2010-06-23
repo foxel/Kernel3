@@ -295,6 +295,48 @@ class FMisc
             return false;
     }
 
+    // recursively builds a linear array of references to all the scalar elements of array or object based tree
+    // usefull for iterating complex data trees
+    static public function linearize(&$data)
+    {        $res = Array();
+        if (is_scalar($data))
+            $res[] =& $data;
+        if (is_array($data) || is_object($data))
+        {
+            foreach ($data as &$val)
+                $res = array_merge($res, self::linearize($val));
+        }
+
+        return $res;
+    }
+
+    // recursive iterator based on 'linearize'
+    // $do_change sets a changing parse mode
+    static public function iterate(&$data, $func_link, $do_change = false)
+    {
+        if (!is_callable($func_link))
+            return false;
+
+        $linear = FMisc::linearize($data);
+        $args = (func_num_args() > 3)
+            ? array_slice(func_get_args(), 3)
+            : Array();
+        array_unshift($args, 0);
+
+        if ($do_change) // selecting iteration mode here (optimization)
+            foreach ($linear as &$val)
+            {                $args[0] =&$val;
+                $val = call_user_func_array($func_link, $args);
+            }
+        else
+            foreach ($linear as &$val)
+            {
+                $args[0] =&$val;
+                call_user_func_array($func_link, $args);
+            }
+
+        return $data;
+    }
 }
 
 class F2DArray

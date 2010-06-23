@@ -21,8 +21,8 @@ class FStr
     const URL_MASK_F = '(?>[0-9A-z]+://[0-9A-z_\-\.]+\.[A-z]{2,4})(?:\/[\w\#$%&~/\.\-;:=,?@+\(\)\[\]\|]+)?';
     const EMAIL_MASK = '[0-9A-z_\-\.]+@[0-9A-z_\-\.]+\.[A-z]{2,4}';
 
-    const LTT_CACHEPREFIX = 'USTR.LTT.';
-    const CHR_CACHEPREFIX = 'USTR.CHR.';
+    const LTT_CACHEPREFIX = 'FSTR.LTT.';
+    const CHR_CACHEPREFIX = 'FSTR.CHR.';
     const INT_ENCODING = F_INTERNAL_ENCODING;
 
     private static $ltts = Array(); // alphabetic chars data array
@@ -211,8 +211,8 @@ class FStr
                 break;
 
             case self::PATH:
-                $val = preg_replace('#(\\\|/)+#', DIRECTORY_SEPARATOR, $val);
-                $val = preg_replace('#[\x00-\x1F\*\?\;\|]|/$|^\.$|(?<!^[A-z])\:#', '', $val);
+                $val = preg_replace('#(\\\\|/)+#', DIRECTORY_SEPARATOR, $val);
+                $val = preg_replace('#[\x00-\x1F\*\?\;\|]|/$|\\\\$|^\.$|(?<!^[A-z])\:#', '', $val);
                 $val = trim($val);
                 break;
         }
@@ -223,46 +223,22 @@ class FStr
         return $val;
     }
 
+    static public function addslashesHeredoc($text, $heredoc_id = false)
+    {
+        $text = str_replace(Array('\\', '$'), Array('\\\\', '\\$'), $text);
+        if ($heredoc_id)
+            $text = str_replace("\n\r?".$heredoc_id, "\n ".$heredoc_id, $text);
+        return $text;
+    }
+
     static public function unslash($data)
     {
-        if (is_scalar($data))
-        {
-            if (!is_numeric($data) && !is_null($data))
-                $data = stripslashes($data);
-        }
-        elseif (is_array($data))
-        {
-            foreach ($data AS $key=>$val)
-                $data[$key] = self::unslash($val);
-        }
-        elseif (is_object($data))
-        {
-            foreach ($data AS $key=>$val)
-                $data->$key = self::unslash($val);
-        }
-
-        return $data;
+        return FMisc::iterate($data, 'stripslashes', true);
     }
 
     static public function htmlschars($data, $q_mode = ENT_COMPAT)
     {
-        if (is_scalar($data))
-        {
-            if (!is_numeric($data) && !is_null($data))
-                $data = htmlspecialchars($data, $q_mode);
-        }
-        elseif (is_array($data))
-        {
-            foreach ($data AS $key=>$val)
-                $data[$key] = self::htmlschars($val, $q_mode);
-        }
-        elseif (is_object($data))
-        {
-            foreach ($data AS $key=>$val)
-                $data->$key = self::htmlschars($val, $q_mode);
-        }
-
-        return $data;
+        return FMisc::iterate($data, 'htmlspecialchars', true, $q_mode);
     }
 
     static private $JS_REPLACE = array(
@@ -283,7 +259,7 @@ class FStr
         elseif (is_array($data) || is_object($data))
         {
             $odata = Array();
-            foreach ($data AS $key=>$val)
+            foreach ($data as $key=>$val)
                 $odata[] = $key.': '.self::JSDefine($val);
             $odata = '{ '.implode(', ', $odata).' }';
         }
@@ -338,6 +314,21 @@ class FStr
         return strtr(self::smartAmpersands($string), self::$SCHARS);
     }
 
+    static public function smartSprintf($string, array $params)
+    {
+        $params = array_values($params);
+        $count = preg_match_all('#\%(\d+)\$|\%\w#', $string, $masks, PREG_PATTERN_ORDER);
+        if ($count > 0)
+        {
+            $masks = $masks[1];
+            $count = max($count, max($masks));
+            $params+= array_fill(0, $count, '');
+            $string = vsprintf($string, $params);
+        }
+
+        return $string;
+    }
+
     static public function isEmail($string)
     {
         return !!preg_match('#^'.self::EMAIL_MASK.'$#D', $string);
@@ -354,7 +345,7 @@ class FStr
 
     static public function path($path)
     {
-        self::cast($path, self::PATH);
+        return self::cast($path, self::PATH);
     }
 
     static public function basename($name)
@@ -423,21 +414,22 @@ class FStr
     // generates full url
     static public function fullUrl($url, $with_amps = false, $force_host = '')
     {
-        if ($url{0} == '#')
+        if ($url[0] == '#')
             return $url;
 
         $url_p = parse_url($url);
 
-        $url_p['scheme'] = strtolower($url_p['scheme']);
-
-        if ($url_p['scheme'] == 'mailto')
-            return $url;
-
         $url = '';
+
         if (isset($url_p['scheme']))
-            $url.= $url_p['scheme'].'://';
+        {
+            $scheme = strtolower($url_p['scheme']);
+            if ($scheme == 'mailto')
+                return $url;
+            $url.= $scheme.'://';
+        }
         else
-            $url.= (F('HTTP')->Secure) ? 'https://' : 'http://';
+            $url.= (F('HTTP')->secure) ? 'https://' : 'http://';
 
         if (isset($url_p['host']))
         {
@@ -457,14 +449,14 @@ class FStr
         }
         else
         {
-            $url.= ($force_host) ? $force_host : F('HTTP')->SrvName;
+            $url.= ($force_host) ? $force_host : F('HTTP')->srvName;
             if (isset($url_p['path']))
             {
                 if ($url_p['path']{0} != '/')
-                    $url_p['path'] = '/'.F('HTTP')->RootDir.'/'.$url_p['path'];
+                    $url_p['path'] = '/'.F('HTTP')->rootDir.'/'.$url_p['path'];
             }
             else
-                $url_p['path'] = '/'.F('HTTP')->RootDir.'/'.F_SITE_INDEX;
+                $url_p['path'] = '/'.F('HTTP')->rootDir.'/'.F_SITE_INDEX;
 
             $url_p['path'] = preg_replace('#(\/|\\\)+#', '/', $url_p['path']);
             $url.= $url_p['path'];
@@ -495,7 +487,9 @@ class FStr
         return str_pad(dechex(crc32($data)), 8, '0', STR_PAD_LEFT);
     }
 
-
+    static public function pathHash($path)
+    {        return md5(realpath($path)); // TODO: maybe this needs to be modified
+    }
 
     // private functions
     static private function _subFromUtf($string, $to_enc)
