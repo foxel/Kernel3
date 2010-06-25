@@ -56,6 +56,9 @@ class FDataBase extends FEventDispatcher
     // simple one table select
     public function doSelect ($table, $fields = Array(), $where = '', $other = '', $flags = 0)
     {
+        if (!$this->c)
+            throw new FException('DB is not connected');
+
         $ret = Array();
         $query = $this->qc->simpleSelect($table, $fields, $where, $other, $flags);
         if ($result = $this->query($query, true))
@@ -112,7 +115,10 @@ class FDataBase extends FEventDispatcher
     }
 
     public function quote($string)
-    {        return $this->c->quote($string);
+    {        if (!$this->c)
+            throw new FException('DB is not connected');
+
+        return $this->c->quote($string);
     }
 
     public function fetchResult (PDOStatement $result, $flags = 0)

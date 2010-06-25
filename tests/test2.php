@@ -21,6 +21,7 @@ $w = F('VIS')->addNode('TEST_WINDOW', 'PAGE_CONTENTS');
 for ($i = 0; $i < 30; $i++)
     F('VIS')->addNode('TEST_WINDOW', 'PAGE_CONTENTS', 0, Array('CONTENTS' => F('Timer')->timeSpent()));
 F('VIS')->addData($w, 'CONTENTS', F('HTTP')->getOB());
+F('VIS')->addNode('TEST_WINDOW', 'PAGE_CONTENTS', 0, Array('CONTENTS' => highlight_file(__FILE__, true), 'WIDTH' => '100%'));
 F('HTTP')->write(F('VIS')->makeHTML());
 F('HTTP')->sendBuffer();
 ?>

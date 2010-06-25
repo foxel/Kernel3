@@ -72,7 +72,6 @@ class FHTTPInterface extends FEventDispatcher
 
         header('X-Powered-By: QuickFox kernel 3 (PHP/'.PHP_VERSION.')');
         ob_start(array( &$this, 'obOutFilter'));
-        //set_error_handler(array( &$this, 'Error_Handler'));
         ini_set ('default_charset', '');
 
         //$this->pool['cPrefix'] = F()->Config->Get('cookie_prefix', 'common', self::DEF_COOKIE_PREFIX);
@@ -247,7 +246,7 @@ class FHTTPInterface extends FEventDispatcher
             $this->throwEventRef('HTML_parse', $this->buffer);
 
             $statstring = sprintf(F('LNG')->lang('FOOT_STATS_PAGETIME'), F('Timer')->timeSpent()).' ';
-            if (F('DBase')->queriesCount)
+            if (F()->ping('DBase') && F('DBase')->queriesCount)
                 $statstring.= sprintf(F('LNG')->lang('FOOT_STATS_SQLSTAT'), F('DBase')->queriesCount, F('DBase')->queriesTime).' ';
 
             $this->buffer = str_replace('<!--Page-Stats-->', $statstring, $this->buffer);
@@ -492,7 +491,7 @@ class FHTTPInterface extends FEventDispatcher
         if (!$this->buffer)
             return false;
         else
-            return '';
+            return 'Output error. Sorry :(';
     }
 
     function _Close()

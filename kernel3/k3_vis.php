@@ -11,7 +11,7 @@ if (!defined('F_STARTED'))
 define('VIS_BR', "\n");
 
 // VIS node class
-class FVISNode extends FEventDispatcher
+class FVISNode extends FBaseClass // FEventDispatcher
 {
     // node flags
     const VISNODE_ARRAY = 1; // node is an array of sametype nodes

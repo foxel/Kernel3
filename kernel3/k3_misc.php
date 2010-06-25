@@ -24,6 +24,17 @@ abstract class FBaseClass
         return $val;
     }
 
+    protected function __isset($name)
+    {
+        return isset($this->pool[$name]);
+    }
+
+    protected function __call($name, $arguments)
+    {
+         throw new FException(get_class($this).' has no '.$name.' method');
+         return null;
+    }
+
     protected function poolLink($names)
     {
         print 'hello';
@@ -129,6 +140,18 @@ final class StaticInstance
             return @constant($this->c.'::'.$p);
         return null;
     }
+}
+
+final class FNullObject
+{    private $message = '';
+
+    public function __construct($var_id = 'Object') { $this->message = $var_id.' is not defined but used as object'; }
+
+    protected function __get($name) { throw new FException($this->message); }
+
+    protected function __set($name, $val) { throw new FException($this->message); }
+
+    protected function __call($name, $arguments) { throw new FException($this->message); }
 }
 
 class FException extends Exception

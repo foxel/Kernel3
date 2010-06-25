@@ -30,6 +30,11 @@ Error_Reporting(0);
 if (get_magic_quotes_runtime())
     set_magic_quotes_runtime(0);
 set_time_limit(30);  // not '0' - once i had my script running for a couple of hours collecting GBytes of errors :)
+// here comes the fatal catcher :P
+register_shutdown_function(create_function('', 'if (($a = error_get_last()) && $a[\'type\'] == E_ERROR)
+    { file_put_contents(F_SITE_ROOT.\'php_fatal.log\', sprintf(\'E%d "%s" at %s:%d\', $a[\'type\'], $a[\'message\'], $a[\'file\'], $a[\'line\']));
+    $i = ob_get_level(); while ($i--) @ob_end_clean(); print \'Fatal error. Sorry :(\'; }'));
+// here we set an error catcher
 set_error_handler(create_function('$c, $m, $f, $l', 'throw new ErrorException($m, 0, $c, $f, $l);'),
     E_ALL & ~(E_NOTICE | E_WARNING | E_USER_NOTICE | E_USER_WARNING | E_STRICT));
 
@@ -43,7 +48,7 @@ $base_modules_files = Array(
     F_KERNEL_DIR.'k3_http.php',          // kernel 2 HTTP interface
     F_KERNEL_DIR.'k3_request.php',       // kernel 2 GPC interface
     F_KERNEL_DIR.'k3_lang.php',          // kernel 2 LNG interface
-    F_KERNEL_DIR.'k3_dbase.php',        // kernel 2 database interface
+    F_KERNEL_DIR.'k3_dbase.php',         // kernel 2 database interface
 );
 // we'll do some trick with caching base modules in one file
 $base_modules_stats = Array();
@@ -101,7 +106,9 @@ class F extends FEventDispatcher
         $this->pool['HTTP']  = FHTTPInterface::getInstance();
         $this->pool['GPC']   = new StaticInstance('FGPC');
         $this->pool['LNG']   = FLNGData::getInstance();
-        $this->pool['DBase'] = new FDataBase();
+
+        //$this->pool['DBase'] = new FDataBase();
+        $this->classes['DBase'] = 'FDataBase';
 
         set_exception_handler(Array($this, 'handleException'));
         set_error_handler(Array($this, 'logError'), E_ALL & ~(E_NOTICE | E_USER_NOTICE | E_STRICT));
@@ -124,6 +131,11 @@ class F extends FEventDispatcher
         return is_null($name)
             ? self::$self
             : self::$self->__get($name);
+    }
+
+    public function ping($name)
+    {
+        return isset($this->pool[$name]);
     }
 
     public function runModule($mod_name)
@@ -169,7 +181,7 @@ class F extends FEventDispatcher
     }
 
     public function handleException(Exception $e)
-    {        $logfile = F_SITE_ROOT.'fatal_err.log';
+    {        $logfile = F_SITE_ROOT.'fatal.log';
         $eName = get_class($e).(($e instanceof ErrorException) ? '['.self::$ERR_TYPES[$e->getSeverity()].']' : '');
         if ($logfile = fopen($logfile, 'ab'))
         {
@@ -200,7 +212,7 @@ class F extends FEventDispatcher
         elseif (isset($this->classes[$name]) && $this->runModule($name))
             return $this->pool[$name];
 
-        return null;
+        return new FNullObject('F(\''.$name.'\')');
     }
 
     protected function __call($name, $arguments)
