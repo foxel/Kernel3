@@ -166,6 +166,7 @@ class FMisc
     const DF_SLINE = 2;
     const DF_MLINE = 3;
     const DF_BLOCK = 4;
+    const DF_FROMSTR = 16; //flag
 
     private static $dfMasks = Array('', '', '#^\s*([\w\-\/]+)\s*=>(.*)$#m', '#^((?>\w+)):(.*?)\r?\n---#sm', '#<<\+ \'(?>(\w+))\'>>(.*?)<<- \'\\1\'>>#s');
 
@@ -197,12 +198,16 @@ class FMisc
         return mkdir($path, $chmod);
     }
 
-    static public function loadDatafile($filename, $format = self::DF_PLAIN, $force_upcase = false, $explode_by = '')
+    static public function loadDatafile($datasource, $format = self::DF_PLAIN, $force_upcase = false, $explode_by = '')
     {
-        $indata = (file_exists($filename)) ? file_get_contents($filename) : false;
+        $indata = ($format & self::DF_FROMSTR)
+            ? $datasource
+            : (file_exists($datasource) ? file_get_contents($datasource) : false);
 
         if ($indata == false)
             return false;
+
+        $format &= 0xf;
 
         switch ($format)
         {

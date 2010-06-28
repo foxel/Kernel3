@@ -427,17 +427,15 @@ class FStr
 
         $url_p = parse_url($url);
 
-        $url = '';
-
         if (isset($url_p['scheme']))
         {
             $scheme = strtolower($url_p['scheme']);
             if ($scheme == 'mailto')
                 return $url;
-            $url.= $scheme.'://';
+            $url = $scheme.'://';
         }
         else
-            $url.= (F('HTTP')->secure) ? 'https://' : 'http://';
+            $url = (F('HTTP')->secure) ? 'https://' : 'http://';
 
         if (isset($url_p['host']))
         {
