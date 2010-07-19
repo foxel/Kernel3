@@ -25,6 +25,8 @@ class FStr
     const CHR_CACHEPREFIX = 'FSTR.CHR.';
     const INT_ENCODING = F_INTERNAL_ENCODING;
 
+    const ENDL = "\n";
+
     private static $ltts = Array(); // alphabetic chars data array
     private static $chrs = Array(); // Charconv tables
     private static $useMB = false;
@@ -231,6 +233,17 @@ class FStr
         return $text;
     }
 
+    static private $JS_REPLACE = array(
+           '\\' => '\\\\', '/'  => '\\/', "\r" => '\\r', "\n" => '\\n',
+           "\t" => '\\t',  "\b" => '\\b', "\f" => '\\f', '"'  => '\\"',
+           );
+
+    static public function addslashesJS($text)
+    {
+        $text = strtr($text, self::$JS_REPLACE);
+        return $text;
+    }
+
     static public function unslash($data)
     {
         return FMisc::iterate($data, 'stripslashes', true);
@@ -240,11 +253,6 @@ class FStr
     {
         return FMisc::iterate($data, 'htmlspecialchars', true, $q_mode);
     }
-
-    static private $JS_REPLACE = array(
-           '\\' => '\\\\', '/'  => '\\/', "\r" => '\\r', "\n" => '\\n',
-           "\t" => '\\t',  "\b" => '\\b', "\f" => '\\f', '"'  => '\\"',
-           );
 
     static public function JSDefine($data)
     {
@@ -294,6 +302,11 @@ class FStr
         else
             $def = '\''.addslashes($data).'\'';
         return $def;
+    }
+
+    static public function heredocDefine($str, $heredoc_id = 'HSTR', $add_semicolon = false)
+    {
+        return '<<<'.$heredoc_id.self::ENDL.self::addslashesHeredoc($val, $heredoc_id).self::ENDL.$heredoc_id.($add_semicolon ? ';' : '').self::ENDL;
     }
 
     static public function smartAmpersands($string)

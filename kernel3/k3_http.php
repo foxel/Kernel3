@@ -122,16 +122,19 @@ class FHTTPInterface extends FEventDispatcher
         else
             $this->buffer = ob_get_contents();
 
+        ob_clean();
         if (!$no_nl)
             $this->buffer.= "\n";
     }
 
     public function getOB()
     {
-        return ob_get_contents();
+        $data = ob_get_contents();
+        ob_clean();
+        return $data;
     }
 
-    public function clear()
+    public function clearBuffer()
     {
         $this->buffer = '';
     }
@@ -375,7 +378,7 @@ class FHTTPInterface extends FEventDispatcher
         FMisc::obFree();
 
         $url = FStr::fullUrl($url);
-        $this->callEventRef('HTTP_URL_Parse', $url );
+        $this->throwEventRef('HTTP_URL_Parse', $url );
         $hurl = strtr($url, Array('&' => '&amp;'));
 
         // Redirect via an HTML form for PITA webservers
