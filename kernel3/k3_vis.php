@@ -928,7 +928,7 @@ class FVISInterface extends FEventDispatcher
         if (!isset($this->templates[$vis]) && !$this->tryAutoLoad($vis))
             return implode(FStr::ENDL, $data);
 
-        if (extract($this->templates[$vis]['V'], EXTR_REFS | EXTR_SKIP))
+        if (extract($this->templates[$vis]['V'], EXTR_SKIP))
         {
             extract($data, EXTR_REFS | EXTR_OVERWRITE | EXTR_PREFIX_ALL, 'IN');
             extract($this->vis_consts, EXTR_REFS | EXTR_OVERWRITE | EXTR_PREFIX_ALL, 'C');
@@ -1118,8 +1118,8 @@ class FVISInterface extends FEventDispatcher
         }
         elseif ($parsewith)
             $code = $for_js
-                ? 'FVIS.callParseFunction('.$parsewith.', '.$val.')'
-                : '$this->callParseFunction('.$parsewith.', '.$val.')';
+                ? 'FVIS.callParseFunction(\''.$parsewith.'\', '.$val.')'
+                : '$this->callParseFunction(\''.$parsewith.'\', $'.$val.')';
 
         return $code;
     }
