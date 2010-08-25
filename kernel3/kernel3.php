@@ -49,6 +49,7 @@ $base_modules_files = Array(
     F_KERNEL_DIR.'k3_request.php',       // kernel 2 GPC interface
     F_KERNEL_DIR.'k3_lang.php',          // kernel 2 LNG interface
     F_KERNEL_DIR.'k3_dbase.php',         // kernel 2 database interface
+    //F_KERNEL_DIR.'k3_session.php',       // kernel 2 session extension
 );
 // we'll do some trick with caching base modules in one file
 $base_modules_stats = Array();
@@ -109,6 +110,8 @@ class F extends FEventDispatcher
 
         //$this->pool['DBase'] = new FDataBase();
         $this->classes['DBase'] = 'FDataBase';
+        //$this->classes['Session'] =
+        //$this->classes['Sess'] = 'FSession';
 
         set_exception_handler(Array($this, 'handleException'));
         set_error_handler(Array($this, 'logError'), E_ALL & ~(E_NOTICE | E_USER_NOTICE | E_STRICT));
@@ -206,7 +209,7 @@ class F extends FEventDispatcher
             fwrite($logfile, date('[d M Y H:i]').' '.$eName.': '.$m.'. File: '.$f.'. Line: '.$l.".\r\n".FStr::PHPDefine(array_slice(debug_backtrace(),1)).".\r\n");
     }
 
-    protected function __get($name)
+    public function __get($name)
     {        if (isset($this->pool[$name]))
             return $this->pool[$name];
         elseif (isset($this->classes[$name]) && $this->runModule($name))
@@ -215,7 +218,7 @@ class F extends FEventDispatcher
         return new FNullObject('F(\''.$name.'\')');
     }
 
-    protected function __call($name, $arguments)
+    public function __call($name, $arguments)
     {         if (isset($this->pool[$name]) || $this->runModule($name))
              if (method_exists($this->pool[$name], '_Call'))
                  return call_user_func_array(Array(&$this->pool[$name],  '_Call'), $arguments);

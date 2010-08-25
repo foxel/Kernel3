@@ -1,2 +1,3 @@
 glob:kernel3/k3_bases-*
 glob:tests/data
+glob:*.php0

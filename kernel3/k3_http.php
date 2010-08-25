@@ -238,7 +238,7 @@ class FHTTPInterface extends FEventDispatcher
     {
         if (headers_sent())
         {
-            trigger_error('QuickFox HTTP error', E_USER_ERROR);
+            trigger_error('QuickFox Kernel 3 HTTP error', E_USER_ERROR);
             return false;
         }
 
@@ -293,7 +293,7 @@ class FHTTPInterface extends FEventDispatcher
             header('Content-Disposition: attachment; filename="'.$send_filename.'"');
 
         header('Content-Length: '.strlen($this->buffer));
-        header('X-QF-Page-GenTime: '.F('Timer')->timeSpent());
+        header('X-K3-Page-GenTime: '.F('Timer')->timeSpent());
         print $this->buffer;
         exit();
     }
@@ -302,7 +302,7 @@ class FHTTPInterface extends FEventDispatcher
     {
         if (headers_sent())
         {
-            trigger_error('QuickFox HTTP error', E_USER_ERROR);
+            trigger_error('QuickFox Kernel 3 HTTP error', E_USER_ERROR);
             return false;
         }
 
@@ -330,7 +330,7 @@ class FHTTPInterface extends FEventDispatcher
             header('Content-Disposition: attachment; filename="'.$send_filename.'"');
 
         header('Content-Length: '.strlen($data));
-        header('X-QF-Page-GenTime: '.F('Timer')->timeSpent());
+        header('X-K3-Page-GenTime: '.F('Timer')->timeSpent());
         print $data;
         exit();
     }
@@ -368,7 +368,7 @@ class FHTTPInterface extends FEventDispatcher
     {
         if (headers_sent())
         {
-            trigger_error('QuickFox HTTP error', E_USER_ERROR);
+            trigger_error('QuickFox Kernel 3 HTTP error', E_USER_ERROR);
             return false;
         }
 
@@ -378,7 +378,7 @@ class FHTTPInterface extends FEventDispatcher
         FMisc::obFree();
 
         $url = FStr::fullUrl($url);
-        $this->throwEventRef('HTTP_URL_Parse', $url );
+        $this->throwEventRef('URL_Parse', $url );
         $hurl = strtr($url, Array('&' => '&amp;'));
 
         // Redirect via an HTML form for PITA webservers

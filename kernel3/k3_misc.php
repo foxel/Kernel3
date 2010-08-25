@@ -11,7 +11,7 @@ if (!defined('F_STARTED'))
 abstract class FBaseClass
 {    protected $pool = Array();
 
-    protected function __get($name)
+    public function __get($name)
     {
         if (isset($this->pool[$name]))
             return $this->pool[$name];
@@ -19,17 +19,17 @@ abstract class FBaseClass
         return null;
     }
 
-    protected function __set($name, $val)
+    public function __set($name, $val)
     {
         return $val;
     }
 
-    protected function __isset($name)
+    public function __isset($name)
     {
         return isset($this->pool[$name]);
     }
 
-    protected function __call($name, $arguments)
+    public function __call($name, $arguments)
     {
          throw new FException(get_class($this).' has no '.$name.' method');
          return null;

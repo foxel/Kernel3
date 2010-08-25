@@ -43,6 +43,8 @@ class FVISNode extends FBaseClass // FEventDispatcher
         if ($this->isParsed && !$force_reparse)
             return $this->parsed;
 
+        $visualizer->checkVIS($this->type);
+
         if ($this->flags && self::VISNODE_ARRAY)
         {
             $parts = Array();
@@ -457,8 +459,8 @@ class FVISInterface extends FEventDispatcher
     public function makeHTML($force_reparse = false)
     {
         $vars = Array(
-            'CSS' => Array($this->CSS_data, $this->VCSS_data),
-            'JS'  => Array($this->JS_data,  $this->VJS_data),
+            'CSS' => Array(&$this->CSS_data, &$this->VCSS_data),
+            'JS'  => Array(&$this->JS_data,  &$this->VJS_data),
             );
 
         return $this->nodes[0]->parse($force_reparse, $vars);
@@ -663,7 +665,7 @@ class FVISInterface extends FEventDispatcher
         $text = $this->templLang($text);
 
         $text = preg_replace('#(?<=\})\n\s*?(?=\{\w)#', '', $text);
-        preg_match_all('#\{(\!?)((?>\w+))(?:\:((?:(?>\w+)(?:[\!=\>\<]{1,2}(?:\w+|\"[^\"]*\"))?|\||)*))?\}|[^\{]+|\{#', $text, $struct, PREG_SET_ORDER);
+        preg_match_all('#\{(\!?)((?>\w+))(?:\:((?:(?>\w+)(?:[\!=\>\<]{1,2}(?:-?[0-9]+|\w+|\"[^\"]*\"))?|\||)*))?\}|[^\{]+|\{#', $text, $struct, PREG_SET_ORDER);
 
         $writes_to = 'OUT';
         $text = '$'.$writes_to.' = <<<FTEXT'.FStr::ENDL;
@@ -684,12 +686,12 @@ class FVISInterface extends FEventDispatcher
             {
                 $got_a = ($part[1]) ? true : false;
                 $params = Array();
-                if (isset($part[3]) && ($got = preg_match_all('#((?>\w+))(?:([\!=\>\<]{1,2})(\w+|\"[^\"]*\"))?#', $part[3], $params, PREG_PATTERN_ORDER)))
+                if (isset($part[3]) && ($got = preg_match_all('#((?>\w+))(?:([\!=\>\<]{1,2})(-?[0-9]+|\w+|\"[^\"]*\"))?#', $part[3], $params, PREG_PATTERN_ORDER)))
                     for ($i = 0; $i < $got; $i++)
                         $params[1][$i] = strtoupper($params[1][$i]);
 
                 if ($tag == 'WRITE')
-                {                    if (isset($params[1]) && count($params[1]) && ($var = $params[1][0]) && !is_numeric($var[0]))
+                {                    if (isset($params[1]) && count($params[1]) && ($var = $params[1][0]) && FStr::isWord($var))
                         $var = $var;
                     else
                         $var = 'OUT';
@@ -711,8 +713,8 @@ class FVISInterface extends FEventDispatcher
                     $jstext.= '"'.FStr::ENDL.'+';
                     for ($i = 0; $i < $pars; $i++)
                     {
-                        $text.= $this->templVISParamCB($params[1][$i], $vars, $consts, $tag);
-                        $jstext.= $this->templVISParamCB($params[1][$i], $vars, $consts, $tag, true);
+                        $text.= $this->templVISParamCB($params[1][$i], $vars, $consts, $tag, false, $got_a);
+                        $jstext.= $this->templVISParamCB($params[1][$i], $vars, $consts, $tag, true, $got_a);
                     }
                     $text.= '.<<<FTEXT'.FStr::ENDL;
                     $jstext.= '+"';
@@ -723,7 +725,7 @@ class FVISInterface extends FEventDispatcher
                         $sets = $jssets = '';
                         for($i = 0; $i < $pars; $i++)
                         {                            $var = $params[1][$i];
-                            if (is_numeric($var[0]) || !isset($params[3][$i]) || !strlen($params[3][$i]))
+                            if (!FStr::isWord($var) || !isset($params[3][$i]) || !strlen($params[3][$i]))
                                 continue;
                             $val = $params[3][$i];
                             $sets.= '$'.$var.' = '.$this->templVISParamCB($val, $vars, $consts).';';
@@ -749,16 +751,16 @@ class FVISInterface extends FEventDispatcher
                     $outiflevel = $iflevel;
                     $iflevel = 0;
 
-                    $pp1 = (is_numeric($p1[0])) ? intval($p1) : '(int) $'.$p1.($vars[$p1] = '');
+                    $pp1 = (!FStr::isWord($p1)) ? intval($p1) : '(int) $'.$p1.($vars[$p1] = '');
                     if ($p2)
-                        $pp2 = (is_numeric($p2[0])) ? intval($p2) : '(int) $'.$p2.($vars[$p2] = '');
+                        $pp2 = (!FStr::isWord($p2)) ? intval($p2) : '(int) $'.$p2.($vars[$p2] = '');
                     else
                     {
                         $pp2 = $p2 = $p1;
                         $pp1 = $p1 = '0';
                     }
                     if ($p3)
-                        $pp3 = (is_numeric($p3[0])) ? intval($p3) : '(int) $'.$p3.($vars[$p3] = '');
+                        $pp3 = (!FStr::isWord($p3)) ? intval($p3) : '(int) $'.$p3.($vars[$p3] = '');
                     else
                         $pp3 = $p3 = '1';
 
@@ -787,15 +789,20 @@ class FVISInterface extends FEventDispatcher
                     $text.= FStr::ENDL.'FTEXT;'.FStr::ENDL.'$'.$writes_to.(($got_a) ? '' : '.').'= $this->parseVIS(\''.$visname.'\'';
                     if (count($params[1]) > 1)
                     {
-                        $text.= ', Array(';
-                        $pars = count($params[1]);
-                        for($i = 1; $i < $pars; $i++)
+                        if ($params[1][1] == '_')
+                            $text.= ', $data';
+                        else
                         {
-                            $var = $params[1][$i];
-                            $val = (isset($params[3][$i]) && strlen($params[3][$i])) ? $params[3][$i] : '1';
-                            $text.= '\''.$var.'\' => '.$this->templVISParamCB($val, $vars, $consts).',';
+                            $text.= ', Array(';
+                            $pars = count($params[1]);
+                            for($i = 1; $i < $pars; $i++)
+                            {
+                                $var = $params[1][$i];
+                                $val = (isset($params[3][$i]) && strlen($params[3][$i])) ? $params[3][$i] : '1';
+                                $text.= '\''.$var.'\' => '.$this->templVISParamCB($val, $vars, $consts).',';
+                            }
+                            $text.= ') ';
                         }
-                        $text.= ') ';
                     }
                     $text.= ');'.FStr::ENDL.'$'.$writes_to.'.= <<<FTEXT'.FStr::ENDL;
                 }
@@ -813,15 +820,15 @@ class FVISInterface extends FEventDispatcher
                             ? ' '.$condition.' '
                             : ' == ';
 
-                        if (is_numeric($condvar[0]))
-                        {
-                            $condition = '((int) $'.$varname.$condition.intval($condvar).')';
-                            $jscondition = '('.$varname.$condition.intval($condvar).')';
-                        }
-                        else
+                        if (FStr::isWord($condvar))
                         {
                             $condition = '($'.$varname.$condition.$this->templVISParamCB($condvar, $vars, $consts).')';
                             $jscondition = '('.$varname.$condition.$this->templVISParamCB($condvar, $vars, $consts, false, true).')';
+                        }
+                        else
+                        {
+                            $condition = '((int) $'.$varname.$condition.intval($condvar).')';
+                            $jscondition = '('.$varname.$condition.intval($condvar).')';
                         }
                     }
                     else
@@ -870,7 +877,7 @@ class FVISInterface extends FEventDispatcher
                         $text.= FStr::addslashesHeredoc($consts[$varname], 'FTEXT');
                         $jstext.= FStr::addslashesJS($consts[$varname]);
                     }
-                    elseif (!is_numeric($varname[0]))
+                    elseif (FStr::isWord($varname))
                     {
                         $vars[$varname] = '';
                         if ($got_a)
@@ -912,6 +919,12 @@ class FVISInterface extends FEventDispatcher
         if ($store_to && is_string($store_to))
             $this->templates[$store_to] = $out;
         return $out;
+    }
+
+    public function checkVIS($vis)
+    {        $vis = strtoupper($vis);
+
+        return (isset($this->templates[$vis]) || $this->tryAutoLoad($vis));
     }
 
     public function parseVIS($vis, $data = Array())
@@ -1086,15 +1099,11 @@ class FVISInterface extends FEventDispatcher
         return $data;
     }
 
-    private function templVISParamCB($val, &$vars, $consts, $parsewith = null, $for_js = false)
+    private function templVISParamCB($val, &$vars, $consts, $parsewith = null, $for_js = false, $do_schars = false)
     {        $code = '';
         $static = true;
 
-        if (is_numeric($val[0]) && $val[0] != '0')
-            $val = intval($val);
-        elseif ($val[0] == '"')
-            $val = substr($val, 1, -1);
-        else
+        if (FStr::isWord($val))
         {
             $val = strtoupper($val);
             if (substr($val, 0, 2) == 'L_')
@@ -1108,18 +1117,30 @@ class FVISInterface extends FEventDispatcher
                 $code = '$'.$val;
             }
         }
+        elseif (is_numeric($val) && $val[0] != '0')
+            $val = intval($val);
+        elseif ($val[0] == '"')
+            $val = substr($val, 1, -1);
 
         if ($static)
         {            if ($parsewith)
                 $val = $this->callParseFunction($parsewith, $val);
+            if ($do_schars)
+                $val = FStr::smartHTMLSchars($val);
             $code = is_string($val)
                 ? ($for_js ? FStr::JSDefine($val) : FStr::heredocDefine($val, 'FTEXT'))
                 : (string) $val;
         }
         elseif ($parsewith)
+        {
             $code = $for_js
                 ? 'FVIS.callParseFunction(\''.$parsewith.'\', '.$val.')'
                 : '$this->callParseFunction(\''.$parsewith.'\', $'.$val.')';
+            if ($do_schars)
+                $code = $for_js
+                    ? 'FStr.smartHTMLSchars('.$code.')'
+                    : 'FStr::smartHTMLSchars('.$code.')';
+        }
 
         return $code;
     }

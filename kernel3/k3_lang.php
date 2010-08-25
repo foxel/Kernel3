@@ -88,8 +88,6 @@ class FLNGData // extends FEventDispatcher
 
     public function loadLanguage($part = '')
     {
-        Global $QF;
-
         if (!$part)
             $part = self::COMMON;
         else
@@ -114,7 +112,7 @@ class FLNGData // extends FEventDispatcher
                 $vdir = $this->DATA_DIR.$this->lang_name;
                 $ddir = $this->DATA_DIR.self::DEFLANG;
                 $odir = (file_exists($vdir.'/'.$file)) ? $vdir : $ddir;
-                $file = $odir.'0/'.$file;
+                $file = $odir.'/'.$file;
 
                 if (!file_exists($file))
                 {

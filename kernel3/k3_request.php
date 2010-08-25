@@ -143,7 +143,7 @@ class FGPC
     public static function getFile($var_name)
     {
         if (is_null(self::$UPLOADS))
-            self::$recheckFiles();
+            self::recheckFiles();
 
         if (isset(self::$UPLOADS[$var_name]))
             return self::$UPLOADS[$var_name];

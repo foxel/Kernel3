@@ -20,6 +20,7 @@ class FStr
     const URL_MASK_R = '[\w\#$%&~/\.\-;:=,?@+\(\)\[\]\|]+';
     const URL_MASK_F = '(?>[0-9A-z]+://[0-9A-z_\-\.]+\.[A-z]{2,4})(?:\/[\w\#$%&~/\.\-;:=,?@+\(\)\[\]\|]+)?';
     const EMAIL_MASK = '[0-9A-z_\-\.]+@[0-9A-z_\-\.]+\.[A-z]{2,4}';
+    const PHPWORD_MASK = '[A-z_]\w*';
 
     const LTT_CACHEPREFIX = 'FSTR.LTT.';
     const CHR_CACHEPREFIX = 'FSTR.CHR.';
@@ -315,16 +316,19 @@ class FStr
     }
 
     static private $SCHARS = null;
+    static private $NQSCHARS = null;
 
-    static public function smartHTMLSchars($string)
+    static public function smartHTMLSchars($string, $no_quotes = false)
     {
         if (is_null(self::$SCHARS))
         {
             self::$SCHARS = get_html_translation_table(HTML_SPECIALCHARS);
             unset(self::$SCHARS['&']);
+            self::$NQSCHARS = self::$SCHARS;
+            unset(self::$NQSCHARS['"'], self::$NQSCHARS['\'']);
         }
 
-        return strtr(self::smartAmpersands($string), self::$SCHARS);
+        return strtr(self::smartAmpersands($string), $no_quotes ? self::$NQSCHARS : self::$SCHARS);
     }
 
     static public function smartSprintf($string, array $params)
@@ -340,6 +344,11 @@ class FStr
         }
 
         return $string;
+    }
+
+    static public function isWord($string)
+    {
+        return !!preg_match('#^'.self::PHPWORD_MASK.'$#D', $string);
     }
 
     static public function isEmail($string)
