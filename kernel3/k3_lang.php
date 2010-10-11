@@ -17,7 +17,7 @@ class FLNGData // extends FEventDispatcher
     private static $self = null;
 
     private $lang       = Array();
-    private $klang       = Array();
+    private $klang      = null;
     private $lang_name  = 'EN';
     private $LNG_loaded = Array();
     private $time_tr    = null;
