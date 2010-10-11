@@ -34,22 +34,29 @@ set_time_limit(30);  // not '0' - once i had my script running for a couple of h
 register_shutdown_function(create_function('', 'if (($a = error_get_last()) && $a[\'type\'] == E_ERROR)
     { file_put_contents(F_SITE_ROOT.\'php_fatal.log\', sprintf(\'E%d "%s" at %s:%d\', $a[\'type\'], $a[\'message\'], $a[\'file\'], $a[\'line\']));
     $i = ob_get_level(); while ($i--) @ob_end_clean(); print \'Fatal error. Sorry :(\'; }'));
+// this will add missing error constants for older PHP
+if (!defined('E_RECOVERABLE_ERROR'))
+    define('E_RECOVERABLE_ERROR', 4096);
+if (!defined('E_DEPRECATED'))
+    define('E_DEPRECATED', 8192);
+if (!defined('E_USER_DEPRECATED'))
+    define('E_USER_DEPRECATED', 16384);
 // here we set an error catcher
 set_error_handler(create_function('$c, $m, $f, $l', 'throw new ErrorException($m, 0, $c, $f, $l);'),
-    E_ALL & ~(E_NOTICE | E_WARNING | E_USER_NOTICE | E_USER_WARNING | E_STRICT));
+    E_ALL & ~(E_NOTICE | E_WARNING | E_USER_NOTICE | E_USER_WARNING | E_STRICT | E_DEPRECATED | E_USER_DEPRECATED));
 
 
 // includes
 $base_modules_files = Array(
-    F_KERNEL_DIR.'k3_misc.php',          // kernel 2 classes and functions library
-    F_KERNEL_DIR.'k3_timer.php',         // kernel 2 basic classes
-    F_KERNEL_DIR.'k3_cache.php',         // kernel 2 cacher class
-    F_KERNEL_DIR.'k3_strings.php',       // kernel 2 strings parsing
-    F_KERNEL_DIR.'k3_http.php',          // kernel 2 HTTP interface
-    F_KERNEL_DIR.'k3_request.php',       // kernel 2 GPC interface
-    F_KERNEL_DIR.'k3_lang.php',          // kernel 2 LNG interface
-    F_KERNEL_DIR.'k3_dbase.php',         // kernel 2 database interface
-    //F_KERNEL_DIR.'k3_session.php',       // kernel 2 session extension
+    F_KERNEL_DIR.'k3_misc.php',          // kernel 3 classes and functions library
+    F_KERNEL_DIR.'k3_timer.php',         // kernel 3 basic classes
+    F_KERNEL_DIR.'k3_cache.php',         // kernel 3 cacher class
+    F_KERNEL_DIR.'k3_strings.php',       // kernel 3 strings parsing
+    F_KERNEL_DIR.'k3_http.php',          // kernel 3 HTTP interface
+    F_KERNEL_DIR.'k3_request.php',       // kernel 3 GPC interface
+    F_KERNEL_DIR.'k3_lang.php',          // kernel 3 LNG interface
+    F_KERNEL_DIR.'k3_dbase.php',         // kernel 3 database interface
+    //F_KERNEL_DIR.'k3_session.php',       // kernel 3 session extension
 );
 // we'll do some trick with caching base modules in one file
 $base_modules_stats = Array();
@@ -93,6 +100,9 @@ class F extends FEventDispatcher
         E_USER_WARNING => 'USER WARNING',
         E_USER_NOTICE  => 'USER NOTICE',
         E_STRICT       => 'PHP5 STRICT',
+        E_DEPRECATED   => 'PHP DEPRECATED',
+        E_USER_DEPRECATED => 'USER DEPRECATED',
+        E_RECOVERABLE_ERROR => 'PHP RECOVERABLE',
         );
 
     static private $self = null;
@@ -200,7 +210,7 @@ class F extends FEventDispatcher
     public function logError($c, $m, $f = '', $l = 0)
     {
         static $logfile = null;
-        if ($c & ~(E_WARNING | E_USER_WARNING | E_NOTICE | E_USER_NOTICE | E_STRICT))
+        if ($c & ~(E_WARNING | E_USER_WARNING | E_NOTICE | E_USER_NOTICE | E_STRICT | E_DEPRECATED | E_USER_DEPRECATED))
             throw new ErrorException($m, 0, $c, $f, $l);
         if ($logfile == null)
             $logfile = fopen(F_SITE_ROOT.'error.log', 'ab');

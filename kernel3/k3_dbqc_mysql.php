@@ -5,10 +5,13 @@ class FDBaseQCmysql
     private $pdo = null;
 
     public function __construct(PDO $pdo)
-    {        static $charSets = Array(); // html charset names to SQL ones converting
-        $charset = (isset($charSets[F_INTERNAL_ENCODING]))
-            ? $charSets[F_INTERNAL_ENCODING]
-            : strtr(F_INTERNAL_ENCODING, Array('-' => ''));
+    {        static $charSets = Array(); 
+        
+        // html charset names to SQL ones converting
+        $charset = strtr(strtolower(F_INTERNAL_ENCODING), Array('-' => '', 'windows' => 'cp'));
+        $charset = (isset($charSets[$charset]))
+            ? $charSets[$charset]
+            : $charset;
 
         $this->pdo = $pdo;
         try { $pdo->exec('set names '.$charset); } catch (PDOException $e) {};
@@ -166,6 +169,46 @@ class FDBaseQCmysql
         return $query;
     }
 
+    public function insert($table, Array $data, $replace = false, $flags = 0)
+    {
+        $query = ($replace) ? 'REPLACE INTO ' : 'INSERT INTO ';
+
+        $query.= '`'.$table.'` ';
+
+        if (count($data)) 
+        {
+            $names = $vals = Array();
+            foreach ($data AS $field=>$val)
+            {
+                $names[] = '`'.$field.'`';
+                if (is_scalar($val))
+                {
+                    if (is_bool($val))
+                        $val = (int) $val;
+                    elseif (is_string($val))
+                    {
+                        if (!($flags & FDataBase::SQL_NOESCAPE) && !is_numeric($val))
+                            $val = $this->pdo->quote($val);
+                        //$val = '"'.$val.'"';
+                    }
+                    else
+                        $val = (string) $val;
+
+                    $vals[] = $val;
+                }
+                elseif (is_null($val))
+                    $vals[] = 'NULL';
+                else
+                    $vals[] = '""';
+            }
+
+            $query.='('.implode(', ', $names).') VALUES ('.implode(', ', $vals).')';
+            return $query;
+        }
+        else
+            return false;
+    }
+    
     private function _parseWhere($where, $flags = 0, $tbl_pref = '')
     {
         if (empty($where))
@@ -190,7 +233,7 @@ class FDBaseQCmysql
                     {
                         if (!($flags & FDataBase::SQL_NOESCAPE) && !is_numeric($val))
                             $val = $this->pdo->quote($val);
-                        $val = '"'.$val.'"';
+                        //$val = '"'.$val.'"';
                     }
                     else
                         $val = (string) $val;
@@ -208,7 +251,7 @@ class FDBaseQCmysql
                         {
                             if (!($flags & FDataBase::SQL_NOESCAPE) && !is_numeric($sub))
                                 $sub = $this->pdo->quote($sub);
-                            $sub = '"'.$sub.'"';
+                            //$sub = '"'.$sub.'"';
                         }
                         elseif (is_null($sub))
                             $sub = 'NULL';
@@ -333,7 +376,7 @@ class FDBaseQCmysql
                     {
                         if (!is_numeric($val))
                             $val = $this->pdo->quote($val);
-                        $val = '"'.$val.'"';
+                        //$val = '"'.$val.'"';
                     }
                 else
                     $val = '"'.$val.'"';

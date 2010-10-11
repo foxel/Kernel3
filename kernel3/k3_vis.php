@@ -22,7 +22,8 @@ class FVISNode extends FBaseClass // FEventDispatcher
     private $isParsed = false;
 
     public function __construct($type, $flags = 0)
-    {        $this->type = (string) $type;
+    {
+        $this->type = (string) $type;
         $this->flags = $flags;
         $this->pool = Array(
             'type'   => &$this->type,
@@ -32,12 +33,14 @@ class FVISNode extends FBaseClass // FEventDispatcher
     }
 
     public function setType($type)
-    {        $this->type = (string) $type;
+    {
+        $this->type = (string) $type;
     }
 
     public function parse($force_reparse = false, Array $add_vars = Array())
     {
-        $visualizer = FVISInterface::getInstance();        $data = Array();
+        $visualizer = FVISInterface::getInstance();
+        $data = Array();
         $text = '';
 
         if ($this->isParsed && !$force_reparse)
@@ -79,7 +82,8 @@ class FVISNode extends FBaseClass // FEventDispatcher
     }
 
     public function addData($varname, $data)
-    {        if (!$data || !$varname)
+    {
+        if (!$data || !$varname)
             return false;
 
         $varname = strtoupper($varname);
@@ -157,7 +161,8 @@ class FVISNode extends FBaseClass // FEventDispatcher
     }
 
     public function appendChild($varname, FVISNode $node)
-    {        if (!$node || !$varname)
+    {
+        if (!$node || !$varname)
             return false;
 
         $varname = strtoupper($varname);
@@ -167,7 +172,8 @@ class FVISNode extends FBaseClass // FEventDispatcher
     }
 
     public function clear()
-    {        $this->vars = Array();
+    {
+        $this->vars = Array();
         $this->subs = Array();
         $this->parsed = '';
     }
@@ -185,7 +191,6 @@ class FVISInterface extends FEventDispatcher
     const VPREFIX = 'VIS.';
     const CPREFIX = 'VIS_CSS.';
     const JPREFIX = 'VIS_JS.';
-    const COMMON  = 'common';
 
     const VIS_BR = FStr::ENDL;
 
@@ -238,7 +243,8 @@ class FVISInterface extends FEventDispatcher
     }
 
     public function clear($keep_nodes = false)
-    {        $this->templates  = Array();
+    {
+        $this->templates  = Array();
         $this->VCSS_data  = '';
         $this->VJS_data   = '';
         $this->VIS_loaded = Array();
@@ -263,7 +269,8 @@ class FVISInterface extends FEventDispatcher
     }
 
     public function setVConsts($consts, $no_replace = false)
-    {        if (!is_array($consts))
+    {
+        if (!is_array($consts))
             return false;
 
         $this->vis_consts = ($no_replace)
@@ -274,7 +281,8 @@ class FVISInterface extends FEventDispatcher
     }
 
     public function addAutoLoadDir($directory, $file_suff = '.vis')
-    {        $directory = FStr::path($directory);
+    {
+        $directory = FStr::path($directory);
         $hash = FStr::pathHash($directory);
         if (isset($this->auto_loads[$hash]))
             return true;
@@ -292,15 +300,18 @@ class FVISInterface extends FEventDispatcher
                 $aldata = Array(0 => $directory);
                 $preg_pattern = '#'.preg_quote($file_suff, '#').'$#';
                 while ($entry = readdir($dir))
-                {                    $filename = $directory.DIRECTORY_SEPARATOR.$entry;
+                {
+                    $filename = $directory.DIRECTORY_SEPARATOR.$entry;
                     if (preg_match($preg_pattern, $entry) && is_file($filename) && $datas = FMisc::loadDatafile($filename, FMisc::DF_BLOCK, true))
-                    {                        $datas = array_keys($datas);
+                    {
+                        $datas = array_keys($datas);
                         foreach ($datas as $key)
                             $aldata[$key] = $entry;
                     }
                 }
                 closedir($dir);
 
+                ksort($aldata);
                 FCache::set($cachename, $aldata);
                 $this->auto_loads[$hash] = $aldata;
                 F('Timer')->logEvent($filename.' autoloads installed (from filesystem)');
@@ -344,7 +355,8 @@ class FVISInterface extends FEventDispatcher
     }
 
     public function loadEJS($filename)
-    {        $hash = FStr::pathHash($filename);
+    {
+        $hash = FStr::pathHash($filename);
 
         if (!in_array($hash, $this->JS_loaded))
         {
@@ -630,7 +642,8 @@ class FVISInterface extends FEventDispatcher
             return $to_find;
         }
         elseif (is_numeric($to_find))
-        {            $to_find = (int) $to_find;
+        {
+            $to_find = (int) $to_find;
             if (isset($this->nodes[$to_find]))
                 return $this->nodes[$to_find];
         }
@@ -685,18 +698,21 @@ class FVISInterface extends FEventDispatcher
             if (isset($part[2]) && ($tag = strtoupper($part[2])))
             {
                 $got_a = ($part[1]) ? true : false;
-                $params = Array();
+
+                $params = Array();
                 if (isset($part[3]) && ($got = preg_match_all('#((?>\w+))(?:([\!=\>\<]{1,2})(-?[0-9]+|\w+|\"[^\"]*\"))?#', $part[3], $params, PREG_PATTERN_ORDER)))
                     for ($i = 0; $i < $got; $i++)
                         $params[1][$i] = strtoupper($params[1][$i]);
 
                 if ($tag == 'WRITE')
-                {                    if (isset($params[1]) && count($params[1]) && ($var = $params[1][0]) && FStr::isWord($var))
+                {
+                    if (isset($params[1]) && count($params[1]) && ($var = $params[1][0]) && FStr::isWord($var))
                         $var = $var;
                     else
                         $var = 'OUT';
                     if ($var != $writes_to)
-                    {                        $writes_to = $var;
+                    {
+                        $writes_to = $var;
                         $text.= FStr::ENDL.'FTEXT;'.FStr::ENDL.'$'.$writes_to.(($got_a) ? '' : '.').'= <<<FTEXT'.FStr::ENDL;
                         $jstext.= '";'.FStr::ENDL.$writes_to.(($got_a) ? '' : '+').'= "';
                     }
@@ -720,11 +736,13 @@ class FVISInterface extends FEventDispatcher
                     $jstext.= '+"';
                 }
                 elseif ($tag == 'SET')
-                {                    if ($pars = count($params[1]))
+                {
+                    if ($pars = count($params[1]))
                     {
                         $sets = $jssets = '';
                         for($i = 0; $i < $pars; $i++)
-                        {                            $var = $params[1][$i];
+                        {
+                            $var = $params[1][$i];
                             if (!FStr::isWord($var) || !isset($params[3][$i]) || !strlen($params[3][$i]))
                                 continue;
                             $val = $params[3][$i];
@@ -740,7 +758,8 @@ class FVISInterface extends FEventDispatcher
                     }
                 }
                 elseif ($tag == 'FOR')
-                {                    if (!isset($params[1]) || !count($params[1]) || $in_for)
+                {
+                    if (!isset($params[1]) || !count($params[1]) || $in_for)
                         continue;
                     $params = $params[1];
                     $p1 = array_shift($params);
@@ -922,7 +941,8 @@ class FVISInterface extends FEventDispatcher
     }
 
     public function checkVIS($vis)
-    {        $vis = strtoupper($vis);
+    {
+        $vis = strtoupper($vis);
 
         return (isset($this->templates[$vis]) || $this->tryAutoLoad($vis));
     }
@@ -1059,8 +1079,10 @@ class FVISInterface extends FEventDispatcher
     // private loaders
 
     private function tryAutoLoad($vis)
-    {        $loads = end($this->auto_loads);
-        do {            if (isset($loads[$vis]))
+    {
+        $loads = end($this->auto_loads);
+        do {
+            if (isset($loads[$vis]))
             {
                 $this->loadTemplates($loads[0].DIRECTORY_SEPARATOR.$loads[$vis]);
                 return isset($this->templates[$vis]);
@@ -1100,14 +1122,15 @@ class FVISInterface extends FEventDispatcher
     }
 
     private function templVISParamCB($val, &$vars, $consts, $parsewith = null, $for_js = false, $do_schars = false)
-    {        $code = '';
+    {
+        $code = '';
         $static = true;
 
         if (FStr::isWord($val))
         {
             $val = strtoupper($val);
             if (substr($val, 0, 2) == 'L_')
-                $val = $this->templLangCB(Array(1 => substr($val, 2)));
+                $val = $this->templLangCB(substr($val, 2));
             elseif (isset($consts[$val]))
                 $val = $consts[$val];
             else
@@ -1123,7 +1146,8 @@ class FVISInterface extends FEventDispatcher
             $val = substr($val, 1, -1);
 
         if ($static)
-        {            if ($parsewith)
+        {
+            if ($parsewith)
                 $val = $this->callParseFunction($parsewith, $val);
             if ($do_schars)
                 $val = FStr::smartHTMLSchars($val);

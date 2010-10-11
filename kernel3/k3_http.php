@@ -41,6 +41,7 @@ class FHTTPInterface extends FEventDispatcher
             'rootDir'  => '',
             'rootFull' => '',
             'srvName'  => '',
+            'srvPort'  => 80,
 
             'cDomain'  => false,
             'cPrefix'  => self::DEF_COOKIE_PREFIX,
@@ -50,8 +51,9 @@ class FHTTPInterface extends FEventDispatcher
         $this->pool['IP']      = $_SERVER['REMOTE_ADDR'];
         $this->pool['IPInt']   = ip2long($this->pool['IP']);
 
-        $this->pool['srvName'] = preg_replace('#^\/*|\/*$#', '\1', trim($_SERVER['SERVER_NAME']));
-        $this->pool['rootUrl'] = 'http://'.$this->pool['srvName'].'/';
+        $this->pool['srvName'] = isset($_SERVER['HTTP_HOST']) ? preg_replace('#:\d+#', '', $_SERVER['HTTP_HOST']) : $_SERVER['SERVER_NAME'];
+        $this->pool['srvPort'] = isset($_SERVER['SERVER_PORT']) ? (int) $_SERVER['SERVER_PORT'] : 80;
+        $this->pool['rootUrl'] = 'http://'.$this->pool['srvName'].(($this->pool['srvPort'] != 80) ? $this->pool['srvPort'] : '').'/';
 
         $this->pool['rootDir'] = dirname($_SERVER['PHP_SELF']);
         $this->pool['rootDir'] = preg_replace('#\/|\\\+#', '/', $this->pool['rootDir']);

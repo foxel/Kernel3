@@ -31,6 +31,9 @@ class FDataBase extends FEventDispatcher
     public function __construct($dbaseType = 'mysql')
     {
         $this->dbType = $dbaseType;
+        if (!isset($this->dbDrivers[$dbaseType]))
+            trigger_error($dbaseType.' driver is not supported by F DataBase manager', E_USER_ERROR);
+        
         require_once(F_KERNEL_DIR.'k3_dbqc_'.$this->dbDrivers[$dbaseType].'.php');
 
         $this->pool['dbType']  =& $this->dbType;
@@ -54,7 +57,7 @@ class FDataBase extends FEventDispatcher
     }
 
     // simple one table select
-    public function doSelect ($table, $fields = Array(), $where = '', $other = '', $flags = 0)
+    public function doSelect($table, $fields = Array(), $where = '', $other = '', $flags = 0)
     {
         if (!$this->c)
             throw new FException('DB is not connected');
@@ -74,13 +77,32 @@ class FDataBase extends FEventDispatcher
     }
 
     // simple one table select all records
-    public function doSelectAll ($table, $fields = Array(), $where = '', $other = '', $flags = 0)
+    public function doSelectAll($table, $fields = Array(), $where = '', $other = '', $flags = 0)
     {
         return $this->doSelect ($table, $fields, $where, $other, $flags | self::SQL_SELECTALL);
     }
+    
+    public function doInsert($table, Array $data, $replace = false, $flags = 0)
+    {
+        if (!$this->c)
+            throw new FException('DB is not connected');
+
+        $ret = null;
+        $query = $this->qc->insert($table, $data, $replace, $flags);
+        if ($result = $this->exec($query, true))
+        {
+            $ret = $this->c->lastInsertId();
+
+            //$result->closeCursor();
+
+            return $ret;
+        }
+        else
+            return null;
+    }
 
     // Base direct query method
-    public function query($query = '', $noprefixrepl = false)
+    public function query($query, $noprefixrepl = false, $exec = false)
     {
         if (!$this->c)
             throw new FException('DB is not connected');
@@ -95,7 +117,9 @@ class FDataBase extends FEventDispatcher
         if (!$noprefixrepl)
             $query = preg_replace('#(?<=\W|^)(`?)\{DBKEY\}(\w+)(\\1)(?=\s|$|\n|\r)#s', '`'.$this->tbPrefix.'$2`', $query);
 
-        $this->qResult = $this->c->query($query);
+        $this->qResult = ($exec)
+            ? $this->c->exec($query)
+            : $this->c->query($query);
 
         $err = $this->c->errorInfo();
 
@@ -112,6 +136,11 @@ class FDataBase extends FEventDispatcher
         $this->history[] = Array('query' => $query, 'time' => $query_time);
 
         return $this->qResult;
+    }
+
+    public function exec($query, $noprefixrepl = false)
+    {
+        $this->query($query, true, $noprefixrepl);
     }
 
     public function quote($string)

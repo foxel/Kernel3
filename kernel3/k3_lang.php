@@ -13,17 +13,17 @@ if (!defined('F_STARTED'))
 class FLNGData // extends FEventDispatcher
 {
     const CACHEPREFIX = 'LANG.';
-    const DEFLANG = 'RU';
-    const COMMON = 'kernel';
-    private $DATA_DIR = '';
 
     private static $self = null;
 
     private $lang       = Array();
-    private $lang_name  = 'RU';
+    private $klang       = Array();
+    private $lang_name  = 'EN';
     private $LNG_loaded = Array();
     private $time_tr    = null;
     private $bsize_tr   = null;
+
+    private $auto_loads = Array();
 
     public static function getInstance()
     {
@@ -34,8 +34,6 @@ class FLNGData // extends FEventDispatcher
 
     private function __construct()
     {
-        $this->DATA_DIR = F_DATA_ROOT.'langs'.DIRECTORY_SEPARATOR;
-
         $this->pool = Array(
             'language' => &$this->lang_name,
             'name' => &$this->lang_name,
@@ -51,10 +49,8 @@ class FLNGData // extends FEventDispatcher
     {
         if (isset($this->pool[$name]))
             return $this->pool[$name];
-        elseif (isset($this->lang[$name]))
-            return $this->lang[$name];
-
-        return null;
+        else
+            return $this->lang($name);
     }
 
     public function _Start()
@@ -64,21 +60,8 @@ class FLNGData // extends FEventDispatcher
 
     public function select($lang)
     {
-        $n_lang = preg_replace('#\W#', '_', $lang);
-        if ($this->lang_name == $n_lang)
-            return true;
-
-        $this->lang_name = $n_lang;
-        $this->time_tr = null;
-        $this->lang = Array();
-        $this->loadKernelDefs();
-        if ($parts = $this->LNG_loaded)
-        {
-            $this->LNG_loaded = Array();
-            foreach ($parts as $part)
-                $this->loadLanguage($part);
-        }
-        return true;
+        trigger_error('LANG: tried to use "select"', E_USER_WARNING );
+        return false;
     }
 
     public function ask()
@@ -86,52 +69,88 @@ class FLNGData // extends FEventDispatcher
         return $this->lang_name;
     }
 
-    public function loadLanguage($part = '')
+    public function addAutoLoadDir($directory, $file_suff = '.lng')
     {
-        if (!$part)
-            $part = self::COMMON;
+        $directory = FStr::path($directory);
+        $hash = FStr::pathHash($directory);
+        if (isset($this->auto_loads[$hash]))
+            return true;
+
+        $cachename = self::CACHEPREFIX.'ald-'.$hash;
+        if ($aldata = FCache::get($cachename))
+        {
+            $this->auto_loads[$hash] = $aldata;
+            F('Timer')->logEvent($directory.' lang autoloads installed (from global cache)');
+        }
         else
         {
-            $part = preg_replace('#\W#', '_', $part);
-            if ($part != self::COMMON && !in_array(self::COMMON, $this->LNG_loaded))
-                $this->loadLanguage();
+            if ($dir = opendir($directory))
+            {
+                $aldata = Array(0 => $directory);
+                $preg_pattern = '#'.preg_quote($file_suff, '#').'$#';
+                while ($entry = readdir($dir))
+                {
+                    $filename = $directory.DIRECTORY_SEPARATOR.$entry;
+                    if (preg_match($preg_pattern, $entry) && is_file($filename) && $datas = FMisc::loadDatafile($filename, FMisc::DF_MLINE, true))
+                    {
+                        $datas = array_keys($datas);
+                        foreach ($datas as $key)
+                            $aldata[$key] = $entry;
+                    }
+                }
+                closedir($dir);
+
+                ksort($aldata);
+                FCache::set($cachename, $aldata);
+                $this->auto_loads[$hash] = $aldata;
+                F('Timer')->logEvent($filename.' lang autoloads installed (from filesystem)');
+            }
+            else
+            {
+                trigger_error('LANG: error installing '.$directory.' auto loading directory', E_USER_WARNING );
+                return false;
+            }
         }
 
-        if (!in_array($part, $this->LNG_loaded))
+        return true;
+    }
+
+    public function load($filename)
+    {        $this->loadLanguage($filename);
+    }
+
+    public function loadLanguage($filename)
+    {
+        $hash = FStr::pathHash($filename);
+
+        if (!in_array($hash, $this->LNG_loaded))
         {
-            $cachename = self::CACHEPREFIX.$this->lang_name.'.'.$part;
+            $cachename = self::CACHEPREFIX.$hash;
 
             if ($Ldata = FCache::get($cachename))
             {
                 $this->lang = $Ldata + $this->lang;
-                F('Timer')->logEvent($this->lang_name.'.'.$part.' language loaded (from global cache)');
+                if (isset($Ldata['__LNG']))
+                    $this->lang_name = strtoupper($Ldata['__LNG']);
+                F('Timer')->logEvent('"'.$filename.'" language loaded (from global cache)');
+            }
+            elseif (!file_exists($filename))
+            {
+                trigger_error('LANG: "'.$filename.'" lang file does not exist', E_USER_NOTICE );
+            }
+            elseif (($Ldata = FMisc::loadDatafile($filename, FMisc::DF_MLINE, true)) !== false)
+            {
+                if (isset($Ldata['__LNG']))
+                    $this->lang_name = strtoupper($Ldata['__LNG']);
+                FCache::set($cachename, $Ldata);
+                $this->lang = $Ldata + $this->lang;
+                F('Timer')->logEvent('"'.$filename.'" language file loaded (from lang file)');
+                //trigger_error('LANG: error parsing '.$this->lang_name.'.'.$part.' lang file', E_USER_WARNING );
             }
             else
-            {
-                $file = $part.'.lng';
-                $vdir = $this->DATA_DIR.$this->lang_name;
-                $ddir = $this->DATA_DIR.self::DEFLANG;
-                $odir = (file_exists($vdir.'/'.$file)) ? $vdir : $ddir;
-                $file = $odir.'/'.$file;
+                trigger_error('LANG: error loading "'.$filename.'" lang file', E_USER_WARNING );
 
-                if (!file_exists($file))
-                {
-                    trigger_error('LANG: '.$this->lang_name.'.'.$part.' lang file does not exist', E_USER_NOTICE );
-                }
-                elseif (($Ldata = FMisc::loadDatafile($file, FMisc::DF_MLINE, true)) !== false)
-                {
-
-                    FCache::set($cachename, $Ldata);
-                    $this->lang = $Ldata + $this->lang;
-                    F('Timer')->logEvent($this->lang_name.'.'.$part.' language file loaded (from lang file)');
-                    //trigger_error('LANG: error parsing '.$this->lang_name.'.'.$part.' lang file', E_USER_WARNING );
-                }
-                else
-                    trigger_error('LANG: error loading '.$this->lang_name.'.'.$part.' lang file', E_USER_WARNING );
-
-            }
-
-            $this->LNG_loaded[] = $part;
+            $this->LNG_loaded[] = $hash;
         }
         return true;
 
@@ -143,21 +162,24 @@ class FLNGData // extends FEventDispatcher
         if (!$key)
             return '';
 
-        if ($load && !in_array($load, $this->LNG_loaded))
-                $this->loadLanguage($load);
+        if ($load)
+            $this->loadLanguage($load);
+        elseif (!isset($this->lang[$key]))
+            $this->tryAutoLoad($key);
 
         if (isset($this->lang[$key]))
-        {
             $out = $this->lang[$key];
-            if ($params)
-            {
-                $params = is_array($params) ? array_values($params) : Array($params);
-                $out = FStr::smartSprintf($out, $params);
-            }
-            return $out;
-        }
+        elseif (isset($this->klang[$key]))
+            $out = $this->klang[$key];
         else
             return '['.$key.']';
+
+        if ($params)
+        {
+            $params = is_array($params) ? array_values($params) : Array($params);
+            $out = FStr::smartSprintf($out, $params);
+        }
+        return $out;
     }
 
     public function _Call($key, $params = false, $load = false)
@@ -169,7 +191,8 @@ class FLNGData // extends FEventDispatcher
     {
         $linear = FMisc::linearize($data);
         foreach ($linear as &$val)
-        {            if (preg_match('#^'.preg_quote($prefix, '#').'\w+$#D', $val))
+        {
+            if (preg_match('#^'.preg_quote($prefix, '#').'\w+$#D', $val))
                 $val = $this->lang(substr($val, strlen($prefix)));
         }
 
@@ -188,9 +211,6 @@ class FLNGData // extends FEventDispatcher
             $no_rels = false; //(bool) F('Config')->Get('force_no_rel_time', 'common', false);
         }
 
-        if (!count($this->LNG_loaded))
-            $this->loadLanguage();
-
         if (!is_array($this->time_tr))
         {
             $keys = Array(
@@ -205,6 +225,9 @@ class FLNGData // extends FEventDispatcher
                 3 => 'DATETIME_TR_MONTHS',
                 4 => 'DATETIME_TR_MONTHS_SHORT',
                 );
+
+            if (!isset($this->lang[$lnames[0]]))
+                $this->tryAutoLoad($lnames[0]);
 
             $translate = Array();
             for ($i = 1; $i<=4; $i++)
@@ -279,14 +302,13 @@ class FLNGData // extends FEventDispatcher
 
     public function sizeFormat($size, $bits = false)
     {
-        if (!count($this->LNG_loaded))
-            $this->loadLanguage();
-
         $size = (int) $size;
 
         if (!is_array($this->bsize_tr))
         {
             $bnames = Array(0 => 'BSIZE_FORM_BYTES', 1 => 'BSIZE_FORM_BITS');
+            if (!isset($this->lang[$bnames[0]]))
+                $this->tryAutoLoad($bnames[0]);
 
             $this->bsize_tr = Array(0 => Array(1 => 'B'), 1 => Array(1 => 'b'));
             foreach ($bnames as $class => $cl_lang)
@@ -351,15 +373,25 @@ class FLNGData // extends FEventDispatcher
         return preg_replace('#[\x80-\xFF]+#', '_', $inp);
     }
 
+    // private loaders
+    private function tryAutoLoad($key)
+    {
+        $loads = end($this->auto_loads);
+        do {
+            if (isset($loads[$key]))
+            {
+                $this->loadLanguage($loads[0].DIRECTORY_SEPARATOR.$loads[$key]);
+                return isset($this->lang[$key]);
+            }
+        } while ($loads = prev($this->auto_loads));
+
+        return false;
+    }
+
     private function loadKernelDefs()
     {
-        static $K_lang = null;
-
-        if (!is_null($K_lang))
-        {
-            $this->lang = $K_lang + $this->lang;
+        if (!is_null($this->klang))
             return true;
-        }
 
         $file = F::KERNEL_DIR.'krnl_def.lng';
 
@@ -367,14 +399,12 @@ class FLNGData // extends FEventDispatcher
 
         if ($Ldata = FCache::get($cachename))
         {
-            $this->lang = $Ldata + $this->lang;
-            $K_lang = $Ldata;
+            $this->klang = $Ldata;
         }
         elseif ($Ldata = FMisc::loadDatafile($file, FMisc::DF_MLINE, true))
         {
             FCache::set($cachename, $Ldata);
-            $this->lang = $Ldata + $this->lang;
-            $K_lang = $Ldata;
+            $this->klang = $Ldata;
         }
         else
             trigger_error('LANG: error loading kernel lang file: '.$file, E_USER_ERROR);

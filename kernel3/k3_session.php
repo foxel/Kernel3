@@ -2,15 +2,11 @@
 
 
 class FSession extends FEventDispatcher
-{    private static $self = null;
+{
+    private static $self = null;
 
     private $SID        = '';           // Session ID
     private $sess_data  = Array();      // session variables
-
-    private $sess_cache = Array();      // session cache data
-    private $got_cache  = Array();      // session cache 'loaded' flags
-    private $upd_cache  = Array();      // session cache 'need upd' flags
-    private $drop_cache = Array();      // session cache 'need drop' flags
 
     private $clicks     = 1;            // session clicks stats
 
@@ -44,8 +40,7 @@ class FSession extends FEventDispatcher
 
     private function __construct()
     {
-        $this->pool = &$_SESSION;
-        FSession::init();
+        $this->pool =& $this->sess_data;
     }
 
     public function open($mode = 0, $no_url_mods = false)
@@ -84,8 +79,8 @@ class FSession extends FEventDispatcher
 
             if (!$no_url_mods && ($this->mode & self::MODE_URLS)) // TODO: && $QF->Config->Get('sid_urls', 'session', true))
             {
-                F('HTTP')->addEventHandler('HTML_parse', Array(&$this, 'HTML_URLs_AddSID') );
-                F('HTTP')->addEventHandler('URL_Parse', Array(&$this, 'AddSID') );
+                F('HTTP')->addEventHandler('HTML_parse', Array(&$this, 'HTMLURLsAddSID') );
+                F('HTTP')->addEventHandler('URL_Parse', Array(&$this, 'addSID') );
             }
 
         }
@@ -173,37 +168,35 @@ class FSession extends FEventDispatcher
         if (!($this->mode & self::MODE_DBASE))
         {
             $q_arr['sid'] = $this->SID;
-            return $QF->Cache->Set(self::CACHEPREFIX.$this->SID, $q_arr);
+            return FCache::set(self::CACHEPREFIX.$this->SID, $q_arr);
         }
-        elseif ($this->mode & self::MODE_LOADED)
-            $this->db_object->doUpdate('sessions', $q_arr, Array('sid' => $this->SID) );
+
+        // if using database
+        if ($this->mode & self::MODE_LOADED)
+            $this->db_object->doUpdate($this->bd_tbname, $q_arr, Array('sid' => $this->SID) );
         else
         {
             $q_arr['sid'] = $this->SID;
             $q_arr['starttime'] = F('Timer')->qTime;
-            $this->db_object->doInsert('sessions', $q_arr, true);
+            $this->db_object->doInsert($this->bd_tbname, $q_arr, true);
         }
 
         // delete old session data
-        if ( $this->db_object->doDelete('sessions', Array('lastused' => '< '.(F('Timer')->qTime - self::LIFETIME)), QF_SQL_USEFUNCS ) )
-        {
-            //let's clear old session cache data
-            $this->db_object->doDelete('sess_cache', Array('ch_stored' => '< '.(F('Timer')->qTime - self::LIFETIME)), QF_SQL_USEFUNCS );
-        }
+        $this->db_object->doDelete($this->bd_tbname, Array('lastused' => '< '.(F('Timer')->qTime - self::LIFETIME)), QF_SQL_USEFUNCS );
 
         return true;
     }
 
-    function Get_Status($check = 255)
+    public function getStatus($check = false)
     {
-        return ($this->mode & $check);
+        return ($check ? $this->mode & $check : $this->mode);
     }
 
     // session variables control
-    function Get($query)
+    public function get($query)
     {
-        if (!$this->started)
-            return false;
+        if (!($this->mode & self::MODE_STARTED))
+            return null;
 
         $names = explode(' ', $query);
         if (count($names)>1)
@@ -218,17 +211,17 @@ class FSession extends FEventDispatcher
             return (isset($this->sess_data[$query])) ? $this->sess_data[$query] : null;
     }
 
-    function Set($name, $val)
+    public function set($name, $val)
     {
-        if (!$this->started)
+        if (!($this->mode & self::MODE_STARTED))
             return false;
 
         return ($this->sess_data[$name] = $val);
     }
 
-    function Drop($query)
+    public function drop($query)
     {
-        if (!$this->started)
+        if (!($this->mode & self::MODE_STARTED))
             return false;
 
         $names = explode(' ', $query);
@@ -244,39 +237,38 @@ class FSession extends FEventDispatcher
     }
 
     // totally clears session data
-    function Clear()
+    public function clear()
     {
-        if (!$this->started)
+        if (!($this->mode & self::MODE_STARTED))
             return false;
 
         $this->sess_data = Array();
 
-        $this->Cache_Clear();
         return true;
     }
 
-    function AddSID($url, $ampersand=false)
+    public function addSID($url, $ampersand=false)
     {
         $url=trim($url);
 
-        if (!$this->started)
+        if (!($this->mode & self::MODE_STARTED))
             return $url;
 
-        $url = qf_url_add_param($url, self::SID_NAME, $this->SID, $ampersand);
+        $url = FStr::urlAddParam($url, self::SID_NAME, $this->SID, $ampersand);
 
         return $url;
     }
 
-    function HTML_URLs_AddSID(&$buffer)
+    public function HTMLURLsAddSID(&$buffer)
     {
-        if (!$this->started || !($this->mode & self::MODE_URLS))
-            return false;
+        if (!($this->mode & self::MODE_STARTED) || !($this->mode & self::MODE_URLS))
+            return $buffer;
 
-        $buffer = preg_replace_callback('#(<(a|form)\s+[^>]*)(href|action)\s*=\s*(\"([^\"<>\(\)]*)\"|\'([^\'<>\(\)]*)\'|[^\s<>\(\)]+)#i', Array(&$this, 'SID_Parse_Callback'), $buffer);
+        $buffer = preg_replace_callback('#(<(a|form)\s+[^>]*)(href|action)\s*=\s*(\"([^\"<>\(\)]*)\"|\'([^\'<>\(\)]*)\'|[^\s<>\(\)]+)#i', Array(&$this, 'SIDParseCallback'), $buffer);
         //$buffer = preg_replace('#(<form [^>]*>)#i', "\\1\n".'<input type="hidden" name="'.self::SID_NAME.'" value="'.$this->SID.'" />', $buffer);
     }
 
-    function SID_Parse_Callback($vars)
+    public function SIDParseCallback($vars)
     {
         Global $QF;
         if (!is_array($vars))
@@ -298,17 +290,11 @@ class FSession extends FEventDispatcher
             $bounds = '';
         }
 
-        if ( preg_match('#^\w+:#', $url) )
-             if ( strpos($url, $QF->HTTP->RootUrl)!==0 )
+        if (preg_match('#^\w+:#', $url))
+            if (strpos($url, F('HTTP')->rootUrl) !== 0)
                 return $vars[1].$vars[3].' = '.$bounds.$url.$bounds;
 
-        if ( !strstr($url, self::SID_NAME.'=') && !strstr($url, 'javascript') )
-        {
-            $insert = ( !strstr($url, '?') ) ? '?' : '&amp;';
-            $insert.= self::SID_NAME.'='.$this->SID;
-
-            $url= preg_replace('#(\#|$)#', $insert.'\\1', $url, 1);
-        }
+        $url = FStr::urlAddParam($url, self::SID_NAME, $this->SID, true);
 
         return $vars[1].$vars[3].' = '.$bounds.$url.$bounds;
 
@@ -316,10 +302,10 @@ class FSession extends FEventDispatcher
 
     function _Close()
     {
-        if (!$this->started)
+        if (!($this->mode & self::MODE_STARTED))
             return false;
 
-        $this->Save_session();
+        $this->save();
     }
 }
 
