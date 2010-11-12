@@ -1,30 +1,39 @@
 <?php
-/*
+/**
  * QuickFox kernel 3 'SlyFox' main file
  * Requires PHP >= 5.1.0
+ * @package kernel3
  */
 
 if (!defined('STARTED'))
     die('Hacking attempt');
 
-if (defined('FSTARTED'))
+if (defined('F_STARTED'))
     die('Scripting error');
 
+/** kernel started flag */
 define ('F_STARTED', True);
 
 // let's check the kernel requirements
 if (PHP_VERSION < '5.1.0')
     die('PHP 5.1.0 required');
 
+/** kernel files directory */
 define('F_KERNEL_DIR', dirname(__FILE__).DIRECTORY_SEPARATOR);
+/** Site index script file
+ * Actually the file that had been opened in browser */
 define('F_SITE_INDEX', basename($_SERVER['PHP_SELF']));
 
+/**#@+ kernel internal encoding (can be defined before outside the kernel to customize the system) */
 if (!defined('F_INTERNAL_ENCODING'))
     define('F_INTERNAL_ENCODING', 'utf-8');
+/**#@+ site root directory (can be defined before outside the kernel) */
 if (!defined('F_SITE_ROOT'))
     define('F_SITE_ROOT', dirname($_SERVER['SCRIPT_FILENAME']).DIRECTORY_SEPARATOR);
+/**#@+ site data storing root directory (can be defined before outside the kernel) */
 if (!defined('F_DATA_ROOT'))
     define('F_DATA_ROOT', F_SITE_ROOT.'data'.DIRECTORY_SEPARATOR);
+/**#@+*/
 
 Error_Reporting(0);
 if (get_magic_quotes_runtime())
@@ -34,13 +43,19 @@ set_time_limit(30);  // not '0' - once i had my script running for a couple of h
 register_shutdown_function(create_function('', 'if (($a = error_get_last()) && $a[\'type\'] == E_ERROR)
     { file_put_contents(F_SITE_ROOT.\'php_fatal.log\', sprintf(\'E%d "%s" at %s:%d\', $a[\'type\'], $a[\'message\'], $a[\'file\'], $a[\'line\']));
     $i = ob_get_level(); while ($i--) @ob_end_clean(); print \'Fatal error. Sorry :(\'; }'));
-// this will add missing error constants for older PHP
+
+/**#@+
+ * @internal this will add missing error constants for older PHP
+ * @ignore
+ */
 if (!defined('E_RECOVERABLE_ERROR'))
     define('E_RECOVERABLE_ERROR', 4096);
 if (!defined('E_DEPRECATED'))
     define('E_DEPRECATED', 8192);
 if (!defined('E_USER_DEPRECATED'))
     define('E_USER_DEPRECATED', 16384);
+/**#@+*/
+
 // here we set an error catcher
 set_error_handler(create_function('$c, $m, $f, $l', 'throw new ErrorException($m, 0, $c, $f, $l);'),
     E_ALL & ~(E_NOTICE | E_WARNING | E_USER_NOTICE | E_USER_WARNING | E_STRICT | E_DEPRECATED | E_USER_DEPRECATED));
@@ -86,10 +101,14 @@ else
 }
 unset($base_modules_files, $base_modules_stats, $base_modules_file);
 
-// the main kernel class
+/**
+ * the main kernel class
+ * used to control all the modules
+ */
 class F extends FEventDispatcher
-{    // internal encoding (usually UTF-8)
+{    /** internal encoding (usually UTF-8) */
     const INTERNAL_ENCODING = F_INTERNAL_ENCODING;
+    /** kernel files directory */
     const KERNEL_DIR = F_KERNEL_DIR;
 
     static private $ERR_TYPES = Array(
@@ -138,6 +157,10 @@ class F extends FEventDispatcher
         }
     }
 
+    /** This method is used to access the kernel from any context (as it is a static method).
+     * @return object Returns module object (if $name is defined) or kernel root object.
+     * @param string $name Name of the kernel module to access
+     */
     public static function kernel($name = null)
     {        if (!self::$self)
             self::$self = new F();
@@ -146,11 +169,19 @@ class F extends FEventDispatcher
             : self::$self->__get($name);
     }
 
+    /** Tests if module with given name is accessable
+     * @return bool
+     * @param string $name
+     */
     public function ping($name)
     {
         return isset($this->pool[$name]);
     }
 
+    /** Loads and initializes $mod_name module
+     * @return bool
+     * @param string $mod_name
+     */
     public function runModule($mod_name)
     {
         if (preg_match('#\W#', $mod_name))
@@ -193,6 +224,10 @@ class F extends FEventDispatcher
         return false; // just in case ))
     }
 
+    /** Handles exceptions and writes logs
+     * @access private
+     * @ignore
+     */
     public function handleException(Exception $e)
     {        $logfile = F_SITE_ROOT.'fatal.log';
         $eName = get_class($e).(($e instanceof ErrorException) ? '['.self::$ERR_TYPES[$e->getSeverity()].']' : '');
@@ -207,6 +242,10 @@ class F extends FEventDispatcher
         print '<html><head><title>'.F('LNG')->lang('ERR_CRIT_PAGE', false, true).'</title></head><body><h1>'.F('LNG')->lang('ERR_CRIT_PAGE', false, true).'</h1>'.F('LNG')->lang('ERR_CRIT_MESS', false, true).'</body></html>';
     }
 
+    /** Handles errors, writes logs and throws exceptions for critical errors
+     * @access private
+     * @ignore
+     */
     public function logError($c, $m, $f = '', $l = 0)
     {
         static $logfile = null;
@@ -219,6 +258,10 @@ class F extends FEventDispatcher
             fwrite($logfile, date('[d M Y H:i]').' '.$eName.': '.$m.'. File: '.$f.'. Line: '.$l.".\r\n".FStr::PHPDefine(array_slice(debug_backtrace(),1)).".\r\n");
     }
 
+    /** Handles accessing to modules in F()->module form
+     * @return object
+     * @param string $name
+     */
     public function __get($name)
     {        if (isset($this->pool[$name]))
             return $this->pool[$name];
@@ -228,6 +271,12 @@ class F extends FEventDispatcher
         return new FNullObject('F(\''.$name.'\')');
     }
 
+    /** Handles calling modules like functions
+     * Calls '_Call' method of selected module
+     * @return mixed
+     * @param string $name
+     * @param array $arguments
+     */
     public function __call($name, $arguments)
     {         if (isset($this->pool[$name]) || $this->runModule($name))
              if (method_exists($this->pool[$name], '_Call'))
@@ -236,6 +285,11 @@ class F extends FEventDispatcher
     }
 }
 
+/** This function is used to access the kernel from any context with 'F()'.
+ * @return object Returns module object (if $name is defined) or kernel root object.
+ * @param string $name Name of the kernel module to access
+ * @see F::kernel
+ */
 function F($name = null) { return F::kernel($name); }
 $GLOBALS['QF'] = $GLOBALS['F'] = F();
 

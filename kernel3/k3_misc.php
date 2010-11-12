@@ -37,7 +37,6 @@ abstract class FBaseClass
 
     protected function poolLink($names)
     {
-        print 'hello';
         if (is_array($names))
             foreach ($names as $name)
                 $this->pool[$name] =& $this->$name;
@@ -114,6 +113,59 @@ abstract class FEventDispatcher extends FBaseClass
         foreach ($ev_arr as $ev_link)
             call_user_func_array($ev_link, $args);
         return true;
+    }
+}
+
+abstract class FDataStream extends FBaseClass
+{    abstract public function open($mode);
+    abstract public function close();
+    abstract public function EOF();
+    abstract public function size();
+    abstract public function read(&$data, $len);
+    abstract public function seek($pos);
+    abstract public function write($data);
+
+    protected $mode = 0;
+    public function mode() { return $this->mode; }
+}
+
+class FFileStream extends FDataStream
+{
+    private $stream = null;
+    private $filename = '';
+    public function __construct($fname)
+    {        $this->filename = $fname;    }
+
+    public function open($mode)
+    {        $this->stream = fopen($this->filename, $mode);
+        $this->mode = $mode;
+        return ($this->stream !== false);
+    }
+
+    public function close()
+    {        return fclose($this->stream);
+    }
+
+    public function EOF()
+    {        return feof($this->stream);
+    }
+
+    public function size()
+    {        $stat = fstat($this->stream);
+        return $stat ? $stat['size'] : false;
+    }
+
+    public function read(&$data, $len)
+    {        $data = fread($this->stream, $len);
+        return strlen($data);
+    }
+
+    public function seek($pos)
+    {        return fseek($this->stream, $pos, SEEK_SET);
+    }
+
+    public function write($data)
+    {        return fwrite($this->stream, $data);
     }
 }
 

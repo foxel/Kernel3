@@ -69,6 +69,7 @@ class FParser extends FEventDispatcher
         $this->addBBTag('img', '', self::BBTAG_NOSUB, Array('func' => Array( &$this, 'BBCodeStdUrlImg') ) );
         $this->addBBTag('url', '', false, Array('func' => Array( &$this, 'BBCodeStdUrlImg') ) );
         $this->addBBTag('table', '', self::BBTAG_BLLEV | self::BBTAG_USEBRK, Array('func' => Array( &$this, 'BBCodeStdTable') ) );
+        $this->addBBTag('list', '', self::BBTAG_USEBRK, Array('func' => Array( &$this, 'BBCodeStdList') ) );
 
         $this->addPreg(FStr::URL_MASK_F, '[url]{data}[/url]');
         //$this->addPreg(FStr::EMAIL_MASK, '[email]{data}[/email]');
@@ -689,6 +690,42 @@ class FParser extends FEventDispatcher
 
         return $buffer;
     }
+
+    private function BBCodeStdList($name, $buffer, $param = false)
+    {
+        static $styles = Array(
+            '' => 'disc', 'd' => 'disc', 'c' => 'circle', 's' => 'square', '1' => 'decimal',
+            'a' => 'lower-alpha', 'A' => 'upper-alpha', 'i' => 'lower-roman', 'I' => 'upper-roman',
+            );
+        static $ols = Array('1', 'a', 'A', 'i', 'I');
+
+        $useborder = false;
+        $parr = explode('|', $param);
+        $style = $prefix = '';
+        if (isset($styles[$parr[0]]))
+            $style = ' style="list-style-type: '.$styles[$parr[0]].';"';
+        else
+        {
+            $style = ' style="list-style-position: inside; list-style-type: none;"';
+            $prefix = $parr[0].' ';
+        }
+        $useOL = in_array($parr[0], $ols);
+
+        $list = explode('['.$this->tagbreaker.']', $buffer);
+        $buffer = '';
+        foreach ($list as $item)
+        {
+            $item = preg_replace('#^\s*\<br\s?/?\>\r?\n?#', '', $item);
+            if (strlen($item))
+                $buffer.= '<li>'.$prefix.$item.'</li>';
+        }
+        $buffer = ($useOL)
+            ? '<ol'.$style.'>'.$buffer.'</ol>'
+            : '<ul'.$style.'>'.$buffer.'</ul>';
+
+        return $buffer;
+    }
+
 }
 
 ?>
