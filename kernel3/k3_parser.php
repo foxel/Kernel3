@@ -35,6 +35,7 @@ class FParser extends FEventDispatcher
     private $pregs = Array();
     private $noparse_tag = 'no_bb';    // contetns of this tag will not be parsed (lower case)
     private $tagbreaker   = '*';
+    private $parabreaker  = '%';
     private $tag_stack = Array();
 
     private $last_time = 0;
@@ -69,7 +70,7 @@ class FParser extends FEventDispatcher
         $this->addBBTag('img', '', self::BBTAG_NOSUB, Array('func' => Array( &$this, 'BBCodeStdUrlImg') ) );
         $this->addBBTag('url', '', false, Array('func' => Array( &$this, 'BBCodeStdUrlImg') ) );
         $this->addBBTag('table', '', self::BBTAG_BLLEV | self::BBTAG_USEBRK, Array('func' => Array( &$this, 'BBCodeStdTable') ) );
-        $this->addBBTag('list', '', self::BBTAG_USEBRK, Array('func' => Array( &$this, 'BBCodeStdList') ) );
+        $this->addBBTag('list', '', self::BBTAG_BLLEV | self::BBTAG_USEBRK, Array('func' => Array( &$this, 'BBCodeStdList') ) );
 
         $this->addPreg(FStr::URL_MASK_F, '[url]{data}[/url]');
         //$this->addPreg(FStr::EMAIL_MASK, '[email]{data}[/email]');
@@ -142,7 +143,7 @@ class FParser extends FEventDispatcher
         {
             $input = htmlspecialchars($input, ENT_NOQUOTES);
             $input = $this->pregsParse($input, $style);
-            $input = nl2br($input);
+            //$input = nl2br($input);
         }
         elseif ($mode == self::BBPARSE_POSTPREP) // in postprep mode tagparcer works with all the tags
             $mode = self::BBPARSE_ALL;
@@ -183,9 +184,13 @@ class FParser extends FEventDispatcher
         $buffer      = '';
         $struct      = Array();
 
-        preg_match_all('#\[((?>[\w]+)|'.preg_quote($this->tagbreaker).')(?:\s*=\s*(\"([^\"\[\]]*)\"|[^\s<>\[\]]+))?\s*\]|\[\/((?>\w+))\]|[^\[]+|\[#', $input, $struct, PREG_SET_ORDER);
+        $input = preg_replace('#[\r\n]+#', '['.$this->parabreaker.']', $input);
+
+        preg_match_all('#\[((?>[\w]+)|'.preg_quote($this->tagbreaker).'|'.preg_quote($this->parabreaker).')(?:\s*=\s*(\"([^\"\[\]]*)\"|[^\s<>\[\]]+))?\s*\]|\[\/((?>\w+))\]|[^\[]+|\[#', $input, $struct, PREG_SET_ORDER);
 
         $this->TStackClear();
+
+        $buffer.= '<p>';
 
         foreach ($struct as $part)
         {
@@ -201,6 +206,35 @@ class FParser extends FEventDispatcher
                             $buffer.= $tdata;
                     }
                     $state_nobb = true;
+                }
+                elseif ($tagname == $this->parabreaker && $this->cur_mode != self::BBPARSE_CHECK)
+                {                    if ($this->cur_mode == self::BBPARSE_CHECK)
+                    {                        $tdata = FStr::ENDL;
+                        if (!$this->TStackWrite($tdata))
+                            $buffer.= $tdata;
+                    }
+                    else
+                    {
+                        while ($subtname = $this->TStackLast())
+                        {
+                            $subtmode = $this->tags[$subtname]['mode'];
+                            if ($subtmode & self::BBTAG_BLLEV)
+                                break;
+                            else
+                            {
+                                $tdata = $this->TStackGet();
+                                if (isset($used_tags[$subtname]))
+                                    $used_tags[$subtname]--;
+
+                                $tdata = $this->parseBBTag($tdata['name'], $tdata['param'], $tdata['buffer']);
+                                if (!$this->TStackWrite($tdata))
+                                    $buffer.= $tdata;
+                            }
+                        }
+                        $tdata = '</p>'.FStr::ENDL.'<p>';
+                        if (!$this->TStackWrite($tdata))
+                            $buffer.= $tdata;
+                    }
                 }
                 elseif ($tagname == $this->tagbreaker && !$state_nobb)
                 {
@@ -218,6 +252,8 @@ class FParser extends FEventDispatcher
                                     $used_tags[$subtname]--;
 
                                 $tdata = $this->parseBBTag($tdata['name'], $tdata['param'], $tdata['buffer']);
+                                if (($this->cur_mode != self::BBPARSE_CHECK) && ($subtmode & self::BBTAG_BLLEV))
+                                    $tdata = '</p>'.FStr::ENDL.$tdata.FStr::ENDL.'<p>';
                                 if (!$this->TStackWrite($tdata))
                                     $buffer.= $tdata;
 
@@ -325,6 +361,8 @@ class FParser extends FEventDispatcher
                                     $state_breakers--;
 
                                 $tdata = $this->parseBBTag($tdata['name'], $tdata['param'], $tdata['buffer']);
+                                if (($this->cur_mode != self::BBPARSE_CHECK) && ($subtmode & self::BBTAG_BLLEV))
+                                    $tdata = '</p>'.FStr::ENDL.$tdata.FStr::ENDL.'<p>';
                                 if (!$this->TStackWrite($tdata))
                                     $buffer.= $tdata;
 
@@ -360,13 +398,18 @@ class FParser extends FEventDispatcher
         while ($tdata = $this->TStackGet())
         {
             $subtname = $tdata['name'];
+            $subtmode = $this->tags[$subtname]['mode'];
             if (isset($used_tags[$subtname]))
                 $used_tags[$subtname]--;
 
             $tdata = $this->parseBBTag($tdata['name'], $tdata['param'], $tdata['buffer']);
+            if (($this->cur_mode != self::BBPARSE_CHECK) && ($subtmode & self::BBTAG_BLLEV))
+                $tdata = '</p>'.FStr::ENDL.$tdata.FStr::ENDL.'<p>';
             if (!$this->TStackWrite($tdata))
                 $buffer.= $tdata;
         }
+
+        $buffer = preg_replace('#<p>\s*</p>#m', '', $buffer.'</p>');
 
         $stime = explode(' ',microtime());
         $stop_time = $stime[1]+$stime[0];
@@ -415,11 +458,15 @@ class FParser extends FEventDispatcher
                 return ('['.$name.($param ? '="'.$param.'"' : '').']'.$buffer.'[/'.$name.']');
             elseif ($tmode & self::BBTAG_FHTML)
             {
+                if ($tmode & self::BBTAG_BLLEV)
+                    $buffer = '<p>'.$buffer.'</p>';
                 $out = strtr($tag['html'], Array('{param}' => $param, '{data}' => $buffer));
                 return $out;
             }
             else
             {
+                if ($tmode & self::BBTAG_BLLEV)
+                    $buffer = '<p>'.$buffer.'</p>';
                 $out = '<'.$tag['html'].(($param && $tag['param']) ? ' '.$tag['param'].'="'.$param.'"' : '').'>'.$buffer.'</'.$tag['html'].'>';
                 return $out;
             }
@@ -678,7 +725,7 @@ class FParser extends FEventDispatcher
             if ($part==='')
                 $part = '&nbsp;';
 
-            $buffer.= '<td>'.$part.'</td>';
+            $buffer.= '<td><p>'.$part.'</p></td>';
             $i++;
         }
         while ($i%$param != 0)
@@ -715,10 +762,11 @@ class FParser extends FEventDispatcher
         $buffer = '';
         foreach ($list as $item)
         {
-            $item = preg_replace('#^\s*\<br\s?/?\>\r?\n?#', '', $item);
+            $item = preg_replace('#^\s+#', '', $item);
             if (strlen($item))
-                $buffer.= '<li>'.$prefix.$item.'</li>';
+                $buffer.= '<li><p>'.$prefix.$item.'</p></li>';
         }
+        $buffer = preg_replace('#<li>(<p></p>|\s)*</li>#m', '', $buffer);
         $buffer = ($useOL)
             ? '<ol'.$style.'>'.$buffer.'</ol>'
             : '<ul'.$style.'>'.$buffer.'</ul>';
