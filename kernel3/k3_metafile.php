@@ -22,6 +22,8 @@ final class FMetaFileFactory
 
     public function create($cluster = 1, $fillchr = "\0") { return new FMetaFile($cluster, $fillchr); }
     public function _Call($cluster = 1, $fillchr = "\0") { return new FMetaFile($cluster, $fillchr); }
+    public function save(FMetaFile $file, $filename) { return file_put_contents($filename, serialize($file)); }
+    public function load($filename) { $o = unserialize(file_get_contents($filename)); return is_a($o, 'FMetaFile') ? $o : new FNullObject(); }
 }
 
 class FMetaFilePart
@@ -33,7 +35,7 @@ class FMetaFilePart
 
 class FMetaFile extends FDataStream
 {    private $parts = Array();
-    private $sel_part = 0;
+    private $sel_part = -1;
     private $pos = 0;
     private $fsize = 0;
     private $cluster = 1;
@@ -43,7 +45,7 @@ class FMetaFile extends FDataStream
         $this->filename = 'foo';
         $this->fsize = 0;
         $this->pos = 0;
-        $this->sel_part = 0;
+        $this->sel_part = -1;
         $this->cluster = $cluster;
         if (is_string($fillchr))
             $this->fillchr = $fillchr[0];
@@ -66,20 +68,21 @@ class FMetaFile extends FDataStream
     {
         if (!$this->parts)
             return false;
-        $this->parts[$this->sel_part]->o->close();
+        if ($this->sel_part >= 0)
+            $this->parts[$this->sel_part]->o->close();
         return $this->parts[$this->sel_part = 0]->o->open($this->mode = 'rb');
     }
 
     public function close()
     {
-        if (!$this->parts)
+        if (!$this->parts || $this->sel_part < 0)
             return false;
         return $this->parts[$this->sel_part]->o->close();
     }
 
     public function EOF()
     {
-        if (!$this->parts)
+        if (!$this->parts || $this->sel_part < 0)
             return true;
         return ($this->sel_part >= count($this->parts)-1 && $this->parts[$this->sel_part]->o->EOF());
     }
@@ -88,6 +91,9 @@ class FMetaFile extends FDataStream
 
     public function read(&$data, $len)
     {
+        if (!$this->parts || $this->sel_part < 0)
+            return false;
+
         $adata = $data = '';
         while ($len)
         {            $rlen = min($len, $this->parts[$this->sel_part]->l - ($this->pos - $this->parts[$this->sel_part]->p));
@@ -108,6 +114,9 @@ class FMetaFile extends FDataStream
 
     public function seek($pos)
     {
+        if (!$this->parts || $this->sel_part < 0)
+            return false;
+
         $this->parts[$this->sel_part]->o->close();
         $this->sel_part = 0;
         while ($this->parts[$this->sel_part+1]->p < $pos)

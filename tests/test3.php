@@ -5,10 +5,17 @@ define ('STARTED', True);
 require_once 'kernel3.php';
 
 
-$file = F()->MetaFile(512, " ");
-$file->add(new FFileStream(__FILE__));
-$file->add(new FFileStream('test0.php'));
-$file->add(new FStringStream('This is a test string ^.^'));
+if (F()->GPC->getBin('load'))
+    $file = F()->MetaFile->load('test.file');
+else
+{
+    $file = F()->MetaFile(512, " ");
+    $file->add(new FFileStream(__FILE__));
+    $file->add(new FFileStream('test0.php'));
+    $file->add(new FStringStream('This is a test string ^.^'));
+    F('MetaFile')->save($file, 'test.file');
+}
+
 $file->open();
 $str = '';
 
