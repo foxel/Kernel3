@@ -1,2 +1,3 @@
+MetaFile => FMetaFileFactory|k3_metafile.php
 VIS      => FVISInterface|k3_vis.php
 Parser   => FParser|k3_parser.php

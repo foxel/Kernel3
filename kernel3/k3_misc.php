@@ -117,7 +117,7 @@ abstract class FEventDispatcher extends FBaseClass
 }
 
 abstract class FDataStream extends FBaseClass
-{    abstract public function open($mode);
+{    abstract public function open($mode = 'rb');
     abstract public function close();
     abstract public function EOF();
     abstract public function size();
@@ -133,39 +133,45 @@ class FFileStream extends FDataStream
 {
     private $stream = null;
     private $filename = '';
-    public function __construct($fname)
-    {        $this->filename = $fname;    }
+    public function __construct($fname) { $this->filename = $fname; }
+    public function open($mode = 'rb') { return (($this->stream = fopen($this->filename, $this->mode = $mode)) !== false); }
+    public function close() { return fclose($this->stream); }
+    public function EOF() { return feof($this->stream); }
+    public function size() { return filesize($this->filename); ($stat = fstat($this->stream)) ? $stat['size'] : false; }
+    public function read(&$data, $len) { return strlen($data = fread($this->stream, $len)); }
+    public function seek($pos) { return (fseek($this->stream, $pos, SEEK_SET) == 0); }
+    public function write($data) { return fwrite($this->stream, $data); }
+}
 
-    public function open($mode)
-    {        $this->stream = fopen($this->filename, $mode);
-        $this->mode = $mode;
-        return ($this->stream !== false);
-    }
-
-    public function close()
-    {        return fclose($this->stream);
-    }
-
-    public function EOF()
-    {        return feof($this->stream);
-    }
-
-    public function size()
-    {        $stat = fstat($this->stream);
-        return $stat ? $stat['size'] : false;
-    }
-
+class FStringStream extends FDataStream
+{
+    private $string = null;
+    private $len = 0;
+    private $pos = 0;
+    public function __construct($string) { $this->len = strlen($this->string = $string); }
+    public function open($mode = 'rb') { return (bool) ($this->mode = $mode); }
+    public function close() { $this->pos = 0; return true; }
+    public function EOF() { return ($this->pos >= $this->len-1); }
+    public function size() { return $this->len; }
     public function read(&$data, $len)
-    {        $data = fread($this->stream, $len);
-        return strlen($data);
+    {
+        $data = substr($this->string, $this->pos, $len);
+        $got = strlen($data);
+        $this->pos+= $got;
+        return $got;
     }
-
     public function seek($pos)
-    {        return fseek($this->stream, $pos, SEEK_SET);
+    {
+        if ($pos < 0 || $pos >= $len)
+            return false;
+        $this->pos = $pos;
+        return true;
     }
-
     public function write($data)
-    {        return fwrite($this->stream, $data);
+    {
+        $this->string = substr_replace($this->string, $data, $this->pos, 0);
+        $this->pos+= strlen($data);
+        return strlen($data);
     }
 }
 
@@ -305,10 +311,9 @@ class FMisc
 
         $style = strtolower($style);
 
-        if (isset($styles[$style]))
-            $DST = $styles[$style];
-        else
-            $DST = $styles[$defstyle];
+        $DST = (isset($styles[$style]))
+            ? $styles[$style]
+            : $styles[$defstyle];
 
         if (!isset($DST['gmt']))
             $time += (int) $tz*3600;

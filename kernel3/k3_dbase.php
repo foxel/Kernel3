@@ -140,7 +140,7 @@ class FDataBase extends FEventDispatcher
 
     public function exec($query, $noprefixrepl = false)
     {
-        $this->query($query, true, $noprefixrepl);
+        return $this->query($query, $noprefixrepl, true);
     }
 
     public function quote($string)

@@ -34,8 +34,8 @@ class FParser extends FEventDispatcher
     private $tags = Array();
     private $pregs = Array();
     private $noparse_tag = 'no_bb';    // contetns of this tag will not be parsed (lower case)
-    private $tagbreaker   = '*';
-    private $parabreaker  = '%';
+    private $tagbreaker  = '*';
+    private $parabreaker = '%';
     private $tag_stack = Array();
 
     private $last_time = 0;

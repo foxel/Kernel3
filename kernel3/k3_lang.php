@@ -373,6 +373,36 @@ class FLNGData // extends FEventDispatcher
         return preg_replace('#[\x80-\xFF]+#', '_', $inp);
     }
 
+    public function getAcceptLang($acc_str = '')
+    {
+        static $cache = Array();
+        if (!$acc_str)
+            $acc_str = $_SERVER['HTTP_ACCEPT_LANGUAGE'];
+        $hash = FStr::shortHash($acc_str);
+        
+        if (isset($cache[$hash]))
+            return $cache[$hash];
+            
+        $acc_str = str_replace(' ', '', $acc_str);
+        $pairs = Array();
+        $res = Array();
+        
+        preg_match_all('#(\w{2,3})(?:\-\w{2,3})?(?:;q=([\d\.]+))?\,*#', $acc_str, $pairs, PREG_SET_ORDER);
+        foreach($pairs as $pair)
+        {
+            $lng = strtolower($pair[1]); 
+            $q = isset($pair[2]) && $pair[2] 
+                ? (float) $pair[2] 
+                : 1;
+            $res[$lng] = isset($res[$lng])
+                ? max($res[$lng], $q)
+                : $q;
+        }
+        arsort($res);
+        
+        return $cache[$hash] = $res;
+    }
+
     // private loaders
     private function tryAutoLoad($key)
     {
@@ -393,9 +423,13 @@ class FLNGData // extends FEventDispatcher
         if (!is_null($this->klang))
             return true;
 
-        $file = F::KERNEL_DIR.'krnl_def.lng';
+        $lngs = array_keys($this->getAcceptLang());
+        $lngs[] = 'en';
+        foreach ($lngs as $lng)
+            if (file_exists($file = F::KERNEL_DIR.'krnl_'.$lng.'.lng'))
+                break;
 
-        $cachename = self::CACHEPREFIX.'krnl_defs';
+        $cachename = self::CACHEPREFIX.'krnl_'.$lng;
 
         if ($Ldata = FCache::get($cachename))
         {
@@ -411,5 +445,6 @@ class FLNGData // extends FEventDispatcher
 
         return true;
     }
+    
 }
 ?>

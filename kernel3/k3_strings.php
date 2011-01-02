@@ -1,5 +1,5 @@
 <?php
-/*
+/**
  * QuickFox kernel 3 'SlyFox' String parsing module
  * Requires PHP >= 5.1.0
  */
