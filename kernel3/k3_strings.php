@@ -14,6 +14,7 @@ class FStr
     const WORD = 2;
     const HTML = 3;
     const PATH = 4;
+    const UNIXPATH = 5;
 
     const LINE = 8; // flag
 
@@ -193,6 +194,49 @@ class FStr
             return $string;
     }
 
+    // creates a constant lenght string
+    // use STR_PAD_RIGHT, STR_PAD_LEFT, STR_PAD_BOTH as mode
+    static public function fixLength($string, $length, $pad_with = ' ', $mode = null)
+    {
+        if (!is_scalar($string))
+            return $string;
+        if ($length <= 0)
+            return $string;
+
+        $len = strlen($string);
+        if ($len > $length)
+        {
+            switch ($mode)
+            {
+                case STR_PAD_LEFT:
+                    return substr($string, -$length);
+                    break;
+                case STR_PAD_BOTH;
+                    return substr($string, ($len - $length)/2, $length);
+                    break;
+                default:
+                    return substr($string, 0, $length);
+            }
+        }
+        elseif ($len < $length)
+        {
+            if (!strlen($pad_with))
+                $pad_with = ' ';
+
+            switch ($mode)
+            {
+                case STR_PAD_LEFT;
+                case STR_PAD_RIGHT:
+                case STR_PAD_BOTH;
+                    return str_pad($string, $length, $pad_with, $mode);
+                    break;
+                default:
+                    return str_pad($string, $length, $pad_with);
+            }
+        }
+
+        return $string;
+    }
 
     // subtype casting
     static public function cast($val, $type = self::COMM)
@@ -213,6 +257,8 @@ class FStr
                 $val = preg_replace('#[^0-9a-zA-Z_\-]#', '', $val);
                 break;
 
+            case self::UNIXPATH:
+                $val = preg_replace('#^[A-z]\:(\\\\|/)#', DIRECTORY_SEPARATOR, $val);
             case self::PATH:
                 $val = preg_replace('#(\\\\|/)+#', DIRECTORY_SEPARATOR, $val);
                 $val = preg_replace('#[\x00-\x1F\*\?\;\|]|/$|\\\\$|^\.$|(?<!^[A-z])\:#', '', $val);
