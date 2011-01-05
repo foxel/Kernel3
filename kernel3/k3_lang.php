@@ -170,7 +170,7 @@ class FLNGData // extends FEventDispatcher
         if (isset($this->lang[$key]))
             $out = $this->lang[$key];
         elseif (isset($this->klang[$key]))
-            $out = $this->klang[$key];
+            $out = $this->klang[$key]; 
         else
             return '['.$key.']';
 
@@ -233,9 +233,9 @@ class FLNGData // extends FEventDispatcher
             for ($i = 1; $i<=4; $i++)
             {
                 $lname = $lnames[$i];
-                if (isset($this->lang[$lname]))
+                if ($this->privateLang($lname))
                 {
-                    $part = explode('|', $this->lang[$lname]);
+                    $part = explode('|', $this->privateLang($lname));
                     $pkeys = $keys[$i];
                     if (count($part) == count($pkeys))
                         foreach ($pkeys as $id => $key)
@@ -277,20 +277,20 @@ class FLNGData // extends FEventDispatcher
             $out = gmdate($format, $timetodraw);
         elseif ($timestamp > $now) {
             if ($timestamp < $now + 60)
-                $out = sprintf($this->lang['DATETIME_FUTURE_SECS'], ($timestamp - $now));
+                $out = sprintf($this->privateLang('DATETIME_FUTURE_SECS'), ($timestamp - $now));
             elseif ($timestamp < $now + 3600)
-                $out = sprintf($this->lang['DATETIME_FUTURE_MINS'], round(($timestamp - $now)/60));
+                $out = sprintf($this->privateLang('DATETIME_FUTURE_MINS'), round(($timestamp - $now)/60));
             else
                 $out = gmdate($format, $timetodraw);
         }
         elseif ($timestamp > ($now - 60))
-            $out = sprintf($this->lang['DATETIME_PAST_SECS'], ($now - $timestamp));
+            $out = sprintf($this->privateLang('DATETIME_PAST_SECS'), ($now - $timestamp));
         elseif ($timestamp > ($now - 3600))
-            $out = sprintf($this->lang['DATETIME_PAST_MINS'], round(($now - $timestamp)/60));
+            $out = sprintf($this->privateLang('DATETIME_PAST_MINS'), round(($now - $timestamp)/60));
         elseif ($timetodraw > $today)
-            $out = sprintf($this->lang['DATETIME_TODAY'], gmdate($time_f, $timetodraw));
+            $out = sprintf($this->privateLang('DATETIME_TODAY'), gmdate($time_f, $timetodraw));
         elseif ($timetodraw > $yesterday)
-            $out = sprintf($this->lang['DATETIME_YESTERDAY'], gmdate($time_f, $timetodraw));
+            $out = sprintf($this->privateLang('DATETIME_YESTERDAY'), gmdate($time_f, $timetodraw));
         else
             $out = gmdate($format, $timetodraw);
 
@@ -312,9 +312,9 @@ class FLNGData // extends FEventDispatcher
 
             $this->bsize_tr = Array(0 => Array(1 => 'B'), 1 => Array(1 => 'b'));
             foreach ($bnames as $class => $cl_lang)
-                if (isset($this->lang[$cl_lang]) && $this->lang[$cl_lang])
+                if ($lang_data = $this->privateLang($cl_lang))
                 {
-                    $parts = explode('|', $this->lang[$cl_lang]);
+                    $parts = explode('|', $lang_data);
                     $i = 1;
                     $this->bsize_tr[$class] = Array();
                     foreach ($parts as $part)
@@ -324,7 +324,7 @@ class FLNGData // extends FEventDispatcher
                         $this->bsize_tr[$class][$i] = $part;
                         $i *= 1024;
                     }
-                    krsort($this->bsize_tr[$class]);
+                    krsort($this->bsize_tr[$class], SORT_NUMERIC);
                 }
         }
 
@@ -354,14 +354,19 @@ class FLNGData // extends FEventDispatcher
         static $trans_arr = null;
         if (is_null($trans_arr))
         {
+            
             if (!isset($this->lang['__TRANSLIT_FROM']) || !isset($this->lang['__TRANSLIT_TO']))
+                $this->tryAutoLoad('__TRANSLIT_FROM');
+            
+            if (!($from = $this->privateLang('__TRANSLIT_FROM')) || 
+                !($to = $this->privateLang('__TRANSLIT_TO')))
             {
                 $trans_arr = false;
                 return preg_replace('#[\x80-\xFF]+#', '_', $inp);
             }
 
-            $from = explode('|', $this->lang['__TRANSLIT_FROM']);
-            $to = explode('|', $this->lang['__TRANSLIT_TO']);
+            $from = explode('|', $from);
+            $to = explode('|', $to);
             foreach ($from as $id => $ent)
                 if (isset($to[$id]))
                     $trans_arr[$ent] = $to[$id];
@@ -403,6 +408,18 @@ class FLNGData // extends FEventDispatcher
         return $cache[$hash] = $res;
     }
 
+    // private lang function
+    private function privateLang($key)
+    {
+        $out = null;
+        if (isset($this->lang[$key]))
+            $out = $this->lang[$key];
+        elseif (isset($this->klang[$key]))
+            $out = $this->klang[$key];        
+        
+        return $out;
+    }
+    
     // private loaders
     private function tryAutoLoad($key)
     {

@@ -108,11 +108,13 @@ class FGPC
         return $val;
     }
 
-    public static function getBin($var_name, $from = self::GET)
+    public static function getBin($var_name, $from = self::GET, $get_flags = true)
     {
         $val = self::get($var_name, $from);
         if ($val === null)
             return null;
+        if ($get_flags && is_string($val) && !strlen($val))
+            $val = true;
         return ($val) ? true : false;
     }
 

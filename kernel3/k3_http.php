@@ -141,7 +141,7 @@ class FHTTPInterface extends FEventDispatcher
         $this->buffer = '';
     }
 
-    public function sendFile($file, $filename = '', $filemime = '', $filemtime = false, $flags = 0)
+    public function sendDataStream(FDataStream $stream, $filename, $filemime = false, $filemtime = false, $flags = 0)
     {
         if (headers_sent())
         {
@@ -149,91 +149,110 @@ class FHTTPInterface extends FEventDispatcher
             return false;
         }
 
-        if (file_exists($file))
-        {
-            ignore_user_abort(false);
-            if (!$filename)
-                $filename = $file;
+        ignore_user_abort(false);
 
-            if (!$filemime)
-                $filemime = 'application/octet-stream';
+        if (!$filemime)
+            $filemime = 'application/octet-stream';
 
-            $filename = FStr::basename($filename);
-            $disposition = ($flags & self::FILE_ATTACHMENT)
-                ? 'attachment'
-                : 'inline';
+        $filename = FStr::basename($filename);
+        $disposition = ($flags & self::FILE_ATTACHMENT)
+            ? 'attachment'
+            : 'inline';
 
-            $FileSize = filesize($file);
-            $FileTime = (is_int($filemtime))
-                ? $filemtime
-                : gmdate('D, d M Y H:i:s ', filemtime($file)).'GMT';
+        $FileSize = $stream->size();
+        $FileTime = (is_int($filemtime))
+            ? $filemtime
+            : $stream->mtime();
 
-            if (isset($_SERVER['HTTP_RANGE']) && preg_match('#bytes\=(\d+)\-(\d*?)#i', $_SERVER['HTTP_RANGE'], $ranges))
-            {
-                $NeedRange = true;
-                $SeekFile  = intval($ranges[1]);
-            }
-            else
-            {
-                $NeedRange = false;
-                $SeekFile  = 0;
-            }
-
-            if ($stream = fopen($file, 'rb'))
+        if (isset($_SERVER['HTTP_IF_MODIFIED_SINCE']) && $reqModTime = strtotime($_SERVER['HTTP_IF_MODIFIED_SINCE']))
+            if ($FileTime <= $reqModTime)
             {
                 FMisc::obFree();
-
-                $filename = preg_replace('#[\x00-\x1F]+#', '', $filename);
-
-                if (preg_match('#[^\x20-\x7F]#', $filename))
-                {
-                    // according to RFC 2183 all headers must contain only of ASCII chars
-                    // according to RFC 1522 there is a way to represent non-ASCII chars
-                    //  in MIME encoded strings like =?utf-8?B?0KTQsNC50LsuanBn?=
-                    //  but actually only Gecko-based browsers accepted that type of message...
-                    //  so in this part non-ASCII chars will be transliterated according to
-                    //  selected language and all unknown chars will be replaced with '_'
-                    //  if you want to send non-ASCII filename to FireFox you'll need to
-                    //  set 'FHTTPInterface::FILE_RFC1522' flag
-                    // Or you may use tricky_mode to force sending 8-bit UTF-8 filenames
-                    //  via breaking some standarts. Opera will get it but IE not
-                    //  so don't use it if you don't really need to
-                    if ($flags & self::FILE_RFC1522)
-                    {
-                        $filename = F('Str')->Str_Mime($filename);
-                    }
-                    elseif ($flags & self::FILE_TRICKY)
-                    {
-                        if (preg_match('#^text/#i', $filemime))
-                            $disposition = 'attachment';
-                        $filemime.= '; charset="'.F::INTERNAL_ENCODING.'"';
-                    }
-                    else
-                        $filename = F('LNG')->Translit($filename);
-                }
-
-                header('Last-Modified: '.$FileTime);
-                header('Expires: '.date('r', F('Timer')->qTime() + 3600*24), true);
-                header('Content-Transfer-Encoding: binary');
-                header('Content-Disposition: '.$disposition.'; filename="'.$filename.'"');
-                header('Content-Type: '.$filemime);
-                header('Content-Length: '.($FileSize - $SeekFile));
-                header('Accept-Ranges: bytes');
-                header('X-QF-GenTime: '.F('Timer')->timeSpent());
-
-                if ($NeedRange)
-                {
-                    header($_SERVER['SERVER_PROTOCOL'] . ' 206 Partial Content');
-                    header('Content-Range: bytes '.$SeekFile.'-'.($FileSize-1).'/'.$FileSize);
-                }
-
-                fseek($stream, $SeekFile);
-                fpassthru($stream);
-                fclose($stream);
-
+                $this->setStatus(304);
+                header('Last-Modified: '.gmdate('D, d M Y H:i:s ', $FileTime).'GMT');
                 exit();
             }
+        
+        if (isset($_SERVER['HTTP_RANGE']) && preg_match('#bytes\=(\d+)\-(\d*?)#i', $_SERVER['HTTP_RANGE'], $ranges))
+        {
+            $NeedRange = true;
+            $SeekFile  = intval($ranges[1]);
         }
+        else
+        {
+            $NeedRange = false;
+            $SeekFile  = 0;
+        }
+
+        if ($stream->open('rb'))
+        {
+            FMisc::obFree();
+
+            $filename = preg_replace('#[\x00-\x1F]+#', '', $filename);
+
+            if (preg_match('#[^\x20-\x7F]#', $filename))
+            {
+                // according to RFC 2183 all headers must contain only of ASCII chars
+                // according to RFC 1522 there is a way to represent non-ASCII chars
+                //  in MIME encoded strings like =?utf-8?B?0KTQsNC50LsuanBn?=
+                //  but actually only Gecko-based browsers accepted that type of message...
+                //  so in this part non-ASCII chars will be transliterated according to
+                //  selected language and all unknown chars will be replaced with '_'
+                //  if you want to send non-ASCII filename to FireFox you'll need to
+                //  set 'FHTTPInterface::FILE_RFC1522' flag
+                // Or you may use tricky_mode to force sending 8-bit UTF-8 filenames
+                //  via breaking some standarts. Opera will get it but IE not
+                //  so don't use it if you don't really need to
+                if ($flags & self::FILE_RFC1522)
+                {
+                    $filename = F('Str')->Str_Mime($filename);
+                }
+                elseif ($flags & self::FILE_TRICKY)
+                {
+                    if (preg_match('#^text/#i', $filemime))
+                        $disposition = 'attachment';
+                    $filemime.= '; charset="'.F::INTERNAL_ENCODING.'"';
+                }
+                else
+                    $filename = F('LNG')->Translit($filename);
+            }
+
+            header('Last-Modified: '.gmdate('D, d M Y H:i:s ', $FileTime).'GMT');
+            header('Expires: '.date('r', F('Timer')->qTime() + 3600*24), true);
+            header('Content-Transfer-Encoding: binary');
+            header('Content-Disposition: '.$disposition.'; filename="'.$filename.'"');
+            header('Content-Type: '.$filemime);
+            header('Content-Length: '.($FileSize - $SeekFile));
+            header('Accept-Ranges: bytes');
+            header('X-QF-GenTime: '.F('Timer')->timeSpent());
+
+            if ($NeedRange)
+            {
+                header($_SERVER['SERVER_PROTOCOL'] . ' 206 Partial Content');
+                header('Content-Range: bytes '.$SeekFile.'-'.($FileSize-1).'/'.$FileSize);
+            }
+
+            $stream->seek($SeekFile);
+            $buff = '';
+            while($stream->read($buff, 10485760)) // 10MB
+                print($buff);
+            $stream->close();
+
+            exit();
+        }
+        else
+            return false;
+    }
+
+    public function sendFile($file, $filename = false, $filemime = false, $filemtime = false, $flags = 0)
+    {
+        if (!file_exists($file))
+            return false;
+            
+        if (!$filename)
+            $filename = $file;
+
+        return $this->sendDataStream(new FFileStream($file), $filename, $filemime, $filemtime, $flags);
     }
 
     public function sendBuffer($recode_to = '', $c_type = '', $force_cache = 0, $send_filename = '')
@@ -399,6 +418,13 @@ class FHTTPInterface extends FEventDispatcher
     public function setStatus($stat_code)
     {
         static $codes = Array(
+            300 => 'Multiple Choices',
+            301 => 'Moved Permanently',
+            302 => 'Found',
+            303 => 'See Other',
+            304 => 'Not Modified',
+            305 => 'Use Proxy',
+            307 => 'Temporary Redirect',
             400 => 'Bad Request',
             401 => 'Unauthorized',
             402 => 'Payment Required',
@@ -421,7 +447,7 @@ class FHTTPInterface extends FEventDispatcher
             );
 
         if (isset($codes[$stat_code]))
-            header (implode(' ', Array($_SERVER["SERVER_PROTOCOL"], $stat_code, $codes[$stat_code])));
+            header(implode(' ', Array($_SERVER["SERVER_PROTOCOL"], $stat_code, $codes[$stat_code])), true, $stat_code);
     }
 
     // returns client signature based on browser, ip and proxy

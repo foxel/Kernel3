@@ -127,6 +127,7 @@ abstract class FDataStream extends FBaseClass
 
     protected $mode = 0;
     public function mode() { return $this->mode; }
+    public function mtime() { return time(); }
 }
 
 class FFileStream extends FDataStream
@@ -137,10 +138,11 @@ class FFileStream extends FDataStream
     public function open($mode = 'rb') { return (($this->stream = fopen($this->filename, $this->mode = $mode)) !== false); }
     public function close() { return fclose($this->stream); }
     public function EOF() { return feof($this->stream); }
-    public function size() { return filesize($this->filename); ($stat = fstat($this->stream)) ? $stat['size'] : false; }
+    public function size() { return filesize($this->filename); }
     public function read(&$data, $len) { return strlen($data = fread($this->stream, $len)); }
-    public function seek($pos) { return (fseek($this->stream, $pos, SEEK_SET) == 0); }
+    public function seek($pos) { return (fseek($this->stream, $pos, SEEK_SET) === 0); }
     public function write($data) { return fwrite($this->stream, $data); }
+    public function mtime() { return filemtime($this->filename); }
 }
 
 class FStringStream extends FDataStream
@@ -162,7 +164,7 @@ class FStringStream extends FDataStream
     }
     public function seek($pos)
     {
-        if ($pos < 0 || $pos >= $len)
+        if ($pos < 0)
             return false;
         $this->pos = $pos;
         return true;
