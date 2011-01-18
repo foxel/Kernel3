@@ -55,6 +55,11 @@ class FDataBase extends FEventDispatcher
         $qcDriver = 'FDBaseQC'.$this->dbDrivers[$this->dbType];
         $this->qc = new $qcDriver($this->c);
     }
+    
+    public function check()
+    {
+        return ($this->c ? true : false);
+    }
 
     // simple one table select
     public function doSelect($table, $fields = Array(), $where = '', $other = '', $flags = 0)
@@ -101,13 +106,33 @@ class FDataBase extends FEventDispatcher
             return null;
     }
 
+    public function doUpdate($table, Array $data, $where = '', $flags = 0)
+    {
+        if (!$this->c)
+            throw new FException('DB is not connected');
+
+        $ret = null;
+        $query = $this->qc->update($table, $data, $where, $flags);
+        return $this->exec($query, true);
+    }
+
+    public function doDelete($table, $where = '', $flags = 0)
+    {
+        if (!$this->c)
+            throw new FException('DB is not connected');
+
+        $ret = null;
+        $query = $this->qc->delete($table, $where, $flags);
+        return $this->exec($query, true);
+    }
+
     // Base direct query method
     public function query($query, $noprefixrepl = false, $exec = false)
     {
         if (!$this->c)
             throw new FException('DB is not connected');
 
-        if( empty($query) )
+        if (!$query)
             return false;
 
         $start_time = F('Timer')->MicroTime();

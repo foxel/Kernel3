@@ -19,13 +19,15 @@ class FCache
     static private $got_cache = Array();
     static private $upd_cache = Array();
     static private $cache_folder = '';
+    static private $qTime = 0;
 
     static public function initCacher()
     {
         self::$cache_folder = F_DATA_ROOT.'cache';
+        self::$qTime = time();
         if (!is_dir(self::$cache_folder))
             FMisc::mkdirRecursive(self::$cache_folder);
-        register_shutdown_function(Array(__CLASS__, 'close'));
+        FMisc::addShutdownCallback(Array(__CLASS__, 'close'));
     }
 
     // cache control functiond
@@ -163,8 +165,6 @@ class FCache
 
     static private function CFS_Load($name)
     {
-        Global $QF;
-
         if (!$name)
             return false;
 
@@ -176,7 +176,7 @@ class FCache
         if (!file_exists($filename))
             return null;
 
-        if (filemtime($filename) < ($QF->Timer->time - QF_KERNEL_CACHE_LIFETIME))
+        if (filemtime($filename) < (self::$qTime - self::LIFETIME))
             return null;
 
         if ($data = file_get_contents($filename)) {
@@ -220,6 +220,7 @@ class FCache
             return true;
     }
 }
+
 FCache::initCacher();
 
 ?>

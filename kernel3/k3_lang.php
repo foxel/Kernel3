@@ -18,7 +18,7 @@ class FLNGData // extends FEventDispatcher
 
     private $lang       = Array();
     private $klang      = null;
-    private $lang_name  = 'EN';
+    private $lang_name  = 'en';
     private $LNG_loaded = Array();
     private $time_tr    = null;
     private $bsize_tr   = null;
@@ -445,7 +445,7 @@ class FLNGData // extends FEventDispatcher
         foreach ($lngs as $lng)
             if (file_exists($file = F::KERNEL_DIR.'krnl_'.$lng.'.lng'))
                 break;
-
+        
         $cachename = self::CACHEPREFIX.'krnl_'.$lng;
 
         if ($Ldata = FCache::get($cachename))
@@ -460,6 +460,7 @@ class FLNGData // extends FEventDispatcher
         else
             trigger_error('LANG: error loading kernel lang file: '.$file, E_USER_ERROR);
 
+        $this->lang_name = $lng;
         return true;
     }
     

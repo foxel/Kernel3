@@ -71,7 +71,7 @@ $base_modules_files = Array(
     F_KERNEL_DIR.'k3_request.php',       // kernel 3 GPC interface
     F_KERNEL_DIR.'k3_lang.php',          // kernel 3 LNG interface
     F_KERNEL_DIR.'k3_dbase.php',         // kernel 3 database interface
-    //F_KERNEL_DIR.'k3_session.php',       // kernel 3 session extension
+    F_KERNEL_DIR.'k3_session.php',       // kernel 3 session extension
 );
 // we'll do some trick with caching base modules in one file
 $base_modules_stats = Array();

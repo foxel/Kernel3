@@ -209,6 +209,56 @@ class FDBaseQCmysql
             return false;
     }
     
+    public function update($table, Array $data, $where = '', $flags = 0)
+    {
+        $where = $this->_parseWhere($where, $flags);
+
+        $query = 'UPDATE `'.$table.'` SET ';
+
+        if (count($data)) {
+            $names = $vals = Array();
+            foreach ($data AS $field=>$val)
+            {
+                if (($flags & FDataBase::SQL_USEFUNCS) && $part = $this->_parseFieldFunc($field, $val, false))
+                    $fields[] = $part;
+                elseif (is_scalar($val))
+                {
+                    $names[] = '`'.$field.'`';
+
+                    if (is_bool($val))
+                        $val = (int) $val;
+                    elseif (is_string($val))
+                    {
+                        if (!($flags & FDataBase::SQL_NOESCAPE) && !is_numeric($val))
+                            $val = $this->pdo->quote($val);
+                        //$val = '"'.$val.'"';
+                    }
+                    else
+                        $val = (string) $val;
+
+                    $fields[] = '`'.$field.'` = '.$val;
+                }
+                elseif (is_null($val))
+                    $fields[] = '`'.$field.'` = NULL';
+            }
+            $query.= implode(', ', $fields);
+            $query.= ' '.$where;
+
+            return $query;
+        }
+        else
+            return false;
+    }
+    
+    public function delete($table, $where = '', $flags = 0)
+    {
+        $where = $this->_parseWhere($where, $flags);
+
+        $query = 'DELETE FROM `'.$table.'` '.$where;
+
+        return $query;
+    }
+    
     private function _parseWhere($where, $flags = 0, $tbl_pref = '')
     {
         if (empty($where))
@@ -356,7 +406,7 @@ class FDBaseQCmysql
             '<'  => '%1$s < %2$s',  '<=' => '%1$s <= %2$s',
             '>'  => '%1$s > %2$s',  '>=' => '%1$s >= %2$s',
             '<>' => '%1$s <> %2$s', '!=' => '%1$s != %2$s',
-            'LIKE' => '%1$s LIKE %2$s',
+            'LIKE' => '%1$s LIKE %2$s', 'ISNULL' => 'ISNULL(%1$s) = %2$s',
             );
 
         if (!is_string($data))
@@ -370,16 +420,10 @@ class FDBaseQCmysql
             if (isset($funcs_set[$expr[0]]))
             {
                 $val = $expr[1];
-                if (is_bool($val))
-                    $val = (int) $val;
-                elseif (is_string($val))
-                    {
-                        if (!is_numeric($val))
-                            $val = $this->pdo->quote($val);
-                        //$val = '"'.$val.'"';
-                    }
-                else
-                    $val = '"'.$val.'"';
+                if ($val == 'NULL')
+                    $val = 'NULL';
+                elseif (!is_numeric($val))
+                    $val = $this->pdo->quote($val);
 
                 $out = sprintf($funcs_set[$expr[0]], $field, $val);
                 return $out;

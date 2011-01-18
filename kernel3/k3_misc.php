@@ -219,7 +219,7 @@ class FException extends Exception
 }
 
 
-class FMisc
+final class FMisc
 {
     const DF_PLAIN = 0;
     const DF_SERIALIZED = 1;
@@ -228,16 +228,51 @@ class FMisc
     const DF_BLOCK = 4;
     const DF_FROMSTR = 16; //flag
 
-    private static $dfMasks = Array('', '', '#^\s*([\w\-\/]+)\s*=>(.*)$#m', '#^((?>\w+)):(.*?)\r?\n---#sm', '#<<\+ \'(?>(\w+))\'>>(.*?)<<- \'\\1\'>>#s');
+    private static $dfMasks  = Array('', '', '#^\s*([\w\-\/]+)\s*=>(.*)$#m', '#^((?>\w+)):(.*?)\r?\n---#sm', '#<<\+ \'(?>(\w+))\'>>(.*?)<<- \'\\1\'>>#s');
+    private static $cbCode   = false;
+    private static $sdCBacks = Array();
+    private static $inited   = false;
 
+    // system private functions
     private function __construct() {}
 
+    static public function initCore()
+    {
+        if (self::$inited)
+            return false;
+            
+        self::$cbCode = rand();
+        register_shutdown_function(Array(__CLASS__, 'phpShutdownCallback'), self::$cbCode);
+        self::$inited = true;
+    }
+    
+    static public function phpShutdownCallback($code)
+    {
+        if ($code != self::$cbCode)
+            return false;
+            
+        while (!is_null($cBack = array_pop(self::$sdCBacks)))
+        {
+            $func = array_shift($cBack);
+            if (is_callable($func))
+                call_user_func_array($func, $cBack);
+        }
+    }
+    
+    // system functions
     static public function obFree()
     {
         $i = ob_get_level();
         while ($i--)
             ob_end_clean();
         return (ob_get_level() == 0);
+    }
+ 
+    static public function addShutdownCallback()
+    {
+        $cBack = func_get_args();
+        
+        array_push(self::$sdCBacks, $cBack);
     }
 
     static public function mkdirRecursive($path, $chmod = null)
@@ -425,6 +460,9 @@ class FMisc
         return $data;
     }
 }
+
+FMisc::initCore();
+
 
 class F2DArray
 {

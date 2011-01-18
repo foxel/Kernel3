@@ -5,18 +5,14 @@ class FSession extends FEventDispatcher
 {
     private static $self = null;
 
-    private $SID        = '';           // Session ID
-    private $sess_data  = Array();      // session variables
+    private $SID       = '';           // Session ID
 
-    private $clicks     = 1;            // session clicks stats
+    private $clicks    = 1;            // session clicks stats
 
-    private $started    = false;        // if the session is started
-    private $loaded     = false;        // if the session is loaded
+    private $mode      = 0;            // status
+    private $tried     = false;        // if the session loading try was performed
 
-    private $mode       = 0;            // status
-
-    private $sess_dbase = null;
-    private $secu_lvl  = 3;
+    private $secu_lvl  = 3;            // security level for client signature used 
 
     private $db_object = null;
     private $db_tbname = 'sessions';
@@ -27,9 +23,14 @@ class FSession extends FEventDispatcher
 
     const MODE_FIXED   = 1;
     const MODE_URLS    = 2;
-    const MODE_STARTED = 4;
-    const MODE_LOADED  = 8;
-    const MODE_DBASE  = 16;
+    const MODE_TRY     = 4;
+    const MODE_NOURLS  = 8;
+    const MODE_STARTED = 16;
+    const MODE_LOADED  = 32;
+    const MODE_DBASE   = 64;
+
+    // Modes mask for flags allowed to set with "open()"
+    const MODES_ALLOW  = 15; // MODE_FIXED + MODE_URLS + MODE_TRY + MODE_NOURLS
 
     public static function getInstance()
     {
@@ -38,32 +39,42 @@ class FSession extends FEventDispatcher
         return self::$self;
     }
 
-    private function __construct()
+    private function __construct() { }
+    
+    public function setDBase(FDataBase $dbo, $tbname = false)
     {
-        $this->pool =& $this->sess_data;
+        if (!$dbo || !$dbo->check())
+            return false;
+            
+        $this->db_object = $dbo;
+        if (is_string($dbname) && $dbname)
+            $this->db_tbname = $tbname;
     }
 
-    public function open($mode = 0, $no_url_mods = false)
+    public function open($mode = 0)
     {
         if ($this->mode & self::MODE_STARTED)
             return true;
 
-        $this->mode = $mode;
+        $this->mode |= $mode & (self::MODES_ALLOW);
 
         $this->SID = F('HTTP')->getCookie(self::SID_NAME);
-        if ($ForceSID = FGPC::getString('ForceQFSID', FGPC::POST, FStr::HEX))
+        if ($ForceSID = FGPC::getString('ForceFSID', FGPC::POST, FStr::HEX))
             $this->SID = $ForceSID;
 
         if (!$this->SID)
         {
             $this->mode |= self::MODE_URLS;
             $this->SID = FGPC::getString(self::SID_NAME, FGPC::ALL, FStr::HEX);
-        }
+        } 
 
-        if ($this->SID)
-            $this->load();
-        else
-            $this->create();
+        if (!$this->SID || $this->tried || !$this->load())
+        {
+            if ($this->mode & self::MODE_TRY) 
+                return false;
+            else
+                $this->create();
+        }
 
 
         if ($this->mode & self::MODE_STARTED)
@@ -77,91 +88,90 @@ class FSession extends FEventDispatcher
             // allows mode changes and any special reactions
             $this->throwEventRef('opened', $this->mode, $this->SID);
 
-            if (!$no_url_mods && ($this->mode & self::MODE_URLS)) // TODO: && $QF->Config->Get('sid_urls', 'session', true))
+            if (!($this->mode & self::MODE_NOURLS) && ($this->mode & self::MODE_URLS)) // TODO: allowing from config
             {
                 F('HTTP')->addEventHandler('HTML_parse', Array(&$this, 'HTMLURLsAddSID') );
                 F('HTTP')->addEventHandler('URL_Parse', Array(&$this, 'addSID') );
             }
 
-        }
+            FMisc::addShutdownCallback(Array(&$this, 'close'));
 
-        return true;
+            return true;
+        }
+        
+        return false;
     }
 
     private function load()
     {
-        if ($this->mode & self::MODE_STARTED)
-            return true;
-
+        $this->tried = true;
+        
         $sess = ($this->mode & self::MODE_DBASE)
                 ? $this->db_object->doSelect($this->bd_tbname, '*', Array('sid' => $this->SID) )
-                : FCache->get(self::CACHEPREFIX.$this->SID);
+                : FCache::get(self::CACHEPREFIX.$this->SID);
 
-        if ($sess)
+        if (!is_array($sess) || !$sess)
+            return false;
+            
+        if ($sess['ip'] != F('HTTP')->IPInt 
+            || $sess['lastused'] < (F('Timer')->qTime() - self::LIFETIME)
+            || $sess['clsign'] != F('HTTP')->getClientSignature($this->secu_lvl))
         {
-            if ($sess['ip'] != F('HTTP')->IPInt)
-                $sess = null;
-            if ($sess['lastused'] < (F('Timer')->qTime - self::LIFETIME))
-                $sess = null;
+            FCache::drop(self::CACHEPREFIX.$this->SID);
+            return false;       
         }
-        else
-            $sess = null;
 
+        $vars = unserialize($sess['vars']);
 
-        if (is_array($sess))
-        {
-            $this->sess_data = unserialize($sess['vars']);
+        $this->clicks = $sess['clicks'] + 1;
 
-            $this->clicks   = $sess['clicks'] + 1;
+        $this->mode |= (self::MODE_STARTED | self::MODE_LOADED);
+        $this->throwEventRef('loaded', $vars, $this->mode);
 
-            F('Timer')->logEvent('Session data loaded');
+        $this->pool = is_array($vars)
+            ? $vars
+            : Array();
 
-            $this->mode |= (self::MODE_STARTED | self::MODE_LOADED);
-            $this->throwEventRef('loaded', $this->sess_data, $this->mode);
+        F('Timer')->logEvent('Session data loaded');
 
-            return true;
-        }
-        else
-            return $this->create();
-
+        return true;
     }
 
     private function create()
     {
-        if ($this->mode & self::MODE_STARTED)
-            return true;
-
-        $this->SID       = md5(uniqid('SESS', true));
-        $this->clicks    = 1;
-        $this->sess_data = Array();
+        $this->SID    = md5(uniqid('SESS', true));
+        $this->clicks = 1;
 
 
-        F('Timer')->qTime_Log('Session data created');
+        $vars = Array();
+        
+        $this->mode |= (self::MODE_STARTED | self::MODE_URLS); // TODO: MODEURLS only if it's allowed by config
+        $this->throwEventRef('created', $vars, $this->mode);
+        
+        $this->pool = is_array($vars)
+            ? $vars
+            : Array();
 
-        $this->Cache_Clear();
-
-        $this->mode |= (self::MODE_STARTED | self::MODE_URLS);
-        $this->throwEventRef('created', $this->sess_data, $this->mode );
+        F('Timer')->logEvent('Session data created');
 
         return true;
     }
 
     public function save()
     {
-        Global $QF;
-
         if (!($this->mode & self::MODE_STARTED))
             return false;
 
         if ($this->mode & self::MODE_FIXED)
             return true;
 
-        $this->throwEventRef('session_save', $this->sess_data);
+        $this->throwEventRef('presave', $this->pool);
 
         $q_arr = Array(
-            'ip'       => $QF->HTTP->IP_int,
-            'vars'     => serialize($this->sess_data),
-            'lastused' => F('Timer')->qTime,
+            'ip'       => F('HTTP')->IPInt,
+            'clsign'   => F('HTTP')->getClientSignature($this->secu_lvl),
+            'vars'     => serialize($this->pool),
+            'lastused' => F('Timer')->qTime(),
             'clicks'   => $this->clicks,
             );
 
@@ -177,12 +187,12 @@ class FSession extends FEventDispatcher
         else
         {
             $q_arr['sid'] = $this->SID;
-            $q_arr['starttime'] = F('Timer')->qTime;
+            $q_arr['starttime'] = F('Timer')->qTime();
             $this->db_object->doInsert($this->bd_tbname, $q_arr, true);
         }
 
         // delete old session data
-        $this->db_object->doDelete($this->bd_tbname, Array('lastused' => '< '.(F('Timer')->qTime - self::LIFETIME)), QF_SQL_USEFUNCS );
+        $this->db_object->doDelete($this->bd_tbname, Array('lastused' => '< '.(F('Timer')->qTime() - self::LIFETIME)), FDataBase::SQL_USEFUNCS );
 
         return true;
     }
@@ -195,7 +205,7 @@ class FSession extends FEventDispatcher
     // session variables control
     public function get($query)
     {
-        if (!($this->mode & self::MODE_STARTED))
+        if (!($this->mode & self::MODE_STARTED) && ($this->tried || !$this->open(self::MODE_TRY)))
             return null;
 
         $names = explode(' ', $query);
@@ -203,55 +213,66 @@ class FSession extends FEventDispatcher
         {
             $out = Array();
             foreach ($names as $name)
-                $out[$name] = (isset($this->sess_data[$name])) ? $this->sess_data[$name] : null;
+                $out[$name] = (isset($this->pool[$name])) ? $this->pool[$name] : null;
 
             return $out;
         }
         else
-            return (isset($this->sess_data[$query])) ? $this->sess_data[$query] : null;
+            return (isset($this->pool[$query])) ? $this->pool[$query] : null;
     }
-
+    
     public function set($name, $val)
     {
-        if (!($this->mode & self::MODE_STARTED))
+        if (!($this->mode & self::MODE_STARTED) && !$this->open())
             return false;
 
-        return ($this->sess_data[$name] = $val);
+        return ($this->pool[$name] = $val);
     }
 
     public function drop($query)
     {
-        if (!($this->mode & self::MODE_STARTED))
+        if (!($this->mode & self::MODE_STARTED) && ($this->tried || !$this->open(self::MODE_TRY)))
             return false;
 
         $names = explode(' ', $query);
-        if (count($names)) {
-            $out = Array();
+        if (count($names)) 
             foreach ($names as $name)
-                unset ($this->sess_data[$name]);
-            return true;
-        }
-        else
-            unset ($this->sess_data[$query]);
+                unset ($this->pool[$name]);
+
         return true;
     }
 
+    public function __get($name)
+    {
+        return $this->get($name);
+    }
+    
+    public function __set($name, $val)
+    {
+        return $this->set($name, $val);
+    }
+    
+    public function __unset($name)
+    {
+        return $this->drop($name);
+    }
+    
     // totally clears session data
     public function clear()
     {
-        if (!($this->mode & self::MODE_STARTED))
+        if (!($this->mode & self::MODE_STARTED) && ($this->tried || !$this->open(self::MODE_TRY)))
             return false;
 
-        $this->sess_data = Array();
+        $this->pool = Array();
 
         return true;
     }
 
-    public function addSID($url, $ampersand=false)
+    public function addSID($url, $ampersand = false)
     {
-        $url=trim($url);
+        $url = trim($url);
 
-        if (!($this->mode & self::MODE_STARTED))
+        if (!($this->mode & self::MODE_STARTED) && ($this->tried || !$this->open(self::MODE_TRY)))
             return $url;
 
         $url = FStr::urlAddParam($url, self::SID_NAME, $this->SID, $ampersand);
@@ -270,7 +291,6 @@ class FSession extends FEventDispatcher
 
     public function SIDParseCallback($vars)
     {
-        Global $QF;
         if (!is_array($vars))
             return false;
 
@@ -300,12 +320,12 @@ class FSession extends FEventDispatcher
 
     }
 
-    function _Close()
+    public function close()
     {
         if (!($this->mode & self::MODE_STARTED))
-            return false;
+            return true;
 
-        $this->save();
+        return $this->save();
     }
 }
 

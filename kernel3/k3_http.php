@@ -59,7 +59,7 @@ class FHTTPInterface extends FEventDispatcher
         $this->pool['rootDir'] = preg_replace('#\/|\\\+#', '/', $this->pool['rootDir']);
 
         if ( $this->pool['rootDir'] = preg_replace('#^\/*|\/*$#', '', $this->pool['rootDir']) )
-            $this->RootUrl.= $this->RootDir.'/';
+            $this->pool['rootUrl'].= $this->pool['rootDir'].'/';
 
         $this->pool['rootFull'] = preg_replace(Array('#\/|\\\+#', '#\/*$#'), Array('/', ''), $_SERVER['DOCUMENT_ROOT']).$this->pool['rootDir'];
 
@@ -92,9 +92,9 @@ class FHTTPInterface extends FEventDispatcher
             {
                 if (strpos($val, $o_prefix) === 0)
                 {
-                    $this->Set_Cookie($val, false, false, false, false, true);
+                    $this->setCookie($val, false, false, false, false, true);
                     $val = $new_prefix.'_'.substr($val, strlen($o_prefix));
-                    $this->Set_Cookie($val, $var, false, false, false, true);
+                    $this->setCookie($val, $var, false, false, false, true);
                 }
                 $_COOKIE[$val] = $var;
             }
