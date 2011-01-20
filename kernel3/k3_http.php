@@ -10,9 +10,9 @@ if (!defined('F_STARTED'))
 
 // HTTP interface
 // Outputs data to user and manages cookies data
-class FHTTPInterface extends FEventDispatcher
+final class FHTTPInterface extends FEventDispatcher
 {
-    const DEF_COOKIE_PREFIX = 'F3';
+    const DEF_COOKIE_PREFIX = 'K3';
     // HTTP send content types
     const FILE_ATTACHMENT = 1;
     const FILE_RFC1522    = 8;
@@ -453,7 +453,7 @@ class FHTTPInterface extends FEventDispatcher
     // returns client signature based on browser, ip and proxy
     public function getClientSignature($level = 0)
     {
-        static $sign_parts = Array('HTTP_USER_AGENT', 'HTTP_ACCEPT', 'HTTP_ACCEPT_CHARSET'); //, 'HTTP_ACCEPT_ENCODING'
+        static $sign_parts = Array('HTTP_USER_AGENT', 'HTTP_ACCEPT_CHARSET'); //, 'HTTP_ACCEPT_ENCODING'
         static $psign_parts = Array('HTTP_VIA', 'HTTP_X_FORWARDED_FOR', 'HTTP_X_REAL_IP');
 
         $sign = Array();

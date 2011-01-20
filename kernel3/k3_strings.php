@@ -353,7 +353,7 @@ class FStr
 
     static public function heredocDefine($str, $heredoc_id = 'HSTR', $add_semicolon = false)
     {
-        return '<<<'.$heredoc_id.self::ENDL.self::addslashesHeredoc($val, $heredoc_id).self::ENDL.$heredoc_id.($add_semicolon ? ';' : '').self::ENDL;
+        return '<<<'.$heredoc_id.self::ENDL.self::addslashesHeredoc($str, $heredoc_id).self::ENDL.$heredoc_id.($add_semicolon ? ';' : '').self::ENDL;
     }
 
     static public function smartAmpersands($string)

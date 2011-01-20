@@ -4,9 +4,6 @@ define ('STARTED', True);
 
 require_once 'kernel3.php';
 
-function filterFunc($fname)
-{    return preg_match('#\.(php|png|vis)$#', $fname);
-}
 
 if (F()->GPC->getBin('download'))
 {
@@ -16,7 +13,7 @@ if (F()->GPC->getBin('download'))
 else
 {
     $file = F()->MetaFile->createTar();
-    $file->add('.', false, false, false, 'filterFunc');
+    $file->add('.');
     $file->add('test0.php');
     $file->addData('This is a test string ^.^');
     F()->MetaFile->save($file, 'test1.file');
