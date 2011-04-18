@@ -23,6 +23,8 @@ class FDBaseQCmysql
         $other = $this->_parseOther($other, $flags);
 
         $query = 'SELECT ';
+        if ($flags & FDataBase::SQL_DISTINCT)
+            $query.= 'DISTINCT ';
 
         if (is_array($fields)) {
             if (count($fields))
@@ -62,6 +64,8 @@ class FDBaseQCmysql
             return '';
 
         $ti = 0;
+        $inh_flags = $flags & (FDataBase::SQL_NOESCAPE);
+        
         foreach ($tqueries as $table => $params)
         {
             $tl = 't'.$ti;
@@ -81,7 +85,7 @@ class FDBaseQCmysql
                     }
                 }
 
-                if ($flags & FDataBase::SQL_LEFTJOIN && count($join_by))
+                if (($params['flags'] | $inh_flags) & FDataBase::SQL_LEFTJOIN && count($join_by))
                     $qc_tables.= ' LEFT JOIN `'.$table.'` '.$tl;
                 else
                     $qc_tables.= ' JOIN `'.$table.'` '.$tl;
@@ -144,8 +148,8 @@ class FDBaseQCmysql
                     $qc_order[] = $tl.'.`'.$order.'`';
             }
 
-            if ($where = $this->_parseWhere($params['where'], $flags, $tl))
-                $qc_where[] = preg_replace('#^WHERE\s#i', '', $where);
+            if ($where = $this->_parseWhere($params['where'], $params['flags'] | $inh_flags, $tl))
+                $qc_where[] = '('.preg_replace('#^WHERE\s#i', '', $where).')';
             $ti++;
         }
 
@@ -155,7 +159,7 @@ class FDBaseQCmysql
             $qc_fields = '*';
 
         if (count($qc_where))
-            $qc_where = 'WHERE '.implode(' AND ', $qc_where);
+            $qc_where = 'WHERE '.implode(($flags & FDataBase::SQL_WHERE_OR) ? ' OR ' : ' AND ', $qc_where);
         else
             $qc_where = '';
 
@@ -177,36 +181,55 @@ class FDBaseQCmysql
 
         if (count($data)) 
         {
-            $names = $vals = Array();
-            foreach ($data AS $field=>$val)
+            $names = $ivals = $vals = Array();
+            if (!($flags & FDataBase::SQL_MULINSERT))
+                $data = Array($data);
+            
+            $fixnames = false;
+            foreach ($data as $dataset)
             {
-                $names[] = '`'.$field.'`';
-                if (is_scalar($val))
+                if (!count($dataset))
+                    continue;
+                    
+                foreach ($dataset as $field => $val)
                 {
-                    if (is_bool($val))
-                        $val = (int) $val;
-                    elseif (is_string($val))
+                    if (!$fixnames)
+                        $names[] = $field;
+                    elseif (!in_array($field, $names))
+                        continue;
+                      
+                    if (is_scalar($val))
                     {
-                        if (!($flags & FDataBase::SQL_NOESCAPE) && !is_numeric($val))
-                            $val = $this->pdo->quote($val);
-                        //$val = '"'.$val.'"';
+                        if (is_bool($val))
+                            $val = (int) $val;
+                        elseif (is_string($val))
+                        {
+                            if (!($flags & FDataBase::SQL_NOESCAPE) && (!is_numeric($val) || $val[0] == '0'))
+                                $val = $this->pdo->quote($val);
+                            //$val = '"'.$val.'"';
+                        }
+                        else
+                            $val = (string) $val;
+
+                        $vals[$field] = $val;
                     }
+                    elseif (is_null($val))
+                        $vals[$field] = 'NULL';
                     else
-                        $val = (string) $val;
-
-                    $vals[] = $val;
+                        $vals[$field] = '""';
                 }
-                elseif (is_null($val))
-                    $vals[] = 'NULL';
-                else
-                    $vals[] = '""';
+                $ivals[] = implode(', ', $vals);
+                $fixnames = true;
             }
-
-            $query.='('.implode(', ', $names).') VALUES ('.implode(', ', $vals).')';
-            return $query;
+            
+            if (count($names))
+            {
+                $query.='(`'.implode('`, `', $names).'`) VALUES ('.implode('), (', $ivals).')';
+                return $query;
+            }
         }
-        else
-            return false;
+
+        return false;
     }
     
     public function update($table, Array $data, $where = '', $flags = 0)
@@ -229,7 +252,7 @@ class FDBaseQCmysql
                         $val = (int) $val;
                     elseif (is_string($val))
                     {
-                        if (!($flags & FDataBase::SQL_NOESCAPE) && !is_numeric($val))
+                        if (!($flags & FDataBase::SQL_NOESCAPE) && (!is_numeric($val) || $val[0] == '0'))
                             $val = $this->pdo->quote($val);
                         //$val = '"'.$val.'"';
                     }
@@ -281,7 +304,7 @@ class FDBaseQCmysql
                         $val = (int) $val;
                     elseif (is_string($val))
                     {
-                        if (!($flags & FDataBase::SQL_NOESCAPE) && !is_numeric($val))
+                        if (!($flags & FDataBase::SQL_NOESCAPE) && (!is_numeric($val) || $val[0] == '0'))
                             $val = $this->pdo->quote($val);
                         //$val = '"'.$val.'"';
                     }
@@ -292,6 +315,8 @@ class FDBaseQCmysql
                 }
                 elseif (is_array($val) && count($val))
                 {
+                    /*$val = array_unique($val);
+                    sort($val);*/
                     $nvals = Array();
                     foreach ($val as $id => $sub)
                     {
@@ -299,7 +324,7 @@ class FDBaseQCmysql
                             $sub = (int) $sub;
                         elseif (is_string($sub))
                         {
-                            if (!($flags & FDataBase::SQL_NOESCAPE) && !is_numeric($sub))
+                            if (!($flags & FDataBase::SQL_NOESCAPE) && (!is_numeric($val) || $val[0] == '0'))
                                 $sub = $this->pdo->quote($sub);
                             //$sub = '"'.$sub.'"';
                         }
@@ -314,7 +339,7 @@ class FDBaseQCmysql
                         $parts[] = $field.' IN ('.implode(', ', $nvals).')';
                 }
                 elseif (is_null($val))
-                    $parts[] = $field.' = NULL';
+                    $parts[] = $field.' IS NULL';
             }
             if (count($parts))
                 return 'WHERE '.implode(($flags & FDataBase::SQL_WHERE_OR) ? ' OR ' : ' AND ', $parts);
@@ -422,7 +447,7 @@ class FDBaseQCmysql
                 $val = $expr[1];
                 if ($val == 'NULL')
                     $val = 'NULL';
-                elseif (!is_numeric($val))
+                elseif (!is_numeric($val) || $val[0] == '0')
                     $val = $this->pdo->quote($val);
 
                 $out = sprintf($funcs_set[$expr[0]], $field, $val);

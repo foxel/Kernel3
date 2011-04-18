@@ -38,10 +38,13 @@ final class FHTTPInterface extends FEventDispatcher
             'IP'       => '',
             'IPInt'    => 0,
             'rootUrl'  => '',
+            'request'  => '',
             'rootDir'  => '',
             'rootFull' => '',
             'srvName'  => '',
             'srvPort'  => 80,
+            'referer'  => '',
+            'extRef'   => false,
 
             'cDomain'  => false,
             'cPrefix'  => self::DEF_COOKIE_PREFIX,
@@ -50,18 +53,36 @@ final class FHTTPInterface extends FEventDispatcher
 
         $this->pool['IP']      = $_SERVER['REMOTE_ADDR'];
         $this->pool['IPInt']   = ip2long($this->pool['IP']);
+        
+        // trick for x64/x86 compatibility
+        if ($this->pool['IPInt'] < 0)
+            $this->pool['IPInt'] = sprintf('%u', $this->pool['IPInt']);
 
         $this->pool['srvName'] = isset($_SERVER['HTTP_HOST']) ? preg_replace('#:\d+#', '', $_SERVER['HTTP_HOST']) : $_SERVER['SERVER_NAME'];
         $this->pool['srvPort'] = isset($_SERVER['SERVER_PORT']) ? (int) $_SERVER['SERVER_PORT'] : 80;
         $this->pool['rootUrl'] = 'http://'.$this->pool['srvName'].(($this->pool['srvPort'] != 80) ? $this->pool['srvPort'] : '').'/';
+        
+        $this->pool['request'] = preg_replace('#\/|\\\+#', '/', trim($_SERVER['REQUEST_URI']));
+        $this->pool['request'] = preg_replace('#^/+#s', '', $this->pool['request']);
 
         $this->pool['rootDir'] = dirname($_SERVER['PHP_SELF']);
         $this->pool['rootDir'] = preg_replace('#\/|\\\+#', '/', $this->pool['rootDir']);
 
         if ( $this->pool['rootDir'] = preg_replace('#^\/*|\/*$#', '', $this->pool['rootDir']) )
+        {
             $this->pool['rootUrl'].= $this->pool['rootDir'].'/';
+            $this->pool['request'] = preg_replace('#^\/*'.$this->pool['rootDir'].'\/+#', '', $this->pool['request']);
+        }
 
         $this->pool['rootFull'] = preg_replace(Array('#\/|\\\+#', '#\/*$#'), Array('/', ''), $_SERVER['DOCUMENT_ROOT']).$this->pool['rootDir'];
+
+        if (isset($_SERVER['HTTP_REFERER']) && ($this->pool['referer'] = trim($_SERVER['HTTP_REFERER'])))
+        {
+            if (strpos($this->pool['referer'], $this->pool['rootUrl']) === 0)
+                $this->pool['referer'] = substr($this->pool['referer'], strlen($this->pool['rootUrl']));
+            else
+                $this->pool['extRef'] = true;
+        }
 
         if (isset($_SERVER['HTTPS']) && ($_SERVER['HTTPS'] == 'on'))
             $this->pool['secure'] = true;
@@ -205,7 +226,7 @@ final class FHTTPInterface extends FEventDispatcher
                 //  so don't use it if you don't really need to
                 if ($flags & self::FILE_RFC1522)
                 {
-                    $filename = F('Str')->Str_Mime($filename);
+                    $filename = FStr::strToMime($filename);
                 }
                 elseif ($flags & self::FILE_TRICKY)
                 {
@@ -372,16 +393,25 @@ final class FHTTPInterface extends FEventDispatcher
         return false;
     }
 
-    // Sets cookie with root dir parameter (needed on sites with many copies of QF)
+    // Sets cookie with root dir parameter (needed on sites with many independent systems in folders)
     public function setCookie($name, $value = false, $expire = false, $root = false, $no_domain = false, $no_prefix = false)
     {
         if (!$root)
             $root = ($this->pool['rootDir']) ? '/'.$this->pool['rootDir'].'/' : '/';
         if (!$no_prefix)
             $name = $this->pool['cPrefix'].'_'.$name;
-        return ($no_domain)
+            
+        if ($value === false && !isset($_COOKIE[$name]))
+            return true;
+            
+        $res = ($no_domain)
             ? setcookie($name, $value, $expire, $root)
             : setcookie($name, $value, $expire, $root, $this->pool['cDomain']);
+        
+        if ($res)
+            $_COOKIE[$name] = $value;
+        
+        return $res;
     }
 
     // Redirecting function
@@ -453,7 +483,7 @@ final class FHTTPInterface extends FEventDispatcher
     // returns client signature based on browser, ip and proxy
     public function getClientSignature($level = 0)
     {
-        static $sign_parts = Array('HTTP_USER_AGENT', 'HTTP_ACCEPT_CHARSET'); //, 'HTTP_ACCEPT_ENCODING'
+        static $sign_parts = Array('HTTP_USER_AGENT'); //, 'HTTP_ACCEPT_CHARSET', 'HTTP_ACCEPT_ENCODING'
         static $psign_parts = Array('HTTP_VIA', 'HTTP_X_FORWARDED_FOR', 'HTTP_X_REAL_IP');
 
         $sign = Array();

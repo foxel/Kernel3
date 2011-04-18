@@ -120,7 +120,7 @@ class FStr
 
             $out = '';
             $in_len = strlen($string);
-            for ($i=0; $i<$in_len; $i++)
+            for ($i=0; $i<$in_len; ++$i)
             {
                 $ch = ord($string[$i]);
 
@@ -622,7 +622,7 @@ class FStr
 
         $out = '';
         $in_len = strlen($string);
-        for ($i=0; $i<$in_len; $i++)
+        for ($i=0; $i<$in_len; ++$i)
         {
             $ch = ord($string[$i]);
 

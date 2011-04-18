@@ -43,18 +43,24 @@ class FSession extends FEventDispatcher
     
     public function setDBase(FDataBase $dbo, $tbname = false)
     {
-        if (!$dbo || !$dbo->check())
+        if (!$dbo || !$dbo->check() || ($this->mode & self::MODE_STARTED))
             return false;
             
         $this->db_object = $dbo;
-        if (is_string($dbname) && $dbname)
+        if (is_string($tbname) && $tbname)
             $this->db_tbname = $tbname;
+        
+        $this->mode |= self::MODE_DBASE;
+        
+        return true;
     }
 
     public function open($mode = 0)
     {
         if ($this->mode & self::MODE_STARTED)
             return true;
+            
+        $old_mode = $this->mode;
 
         $this->mode |= $mode & (self::MODES_ALLOW);
 
@@ -70,9 +76,7 @@ class FSession extends FEventDispatcher
 
         if (!$this->SID || $this->tried || !$this->load())
         {
-            if ($this->mode & self::MODE_TRY) 
-                return false;
-            else
+            if (!($this->mode & self::MODE_TRY)) 
                 $this->create();
         }
 
@@ -98,7 +102,10 @@ class FSession extends FEventDispatcher
 
             return true;
         }
+        else
+            F('HTTP')->setCookie(self::SID_NAME);
         
+        $this->mode = $old_mode;
         return false;
     }
 
@@ -107,7 +114,7 @@ class FSession extends FEventDispatcher
         $this->tried = true;
         
         $sess = ($this->mode & self::MODE_DBASE)
-                ? $this->db_object->doSelect($this->bd_tbname, '*', Array('sid' => $this->SID) )
+                ? $this->db_object->doSelect($this->db_tbname, '*', Array('sid' => $this->SID) )
                 : FCache::get(self::CACHEPREFIX.$this->SID);
 
         if (!is_array($sess) || !$sess)
@@ -183,16 +190,16 @@ class FSession extends FEventDispatcher
 
         // if using database
         if ($this->mode & self::MODE_LOADED)
-            $this->db_object->doUpdate($this->bd_tbname, $q_arr, Array('sid' => $this->SID) );
+            $this->db_object->doUpdate($this->db_tbname, $q_arr, Array('sid' => $this->SID) );
         else
         {
             $q_arr['sid'] = $this->SID;
             $q_arr['starttime'] = F('Timer')->qTime();
-            $this->db_object->doInsert($this->bd_tbname, $q_arr, true);
+            $this->db_object->doInsert($this->db_tbname, $q_arr, true);
         }
 
         // delete old session data
-        $this->db_object->doDelete($this->bd_tbname, Array('lastused' => '< '.(F('Timer')->qTime() - self::LIFETIME)), FDataBase::SQL_USEFUNCS );
+        $this->db_object->doDelete($this->db_tbname, Array('lastused' => '< '.(F('Timer')->qTime() - self::LIFETIME)), FDataBase::SQL_USEFUNCS );
 
         return true;
     }

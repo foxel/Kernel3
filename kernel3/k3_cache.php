@@ -8,6 +8,8 @@ if (!defined('F_STARTED'))
     die('Hacking attempt');
 
 
+//define('FCACHE_USE_MEMCACHED', class_exists('Memcached'));
+    
 // caching class indeed
 class FCache
 {

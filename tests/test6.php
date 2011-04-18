@@ -10,7 +10,7 @@ if (F('GPC')->getBin('image'))
 $page = '<html><head><!--Meta-Content-Type--><title>'.F_SITE_INDEX.'</title></head>
 <body>
 <form action="'.F_SITE_INDEX.'" method="post">
- <img src="'.F_SITE_INDEX.'?image" />
+ <img src="'.F_SITE_INDEX.'?image" onclick="this.src=\''.F_SITE_INDEX.'?image&rand=\'+Math.random();" style="cursor: pointer;" title="Click to reload" />
  Enter the code: <input type="text" name="code" />
  '.(($code=F('GPC')->getString('code', FGPC::POST)) ? (F()->Captcha->check($code) ? ' >> "'.$code.'" All right!' : ' >> Wrong :(') : '').'
 </form>

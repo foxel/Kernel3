@@ -24,6 +24,7 @@ class FLNGData // extends FEventDispatcher
     private $bsize_tr   = null;
 
     private $auto_loads = Array();
+    public  $timeZone = 0;
 
     public static function getInstance()
     {
@@ -230,7 +231,7 @@ class FLNGData // extends FEventDispatcher
                 $this->tryAutoLoad($lnames[0]);
 
             $translate = Array();
-            for ($i = 1; $i<=4; $i++)
+            for ($i = 1; $i<=4; ++$i)
             {
                 $lname = $lnames[$i];
                 if ($this->privateLang($lname))
@@ -251,7 +252,7 @@ class FLNGData // extends FEventDispatcher
             $timestamp = $now;
 
         if (!is_numeric($tz))
-            $tz = 0; //(int) F('Config')->Get('time_zone', 'common', 0);
+            $tz = intval($this->timeZone); //(int) F('Config')->Get('time_zone', 'common', 0);
         else
             $tz = intval($tz);
 

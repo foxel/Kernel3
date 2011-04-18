@@ -61,6 +61,11 @@ class FTimer
     public function qTime()
     {        return $this->qTime;
     }
+
+    public function setQTime($time)
+    {
+        $this->qTime = (int) $time;
+    }
 }
 
 ?>

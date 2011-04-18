@@ -30,6 +30,9 @@ if (!defined('F_INTERNAL_ENCODING'))
 /**#@+ site root directory (can be defined before outside the kernel) */
 if (!defined('F_SITE_ROOT'))
     define('F_SITE_ROOT', dirname($_SERVER['SCRIPT_FILENAME']).DIRECTORY_SEPARATOR);
+/**#@+ directory to store logs (can be defined before outside the kernel) */
+if (!defined('F_LOGS_ROOT'))
+    define('F_LOGS_ROOT', F_SITE_ROOT);
 /**#@+ site data storing root directory (can be defined before outside the kernel) */
 if (!defined('F_DATA_ROOT'))
     define('F_DATA_ROOT', F_SITE_ROOT.'data'.DIRECTORY_SEPARATOR);
@@ -41,7 +44,7 @@ if (get_magic_quotes_runtime())
 set_time_limit(30);  // not '0' - once i had my script running for a couple of hours collecting GBytes of errors :)
 // here comes the fatal catcher :P
 register_shutdown_function(create_function('', 'if (($a = error_get_last()) && $a[\'type\'] == E_ERROR)
-    { file_put_contents(F_SITE_ROOT.\'php_fatal.log\', sprintf(\'E%d "%s" at %s:%d\', $a[\'type\'], $a[\'message\'], $a[\'file\'], $a[\'line\']));
+    { file_put_contents(F_LOGS_ROOT.\'php_fatal.log\', sprintf(\'E%d "%s" at %s:%d\', $a[\'type\'], $a[\'message\'], $a[\'file\'], $a[\'line\']));
     $i = ob_get_level(); while ($i--) @ob_end_clean(); print \'Fatal error. Sorry :(\'; }'));
 
 /**#@+
@@ -71,6 +74,7 @@ $base_modules_files = Array(
     F_KERNEL_DIR.'k3_request.php',       // kernel 3 GPC interface
     F_KERNEL_DIR.'k3_lang.php',          // kernel 3 LNG interface
     F_KERNEL_DIR.'k3_dbase.php',         // kernel 3 database interface
+    //F_KERNEL_DIR.'k3_dbobject.php',      // kernel 3 database ORM interface
     F_KERNEL_DIR.'k3_session.php',       // kernel 3 session extension
 );
 // we'll do some trick with caching base modules in one file
@@ -79,18 +83,31 @@ foreach ($base_modules_files as $fname)
     $base_modules_stats[] = filemtime($fname).'|'.filesize($fname);
 $base_modules_stats = md5(implode('|', $base_modules_stats));
 $base_modules_file  = F_KERNEL_DIR.'k3_bases-'.$base_modules_stats.'.krninc';
-if (file_exists($base_modules_file))
+/*if (extension_loaded('bcompiler') && file_exists($base_modules_file.'.bc'))
+    require_once($base_modules_file.'.bc');
+else*/if (file_exists($base_modules_file))
     require_once($base_modules_file);
 else
 {
     foreach (scandir(F_KERNEL_DIR) as $fname)
-        if (preg_match('#^k3_bases\-[0-9a-fA-F]{32}\.krninc$#', $fname))
+        if (preg_match('#^k3_bases\-[0-9a-fA-F]{32}\.krninc(\.bc)?$#', $fname))
             unlink(F_KERNEL_DIR.$fname);
     $base_modules_eval = '';
     foreach ($base_modules_files as $fname)
         $base_modules_eval.= preg_replace('#^\s*\<\?php\s*|^\s*\<\?\s*|\?\>\s*$#D', '', php_strip_whitespace($fname));
     if (file_put_contents($base_modules_file, "<?php\n".$base_modules_eval."\n?>"))
+    {
+        if (function_exists('bcompiler_write_file'))
+        {
+            $fileHandle = fopen($base_modules_file.'.bc', 'w');
+            bcompiler_write_header($fileHandle);
+            bcompiler_write_file($fileHandle, $base_modules_file); 
+            bcompiler_write_footer($fileHandle);
+            fclose($fileHandle); 
+            unset($fileHandle);
+        }
         eval($base_modules_eval);
+    }
     else
     {
         trigger_error('Kernel: Error creating base modules cache.', E_USER_WARNING);
@@ -136,12 +153,13 @@ class F extends FEventDispatcher
         $this->pool['HTTP']  = FHTTPInterface::getInstance();
         $this->pool['GPC']   = new StaticInstance('FGPC');
         $this->pool['LNG']   = FLNGData::getInstance();
-
         //$this->pool['DBase'] = new FDataBase();
         $this->classes['DBase'] = 'FDataBase';
-        //$this->classes['Session'] =
-        //$this->classes['Sess'] = 'FSession';
+        $this->classes['Session'] = 
+        $this->classes['Sess'] = 'FSession';
+        //$this->pool['DBObject'] = new StaticInstance('FDBObject');
 
+        
         set_exception_handler(Array($this, 'handleException'));
         set_error_handler(Array($this, 'logError'), E_ALL & ~(E_NOTICE | E_USER_NOTICE | E_STRICT));
 
@@ -207,7 +225,7 @@ class F extends FEventDispatcher
         if (class_exists($mod_class))
         {
             $res = method_exists($mod_class, 'getInstance')
-                ? (eval('$this->pool[$mod_name] = '.$mod_class.'::getInstance();') !== false)
+                ? ($this->pool[$mod_name] = call_user_func(Array($mod_class, 'getInstance')))
                 : ($this->pool[$mod_name] = new $mod_class());
 
             if ($res)
@@ -229,7 +247,7 @@ class F extends FEventDispatcher
      * @ignore
      */
     public function handleException(Exception $e)
-    {        $logfile = F_SITE_ROOT.'fatal.log';
+    {        $logfile = F_LOGS_ROOT.'fatal.log';
         $eName = get_class($e).(($e instanceof ErrorException) ? '['.self::$ERR_TYPES[$e->getSeverity()].']' : '');
         if ($logfile = fopen($logfile, 'ab'))
         {
@@ -239,6 +257,7 @@ class F extends FEventDispatcher
 
         FMisc::obFree();
         header ($_SERVER["SERVER_PROTOCOL"].' 503 Service Unavailable');
+        header('Content-Type: text/html; charset='.self::INTERNAL_ENCODING);
         print '<html><head><title>'.F('LNG')->lang('ERR_CRIT_PAGE', false, true).'</title></head><body><h1>'.F('LNG')->lang('ERR_CRIT_PAGE', false, true).'</h1>'.F('LNG')->lang('ERR_CRIT_MESS', false, true).'</body></html>';
     }
 
@@ -252,7 +271,7 @@ class F extends FEventDispatcher
         if ($c & ~(E_WARNING | E_USER_WARNING | E_NOTICE | E_USER_NOTICE | E_STRICT | E_DEPRECATED | E_USER_DEPRECATED))
             throw new ErrorException($m, 0, $c, $f, $l);
         if ($logfile == null)
-            $logfile = fopen(F_SITE_ROOT.'error.log', 'ab');
+            $logfile = fopen(F_LOGS_ROOT.'error.log', 'ab');
         $eName = isset(self::$ERR_TYPES[$c]) ? '['.self::$ERR_TYPES[$c].']' : '[UNKNOWN ERROR]';
         if ($logfile)
             fwrite($logfile, date('[d M Y H:i]').' '.$eName.': '.$m.'. File: '.$f.'. Line: '.$l.".\r\n".FStr::PHPDefine(array_slice(debug_backtrace(),1)).".\r\n");

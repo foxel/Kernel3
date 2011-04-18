@@ -45,6 +45,11 @@ abstract class FBaseClass
     }
 }
 
+final class FDataPool extends FBaseClass
+{
+    private function __construct(Array $data) { $this->pool = $data; }
+}
+
 abstract class FEventDispatcher extends FBaseClass
 {
     private $events = Array();
@@ -495,7 +500,7 @@ class F2DArray
         return $array;
     }
 
-    static public function keycol(&$array, $field)
+    static public function keycol(&$array, $field, $unset_key = false)
     {
         if (!is_array($array))
             return $array;
@@ -505,7 +510,11 @@ class F2DArray
             if (!is_array($val) || !isset($val[$field]))
                 $skey = 0;
             else
+            {
                 $skey = $val[$field];
+                if ($unset_key)
+                    unset($val[$field]);
+            }
 
             if (!isset($narray[$skey]))
                 $narray[$skey] = $val;
@@ -530,16 +539,41 @@ class F2DArray
         $result = Array();
 
         foreach ($array as $key => $row)
-        {
             foreach($fields as $fkey => $field)
-                if (isset($row[$field]))
-                    $result[$fkey][$key] = $row[$field];
-        }
+                $result[$fkey][$key] = (isset($row[$field]))
+                    ? $row[$field]
+                    : null;
 
         if ($get_one)
             $result = $result[0];
 
         return $result;
+    }
+    
+    static public function toVector($array, $keycol, $valcol)
+    {
+        if (!is_array($array))
+            return $array;
+        $narray = Array();
+        foreach ($array as $val)
+        {
+            if (!is_array($val))
+                $skey = 0;
+            else
+            {
+                $skey = isset($val[$keycol])
+                    ? $val[$keycol]
+                    : 0;
+                $val = isset($val[$valcol])
+                    ? $val[$valcol]
+                    : null;
+            }
+
+            if (!isset($narray[$skey]))
+                $narray[$skey] = $val;
+        }
+
+        return $narray;
     }
 
     static public function tree($array, $by_id = 'id', $by_par = 'parent', $root_id = 0, $by_lvl = 't_level')

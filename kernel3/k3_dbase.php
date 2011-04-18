@@ -1,5 +1,5 @@
 <?php
-/*
+/**
  * QuickFox kernel 3 'SlyFox' Database driver
  * Requires PHP >= 5.1.0 and PDO
  */
@@ -16,6 +16,8 @@ class FDataBase extends FEventDispatcher
     const SQL_SELECTALL = 8;
     const SQL_NOPREFIX  = 16;
     const SQL_LEFTJOIN  = 32;
+    const SQL_DISTINCT  = 64;
+    const SQL_MULINSERT = 128;
 
     private $dbDrivers = Array('mysql' => 'mysql');
     private $dbDSNType = Array('mysql' => 'mysql');
@@ -54,6 +56,8 @@ class FDataBase extends FEventDispatcher
         $this->tbPrefix = (string) $tbPrefix;
         $qcDriver = 'FDBaseQC'.$this->dbDrivers[$this->dbType];
         $this->qc = new $qcDriver($this->c);
+        
+        return true;
     }
     
     public function check()
@@ -87,6 +91,26 @@ class FDataBase extends FEventDispatcher
         return $this->doSelect ($table, $fields, $where, $other, $flags | self::SQL_SELECTALL);
     }
     
+    // multitable select
+    public function doMultitableSelect($tqueries, $other = '', $flags = 0)
+    {
+        if (!$this->c)
+            throw new FException('DB is not connected');
+
+        $ret = Array();
+        $query = $this->qc->multitableSelect($tqueries, $other, $flags);
+        if ($result = $this->query($query, true))
+        {
+            $ret = $this->fetchResult($result, $flags);
+
+            $result->closeCursor();
+
+            return $ret;
+        }
+        else
+            return null;
+    }
+    
     public function doInsert($table, Array $data, $replace = false, $flags = 0)
     {
         if (!$this->c)
@@ -100,7 +124,7 @@ class FDataBase extends FEventDispatcher
 
             //$result->closeCursor();
 
-            return $ret;
+            return $ret ? $ret : true;
         }
         else
             return null;

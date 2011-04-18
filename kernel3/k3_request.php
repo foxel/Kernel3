@@ -68,6 +68,13 @@ class FGPC
         return true;
     }
 
+    public static function getURLParams()
+    {
+        $res = Array();
+        parse_str(parse_url($_SERVER['REQUEST_URI'], PHP_URL_QUERY), $res);
+        return $res;
+    }
+
     public static function get($var_name, $from = self::GET )
     {
 
@@ -76,7 +83,8 @@ class FGPC
         if (!isset($raw[$from][$var_name]))
         {
             $svar_name = $var_name;
-            switch ($from) {
+            switch ($from) 
+            {
                 case self::GET:
                     $source =& $_GET;
                     break;

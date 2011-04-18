@@ -53,7 +53,20 @@ final class FCaptcha extends FEventDispatcher
 		$black = imagecolorallocate($img, 0, 0, 0);
         imagefilledrectangle($img, 0, 0, $width-1, $height-1, $white);
 
-        for ($i = 0; $i < $len; $i++)
+        // lines
+        if (function_exists('imageantialias'))
+            imageantialias($img, true);
+                
+        imagesetthickness($img, 1);
+        for ($i = 0; $i < 5; ++$i)
+            ($i%2)
+                ? imageline($img, rand(-10, $width + 10), 0, rand(-10, $width + 10), $height, $black)
+                : imageline($img, 0, rand(-10, $height + 10), $width, rand(-10, $height + 10), $black);
+                
+        if (function_exists('imagefilter'))
+            imagefilter($img, IMG_FILTER_SMOOTH, 50);
+
+        for ($i = 0; $i < $len; ++$i)
         {
             $c = $string[$i];
             $fx = strpos(self::FONT_CHARS, $c);
@@ -85,17 +98,10 @@ final class FCaptcha extends FEventDispatcher
 
         $backCol = imagecolorallocate($img, $backR, $backG, $backB);
 		$textCol = imagecolorallocate($img, $textR, $textG, $textB);
-		$lineCol = imagecolorallocate($img, ($textR+$backR*2)/3, ($textG+$backG*2)/3, ($textB+$backB*2)/3);
+		$lineCol = imagecolorallocate($img, ($textR+$backR*2)/3, ($textG+$backG)/2, ($textB+$backB)/2);
         imagefilledrectangle($img, 0, 0, $width-1, $height-1, $backCol);
 
-        // lines
-        if (function_exists('imageantialias'))
-            imageantialias($dest_img, true);
-                
-        for ($i = 0; $i < 5; $i++)
-            ($i%2)
-                ? imageline($img, rand(-10, $width + 10), 0, rand(-10, $width + 10), $height, $lineCol)
-                : imageline($img, 0, rand(-10, $height + 10), $width, rand(-10, $height + 10), $lineCol);
+        
 
         // periods
 		$period1 = mt_rand(750000, 1200000)/10000000;
@@ -112,14 +118,16 @@ final class FCaptcha extends FEventDispatcher
 		$ampl2 = mt_rand(330, 450)/110;
 
 		//wave distortion
-		for($x = 0; $x < $width; $x++)
-        for($y = 0; $y < $height; $y++)
+		for($x = 0; $x < $width; ++$x)
+        for($y = 0; $y < $height; ++$y)
         {
             $sx = $x+(sin($x*$period1 + $phase1)+sin($y*$period3 + $phase3))*$ampl1;
             $sy = $y+(sin($x*$period2 + $phase2)+sin($y*$period4 + $phase4))*$ampl2;
 
-            if ($sx < 0 || $sy < 0 || $sx >= $width-1 || $sy >= $height-1)
-                continue;
+            $sx = max(0, min($width-1, $sx));
+            $sy = max(0, min($height-1, $sy));
+            //if ($sx < 0 || $sy < 0 || $sx >= $width-1 || $sy >= $height-1)
+            //    continue;
 
             $color_0  = imagecolorat($imgi, $sx, $sy) & 0xFF;
             $color_x  = imagecolorat($imgi, $sx+1, $sy) & 0xFF;
@@ -137,8 +145,9 @@ final class FCaptcha extends FEventDispatcher
                 $color_y*$frsx1*$frsy +
                 $color_xy*$frsx*$frsy;
 
-            if ($newcolor > 255)
-                $newcolor = 255;
+            if ($newcolor >= 255)
+                continue;
+                
             $newcolor = $newcolor/255;
             $newcolor0 = 1 - $newcolor;
             
@@ -168,15 +177,21 @@ final class FCaptcha extends FEventDispatcher
     
     public function check($string, $check_for = false)
     {
-        if (!$check_for && !($check_for = FSession()->captchaString))
+        if (!$string)
             return false;
+        
+        if (!$check_for)
+        {
+            $check_for = FSession()->captchaString;
+            unset(FSession()->captchaString);
+        }
         else
             $check_for = preg_replace('#[^'.self::FONT_CHARS.'\s]#', '', strtolower(trim($check_for)));
             
         $check_for = preg_replace('#\s+#', ' ', $check_for);
         $string = preg_replace('#\s+#', ' ', strtolower(trim($string)));
         
-        return ($string == $check_for);
+        return ($string && $string == $check_for);
     }
 
     public function _Call($string = false, $bgcolor = 0xffffff, $fgcolor = 0, $no_session = false)
@@ -195,7 +210,7 @@ final class FCaptcha extends FEventDispatcher
         $chars = self::ALLOW_CHARS;
         do {
             $string = '';
-            for($i = 0; $i < $length; $i++)
+            for($i = 0; $i < $length; ++$i)
                 $string.= $chars[mt_rand(0, strlen(self::ALLOW_CHARS)-1)];
         } while (preg_match('/cp|cb|ck|c6|c9|rn|rm|mm|co|do|cl|db|qp|qb|dp|ww/', $string));
         

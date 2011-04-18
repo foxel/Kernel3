@@ -345,7 +345,7 @@ class FMetaTar extends FMetaFile
         {
             $val = $header[$key];
             $len = strlen($val);
-            for ($i=0; $i<$len; $i++)
+            for ($i=0; $i<$len; ++$i)
                 $csumm += ord(substr($val, $i, 1));
         }
         $header['chsum'] = FStr::fixLength(decoct($csumm), 6, '0', STR_PAD_LEFT)." \x00";
