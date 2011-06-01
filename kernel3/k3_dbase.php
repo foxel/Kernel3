@@ -218,19 +218,19 @@ class FDataBase extends FEventDispatcher
     }
 }
 
-class FDBQuery
+class FDBSelect
 {
     const JOIN_INNER = 0;
     const JOIN_LEFT  = 1;
     const JOIN_RIGNT = 2;
     const JOIN_CROSS = 3;
 
-    private $tables = array();
-    private $fields = array();
-    private $where  = array();
-    private $joins  = array();
-    private $joints = array();
-    private $order  = array();
+    protected $tables = array();
+    protected $fields = array();
+    protected $where  = array();
+    protected $joins  = array();
+    protected $joints = array();
+    protected $order  = array();
     
     public function __construct($tableName, $tableAlias = false, array $fields = null)
     {
@@ -238,10 +238,6 @@ class FDBQuery
             $tableAlias = 't'.count($this->tables);
 
         $this->tables[$tableAlias] = (string) $tableName;
-        $this->fields[$tableAlias] = array();
-        $this->where[$tableAlias]  = array();
-        $this->joins[$tableAlias]  = array();
-        $this->order[$tableAlias]  = array();
 
         if (!is_null($fields))
             $this->columns($fields, $tableAlias);
@@ -255,11 +251,8 @@ class FDBQuery
             $tableAlias = 't'.count($this->tables);
 
         $this->tables[$tableAlias] = (string) $tableName;
-        $this->fields[$tableAlias] = array();
-        $this->where[$tableAlias]  = array();
         $this->joins[$tableAlias]  = array();
         $this->joints[$tableAlias] = (int) $joinType;
-        $this->order[$tableAlias]  = array();
 
         if (is_array($joinOn) && count($joinOn))
         {
@@ -284,14 +277,14 @@ class FDBQuery
     {
         $this->_determineTableAlias($tableAlias);
 
-        if (FStr::isWord($column)) {
-            if ($alias && FStr::isWord($alias))
-                $this->fields[$tableAlias][$alias] = (string) $column;
-            else
-                $this->fields[$tableAlias][] = (string) $column;
-        }
+        $expr = (FStr::isWord($column))
+            ? array($tableAlias, $column)
+            : (string) $column;
+
+        if (FStr::isWord($alias))
+            $this->fields[$alias] = $expr;
         else
-            $this->fields[0][] = (string) $column;
+            $this->fields[] = $expr;
         
         return $this;
     }
@@ -304,18 +297,34 @@ class FDBQuery
         return $this;
     }
 
-    public function where($where, $value = null, $tableAlias = false)
+    public function where($where, $value = null, $tableAlias = false, $whereOr = false)
     {
+        if (is_array($where))
+        {
+            foreach ($where as $key => &$value)
+                if (is_string($key))
+                    $this->where($key, $value, $tableAlias, $whereOr);
+                else
+                    $this->where($value, false, $tableAlias, $whereOr);
+
+            return $this;
+        }
+
         $this->_determineTableAlias($tableAlias);
 
         if (FStr::isWord($where))
-            $this->where[$tableAlias][$where] = $value;
+            $this->where[] = array($tableAlias, $where, $value, (boolean) $whereOr);
         elseif (preg_match('#(?<!\w|\\\\)\?#', $where))
-            $this->where[0][] = array($where, $value);
+            $this->where[] = array($where, $value, (boolean) $whereOr);
         else
-            $this->where[0][] = $where;
+            $this->where[] = array((string) $where, (boolean) $whereOr);
 
         return $this;
+    }
+
+    public function whereOr($where, $value = null, $tableAlias = false)
+    {
+        return $this->where($where, $value, $tableAlias, true);
     }
 
     public function order($order, $desc = false, $tableAlias = false)
@@ -323,9 +332,9 @@ class FDBQuery
         $this->_determineTableAlias($tableAlias);
 
         if (FStr::isWord($order)) // clumn given
-            $this->order[$tableAlias][$order] = (boolean) $desc;
+            $this->order[] = array($tableAlias, $order, (boolean) $desc);
         else
-            $this->order[0][] = $order;
+            $this->order[] = $order;
 
         return $this;
     }
@@ -334,19 +343,17 @@ class FDBQuery
     {
         $this->_determineTableAlias($tableAlias);
 
-        if (FStr::isWord($group)) // clumn given
-            $this->group[$tableAlias][] = $group;
+        if (FStr::isWord($group)) // column given
+            $this->group[] = array($tableAlias, $group);
         else
-            $this->group[0][] = $group;
+            $this->group[] = (string) $group;
 
         return $this;
     }
 
     protected function _determineTableAlias(&$tableAlias)
     {
-        if (is_null($tableAlias) || $tableAlias == 0)
-            $tableAlias = 0;
-        elseif (!$tableAlias)
+        if (!$tableAlias)
             list($tableAlias) = array_keys($this->tables);
         else
             $tableAlias = (string) $tableAlias;
@@ -354,4 +361,5 @@ class FDBQuery
         return $tableAlias;
     }
 }
+
 ?>
