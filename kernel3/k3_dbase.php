@@ -216,6 +216,142 @@ class FDataBase extends FEventDispatcher
 
         return $ret;
     }
+}
 
+class FDBQuery
+{
+    const JOIN_INNER = 0;
+    const JOIN_LEFT  = 1;
+    const JOIN_RIGNT = 2;
+    const JOIN_CROSS = 3;
+
+    private $tables = array();
+    private $fields = array();
+    private $where  = array();
+    private $joins  = array();
+    private $joints = array();
+    private $order  = array();
+    
+    public function __construct($tableName, $tableAlias = false, array $fields = null)
+    {
+        if (!$tableAlias || !is_string($tableAlias))
+            $tableAlias = 't'.count($this->tables);
+
+        $this->tables[$tableAlias] = (string) $tableName;
+        $this->fields[$tableAlias] = array();
+        $this->where[$tableAlias]  = array();
+        $this->joins[$tableAlias]  = array();
+        $this->order[$tableAlias]  = array();
+
+        if (!is_null($fields))
+            $this->columns($fields, $tableAlias);
+
+        return $this;
+    }
+
+    public function join($tableName, $joinOn, $tableAlias = false, array $fields = null, $joinType = self::JOIN_INNER)
+    {
+        if (!$tableAlias || !is_string($tableAlias))
+            $tableAlias = 't'.count($this->tables);
+
+        $this->tables[$tableAlias] = (string) $tableName;
+        $this->fields[$tableAlias] = array();
+        $this->where[$tableAlias]  = array();
+        $this->joins[$tableAlias]  = array();
+        $this->joints[$tableAlias] = (int) $joinType;
+        $this->order[$tableAlias]  = array();
+
+        if (is_array($joinOn) && count($joinOn))
+        {
+            foreach ($joinOn as $field => &$toField)
+                $this->joins[$tableAlias][$field] = $toField;
+        }
+        elseif (is_string($joinOn))
+            $this->joins[$tableAlias] = $joinOn;
+
+        if (!is_null($fields))
+            $this->columns($fields, $tableAlias);
+
+        return $this;
+    }
+
+    public function joinLeft($tableName, $joinOn, $tableAlias = false, array $fields = null)
+    {
+        return $this->join($tableName, $joinOn, $tableAlias, $fields, self::JOIN_LEFT)
+    }
+    
+    public function column($column, $alias = false, $tableAlias = false)
+    {
+        $this->_determineTableAlias($tableAlias);
+
+        if (FStr::isWord($column)) {
+            if ($alias && FStr::isWord($alias))
+                $this->fields[$tableAlias][$alias] = (string) $column;
+            else
+                $this->fields[$tableAlias][] = (string) $column;
+        }
+        else
+            $this->fields[0][] = (string) $column;
+        
+        return $this;
+    }
+
+    public function columns(array $columns, $tableAlias = false)
+    {
+        foreach ($columns as $key => &$val)
+            $this->column($val, is_string($key) ? $key : false, $tableAlias);
+
+        return $this;
+    }
+
+    public function where($where, $value = null, $tableAlias = false)
+    {
+        $this->_determineTableAlias($tableAlias);
+
+        if (FStr::isWord($where))
+            $this->where[$tableAlias][$where] = $value;
+        elseif (preg_match('#(?<!\w|\\\\)\?#', $where))
+            $this->where[0][] = array($where, $value);
+        else
+            $this->where[0][] = $where;
+
+        return $this;
+    }
+
+    public function order($order, $desc = false, $tableAlias = false)
+    {
+        $this->_determineTableAlias($tableAlias);
+
+        if (FStr::isWord($order)) // clumn given
+            $this->order[$tableAlias][$order] = (boolean) $desc;
+        else
+            $this->order[0][] = $order;
+
+        return $this;
+    }
+
+    public function group($group, $tableAlias = false)
+    {
+        $this->_determineTableAlias($tableAlias);
+
+        if (FStr::isWord($group)) // clumn given
+            $this->group[$tableAlias][] = $group;
+        else
+            $this->group[0][] = $group;
+
+        return $this;
+    }
+
+    protected function _determineTableAlias(&$tableAlias)
+    {
+        if (is_null($tableAlias) || $tableAlias == 0)
+            $tableAlias = 0;
+        elseif (!$tableAlias)
+            list($tableAlias) = array_keys($this->tables);
+        else
+            $tableAlias = (string) $tableAlias;
+
+        return $tableAlias;
+    }
 }
 ?>

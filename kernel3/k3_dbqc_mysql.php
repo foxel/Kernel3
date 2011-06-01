@@ -5,7 +5,8 @@ class FDBaseQCmysql
     private $pdo = null;
 
     public function __construct(PDO $pdo)
-    {        static $charSets = Array(); 
+    {        // html charset transformation table TODO: filling
+        static $charSets = Array(); 
         
         // html charset names to SQL ones converting
         $charset = strtr(strtolower(F_INTERNAL_ENCODING), Array('-' => '', 'windows' => 'cp'));
@@ -14,7 +15,12 @@ class FDBaseQCmysql
             : $charset;
 
         $this->pdo = $pdo;
-        try { $pdo->exec('set names '.$charset); } catch (PDOException $e) {};
+        try
+        {
+            $pdo->exec('set names '.$charset);
+            $pdo->exec('set time_zone = \'+0:00\'');
+        }
+        catch (PDOException $e) {};
     }
 
     public function simpleSelect($table, $fields = Array(), $where = '', $other = '', $flags = 0)
