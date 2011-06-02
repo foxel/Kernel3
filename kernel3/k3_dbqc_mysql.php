@@ -23,14 +23,149 @@ class FDBaseQCmysql
         catch (PDOException $e) {};
     }
 
+    public function calcRowsQuery()
+    {
+        return 'SELECT FOUND_ROWS();';
+    }
+
+    public function parseDBSelect(array $selectInfo, $flags = 0)
+    {
+        static $joinTypes = array(
+            FDBSelect::JOIN_INNER => ' INNER JOIN ',
+            FDBSelect::JOIN_LEFT  => ' LEFT JOIN ',
+            FDBSelect::JOIN_RIGNT => ' RIGNT JOIN ',
+            FDBSelect::JOIN_CROSS => ' CROSS JOIN ',
+            );
+        
+        if (!isset($selectInfo['tables']) || !is_array($selectInfo['tables']))
+            return '';
+        
+        $query = 'SELECT ';
+        if ($flags & FDataBase::SQL_DISTINCT)
+            $query.= 'DISTINCT ';
+        if ($flags & FDataBase::SQL_CALCROWS)
+            $query.= 'SQL_CALC_FOUND_ROWS ';
+
+        // fields
+        if (isset($selectInfo['fields']) && is_array($selectInfo['fields']))
+        {
+            $fields = array();
+            foreach ($selectInfo['fields'] as $key => $val)
+            {
+                if ($val instanceof FDBSelect)
+                    $field = '('.$val->toString().')';
+                elseif (is_array($val))
+                {
+                    $field = (string) $val[1];
+                    if (FStr::isWord($field))
+                        $field = '`'.$field.'`';
+                    if ($val[0])
+                        $field = $val[0].'.'.$field;
+                }
+                else
+                    $field = '('.strval($val).')';
+                
+                $fields[] = (is_string($key))
+                    ? $field.' as `'.$key.'`'
+                    : $field;
+            }
+            if (count($fields))
+                $query.= implode(', ', $fields);
+            else
+                $query.= ' * ';
+        }
+        else
+            $query.= ' * ';
+        
+        // FROM
+        $tables = '';
+        foreach ($selectInfo['tables'] as $tableAlias => $tableName)
+        {
+            $table = (FStr::isWord($tableName))
+                ? '`'.$tableName.'` as '.$tableAlias
+                : '('.$tableName.') as '.$tableAlias;
+            
+            if (!$tables)
+                $tables = $table;
+            elseif (isset($selectInfo['joins']) && isset($selectInfo['joins'][$tableAlias]))
+            {
+                $joinOn = array();
+                foreach($selectInfo['joins'][$tableAlias] as $field => $toField)
+                {
+                    if (is_string($field)) 
+                    {
+                        $joinOn[] = is_array($toField)
+                            ? $tableAlias.'.`'.$field.'` = '.$toField[0].'.`'.$toField[1].'`'
+                            : $tableAlias.'.`'.$field.'` = '.$toField;
+                    }
+                    else
+                        $joinOn[] = (string) $toField;
+                }
+                $tables = '('.$tables.')'.$joinTypes[$selectInfo['joints'][$tableAlias]].$table.' ON ('.implode(', ', $joinOn).')';
+            }
+            else
+                $tables.= ', '.$table;
+        }
+        $query.= ' FROM '.$tables;
+        
+        // WHERE    
+        if (isset($selectInfo['where']) && is_array($selectInfo['where']) && $where = $this->_parseWhereNew($selectInfo['where'], $flags))
+            $query.= ' WHERE '.$where;
+
+        // GROUP
+        if (isset($selectInfo['group']) && is_array($selectInfo['group']) && $parts = $selectInfo['group'])
+        {
+            $group = array();
+            foreach($parts as $part)
+                if (is_array($part))
+                {
+                    $field = '`'.$part[1].'`';
+                    if ($part[0])
+                        $field = $part[0].'.'.$field;
+                    $group[] = $field;
+                }
+                else
+                    $group[] = '('.$part.')';
+            if (count($group))
+                $query.= ' GROUP BY '.implode(', ', $group);
+        }
+
+        // ORDER
+        if (isset($selectInfo['order']) && is_array($selectInfo['order']) && $parts = $selectInfo['order'])
+        {
+            $order = array();
+            foreach($parts as $part)
+                if (is_array($part))
+                {
+                    $field = '`'.$part[1].'`';
+                    if ($part[0])
+                        $field = $part[0].'.'.$field;
+                    $order[] = $field.($part[2] ? ' DESC' : ' ASC');
+                }
+                else
+                    $order[] = '('.$part.')';
+            if (count($order))
+                $query.= ' ORDER BY '.implode(', ', $order);
+        }
+        
+        // LIMIT
+        if (isset($selectInfo['limit']) && is_array($selectInfo['limit']) && $limit = $selectInfo['limit'])
+            $query.= ' LIMIT '.($limit[1] ? $limit[1].', ' : '').$limit[0];
+    
+        return $query;
+    }
+    
     public function simpleSelect($table, $fields = Array(), $where = '', $other = '', $flags = 0)
     {
-        $where = $this->_parseWhere($where, $flags);
+        if ($where = $this->_parseWhere($where, $flags))
+            $where = 'WHERE '.$where;
         $other = $this->_parseOther($other, $flags);
 
         $query = 'SELECT ';
         if ($flags & FDataBase::SQL_DISTINCT)
             $query.= 'DISTINCT ';
+        if ($flags & FDataBase::SQL_CALCROWS)
+            $query.= 'SQL_CALC_FOUND_ROWS ';
 
         if (is_array($fields)) {
             if (count($fields))
@@ -155,7 +290,7 @@ class FDBaseQCmysql
             }
 
             if ($where = $this->_parseWhere($params['where'], $params['flags'] | $inh_flags, $tl))
-                $qc_where[] = '('.preg_replace('#^WHERE\s#i', '', $where).')';
+                $qc_where[] = '('.$where.')';
             $ti++;
         }
 
@@ -174,7 +309,13 @@ class FDBaseQCmysql
         else
             $qc_order = '';
 
-        $query ='SELECT '.$qc_fields.' FROM '.$qc_tables.' '.$qc_where.' '.$qc_order.' '.strval($other);
+        $query = 'SELECT ';
+        if ($flags & FDataBase::SQL_DISTINCT)
+            $query.= 'DISTINCT ';
+        if ($flags & FDataBase::SQL_CALCROWS)
+            $query.= 'SQL_CALC_FOUND_ROWS ';
+
+        $query.= $qc_fields.' FROM '.$qc_tables.' '.$qc_where.' '.$qc_order.' '.strval($other);
 
         return $query;
     }
@@ -240,7 +381,9 @@ class FDBaseQCmysql
     
     public function update($table, Array $data, $where = '', $flags = 0)
     {
-        $where = $this->_parseWhere($where, $flags);
+        if ($where = $this->_parseWhere($where, $flags))
+            $where = 'WHERE '.$where;
+
 
         $query = 'UPDATE `'.$table.'` SET ';
 
@@ -281,7 +424,8 @@ class FDBaseQCmysql
     
     public function delete($table, $where = '', $flags = 0)
     {
-        $where = $this->_parseWhere($where, $flags);
+        if ($where = $this->_parseWhere($where, $flags))
+            $where = 'WHERE '.$where;
 
         $query = 'DELETE FROM `'.$table.'` '.$where;
 
@@ -348,19 +492,102 @@ class FDBaseQCmysql
                     $parts[] = $field.' IS NULL';
             }
             if (count($parts))
-                return 'WHERE '.implode(($flags & FDataBase::SQL_WHERE_OR) ? ' OR ' : ' AND ', $parts);
+                return implode(($flags & FDataBase::SQL_WHERE_OR) ? ' OR ' : ' AND ', $parts);
             else
-                return 'WHERE false';
+                return 'false';
         }
         elseif (empty($tbl_pref))
         {
             $where = trim(strval($where));
-            if (!preg_match('#^WHERE\s#i', $where))
-                $where = 'WHERE '.$where;
+            $where = preg_replace('#^WHERE\s+#i', '', $where);
             return $where;
         }
         else
             return '';
+    }    
+    
+    private function _parseWhereNew(array $where, $flags = 0)
+    {
+        if (empty($where))
+            return '';
+
+        $string = '';
+        foreach ($where AS $part)
+        {
+            $delim = array_pop($part) ? ' OR '
+                : ' AND ';
+            $val   = array_pop($part);
+            $field = array_pop($part);
+            $tblPref = array_pop($part);
+            
+            if (!is_null($field))
+            {
+                if (!is_null($tblPref))
+                {
+                    $field = '`'.$field.'`';
+                    if ($tblPref)
+                        $field = $tblPref.'.'.$field;
+                }
+
+                if (($flags & FDataBase::SQL_USEFUNCS) && ($part = $this->_parseFieldFunc($field, $val, true)))
+                    $string.= ($string ? '('.$string.')'.$delim : '').$part;
+                elseif (is_scalar($val))
+                {
+                    if (is_bool($val))
+                        $val = (int) $val;
+                    elseif (is_string($val))
+                    {
+                        if (!($flags & FDataBase::SQL_NOESCAPE) && (!is_numeric($val) || $val[0] == '0'))
+                            $val = $this->pdo->quote($val);
+                        //$val = '"'.$val.'"';
+                    }
+                    else
+                        $val = (string) $val;
+
+                    $part = (is_null($tblPref))
+                        ? preg_replace('#(?<!\w|\\\\)\?#', $val, $field)
+                        : $field.' = '.$val;
+                    $string.= ($string ? '('.$string.')'.$delim : '').$part;
+                }
+                elseif (is_array($val) && count($val))
+                {
+                    /*$val = array_unique($val);
+                    sort($val);*/
+                    $nvals = Array();
+                    foreach ($val as $id => $sub)
+                    {
+                        if (is_bool($sub))
+                            $sub = (int) $sub;
+                        elseif (is_string($sub))
+                        {
+                            if (!($flags & FDataBase::SQL_NOESCAPE) && (!is_numeric($val) || $val[0] == '0'))
+                                $sub = $this->pdo->quote($sub);
+                            //$sub = '"'.$sub.'"';
+                        }
+                        elseif (is_null($sub))
+                            $sub = 'NULL';
+
+                        if (is_scalar($sub))
+                            $nvals[$id] = $sub;
+                    }
+
+                    if (count($nvals))
+                    {
+                        $part = (is_null($tblPref))
+                            ? preg_replace('#(?<!\w|\\\\)\?#', implode(', ', $nvals), $field)
+                            : $field.' IN ('.implode(', ', $nvals).')';
+                        $string.= ($string ? '('.$string.')'.$delim : '').$part;
+                    }
+                }
+                elseif (is_null($val) && !is_null($tblPref))
+                    $string.= ($string ? '('.$string.')'.$delim : '').$field.' IS NULL';
+            }
+            else
+                $string.= ($string ? '('.$string.')'.$delim : '').$val;
+            
+        }
+
+        return $string;
     }
 
     // constructs simple ORDER and LIMIT
