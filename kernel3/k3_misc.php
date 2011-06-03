@@ -1,13 +1,16 @@
 <?php
-/*
+/**
  * QuickFox kernel 3 'SlyFox' misc file
  * Provides some basic functionality
  * Requires PHP >= 5.1.0
+ * @package kernel3
+ * @subpackage core
  */
 
 if (!defined('F_STARTED'))
     die('Hacking attempt');
 
+/** base kernel class */
 abstract class FBaseClass
 {    protected $pool = Array();
 
@@ -45,11 +48,13 @@ abstract class FBaseClass
     }
 }
 
-final class FDataPool extends FBaseClass
+/** data pool class for quick storing read-only data */
+class FDataPool extends FBaseClass 
 {
     private function __construct(Array $data) { $this->pool = $data; }
 }
 
+/** basic event dispatcher class */
 abstract class FEventDispatcher extends FBaseClass
 {
     private $events = Array();
@@ -121,6 +126,7 @@ abstract class FEventDispatcher extends FBaseClass
     }
 }
 
+/** basic data streaming abstraction class */
 abstract class FDataStream extends FBaseClass
 {    abstract public function open($mode = 'rb');
     abstract public function close();
@@ -135,6 +141,7 @@ abstract class FDataStream extends FBaseClass
     public function mtime() { return time(); }
 }
 
+/** file data streaming */
 class FFileStream extends FDataStream
 {
     private $stream = null;
@@ -150,6 +157,7 @@ class FFileStream extends FDataStream
     public function mtime() { return filemtime($this->filename); }
 }
 
+/** string data streaming */
 class FStringStream extends FDataStream
 {
     private $string = null;
@@ -182,6 +190,7 @@ class FStringStream extends FDataStream
     }
 }
 
+/** special class to represent class with static methods as object */
 final class StaticInstance
 {
     private $c = null;
@@ -207,6 +216,7 @@ final class StaticInstance
     }
 }
 
+/** special null object for object actions error handling */
 final class FNullObject
 {    private $message = '';
 
@@ -224,6 +234,7 @@ class FException extends Exception
 }
 
 
+/** collection of misc functions used all over the kernel */
 final class FMisc
 {
     const DF_PLAIN = 0;
@@ -469,6 +480,7 @@ final class FMisc
 FMisc::initCore();
 
 
+/** 2D array parsing functions collection */
 class F2DArray
 {
     private function __construct() {}

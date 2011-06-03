@@ -1,8 +1,9 @@
 <?php
-
-// -------------------------------------------------------------------------- \\
-// QuickFox kernel 2 parser classes                                           \\
-// -------------------------------------------------------------------------- \\
+/**
+ * QuickFox kernel 3 parser classes
+ * @package kernel3
+ * @subpackage extra
+ */
 
 // Simple InUSE Check
 if ( !defined('F_STARTED') )

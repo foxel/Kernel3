@@ -3,6 +3,7 @@
  * QuickFox kernel 3 'SlyFox' main file
  * Requires PHP >= 5.1.0
  * @package kernel3
+ * @subpackage core
  */
 
 if (!defined('STARTED'))
@@ -64,7 +65,11 @@ set_error_handler(create_function('$c, $m, $f, $l', 'throw new ErrorException($m
     E_ALL & ~(E_NOTICE | E_WARNING | E_USER_NOTICE | E_USER_WARNING | E_STRICT | E_DEPRECATED | E_USER_DEPRECATED));
 
 
-// includes
+
+/**#@+
+ * @internal this will build a list of base includes to include in one file
+ * @ignore
+ */
 $base_modules_files = Array(
     F_KERNEL_DIR.'k3_misc.php',          // kernel 3 classes and functions library
     F_KERNEL_DIR.'k3_timer.php',         // kernel 3 basic classes
@@ -74,7 +79,6 @@ $base_modules_files = Array(
     F_KERNEL_DIR.'k3_request.php',       // kernel 3 GPC interface
     F_KERNEL_DIR.'k3_lang.php',          // kernel 3 LNG interface
     F_KERNEL_DIR.'k3_dbase.php',         // kernel 3 database interface
-    //F_KERNEL_DIR.'k3_dbobject.php',      // kernel 3 database ORM interface
     F_KERNEL_DIR.'k3_session.php',       // kernel 3 session extension
 );
 // we'll do some trick with caching base modules in one file
@@ -83,9 +87,9 @@ foreach ($base_modules_files as $fname)
     $base_modules_stats[] = filemtime($fname).'|'.filesize($fname);
 $base_modules_stats = md5(implode('|', $base_modules_stats));
 $base_modules_file  = F_KERNEL_DIR.'k3_bases-'.$base_modules_stats.'.krninc';
-/*if (extension_loaded('bcompiler') && file_exists($base_modules_file.'.bc'))
+if (extension_loaded('bcompiler') && file_exists($base_modules_file.'.bc'))
     require_once($base_modules_file.'.bc');
-else*/if (file_exists($base_modules_file))
+elseif (file_exists($base_modules_file))
     require_once($base_modules_file);
 else
 {
@@ -117,6 +121,7 @@ else
     unset($base_modules_eval);
 }
 unset($base_modules_files, $base_modules_stats, $base_modules_file);
+/**#@+*/
 
 /**
  * the main kernel class
@@ -177,7 +182,7 @@ class F extends FEventDispatcher
 
     /** This method is used to access the kernel from any context (as it is a static method).
      * @return object Returns module object (if $name is defined) or kernel root object.
-     * @param string $name Name of the kernel module to access
+     * @param string $name Name of the kernel module to access. If empty - kernel object returned
      */
     public static function kernel($name = null)
     {        if (!self::$self)
@@ -189,7 +194,7 @@ class F extends FEventDispatcher
 
     /** Tests if module with given name is accessable
      * @return bool
-     * @param string $name
+     * @param string $name Name of module to ping
      */
     public function ping($name)
     {
@@ -198,7 +203,7 @@ class F extends FEventDispatcher
 
     /** Loads and initializes $mod_name module
      * @return bool
-     * @param string $mod_name
+     * @param string $mod_name Name of module to run
      */
     public function runModule($mod_name)
     {
@@ -279,7 +284,7 @@ class F extends FEventDispatcher
 
     /** Handles accessing to modules in F()->module form
      * @return object
-     * @param string $name
+     * @param string $name Name of module to access
      */
     public function __get($name)
     {        if (isset($this->pool[$name]))
@@ -291,7 +296,7 @@ class F extends FEventDispatcher
     }
 
     /** Handles calling modules like functions
-     * Calls '_Call' method of selected module
+     * Calls '_Call' method of '$name' module
      * @return mixed
      * @param string $name
      * @param array $arguments

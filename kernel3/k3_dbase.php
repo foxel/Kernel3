@@ -2,6 +2,8 @@
 /**
  * QuickFox kernel 3 'SlyFox' Database driver
  * Requires PHP >= 5.1.0 and PDO
+ * @package kernel3
+ * @subpackage database
  */
 
 

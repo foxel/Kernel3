@@ -1,8 +1,10 @@
 <?php
-/*
+/**
  * QuickFox kernel 3 'SlyFox' Cptcha generating module
  * Requires PHP >= 5.1.0, GD2
  * Thanks to http://www.captcha.ru/
+ * @package kernel3
+ * @subpackage extra
  */
 
 if (!defined('F_STARTED'))

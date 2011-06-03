@@ -1,7 +1,8 @@
 <?php
-
 /**
  * QuickFox kernel 3 sendmail control interface
+ * @package kernel3
+ * @subpackage extra
  */
 
 if (!defined('F_STARTED'))

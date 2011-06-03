@@ -1,7 +1,9 @@
 <?php
-/*
+/**
  * QuickFox kernel 3 'SlyFox' HTTP interface
  * Requires PHP >= 5.1.0
+ * @package kernel3
+ * @subpackage core
  */
 
 

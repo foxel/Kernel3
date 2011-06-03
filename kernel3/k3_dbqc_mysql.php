@@ -1,5 +1,12 @@
 <?php
+/**
+ * QuickFox kernel 3 'SlyFox' Database Query constructor for MySQL DB
+ * Requires PHP >= 5.1.0 and PDO
+ * @package kernel3
+ * @subpackage database
+ */
 
+ 
 class FDBaseQCmysql
 {
     private $pdo = null;
