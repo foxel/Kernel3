@@ -23,7 +23,7 @@ class FMail
     public function __construct($subject, $from_name = false, $from_addr = false)
     {
         if (!FStr::isEmail($from_addr))
-            $from_addr = 'no-reply@'.F('HTTP')->srvName;
+            $from_addr = 'no-reply@'.F()->HTTP->srvName;
 
         $this->send_to = Array();
         $this->copy_to = Array();
@@ -115,7 +115,7 @@ class FMail
 
         $m_headers = Array(
             'From: '.$m_from,
-            'Message-ID: <'.md5(uniqid(time())).'@'.F('HTTP')->srvName.'>',
+            'Message-ID: <'.md5(uniqid(time())).'@'.F()->HTTP->srvName.'>',
             'MIME-Version: 1.0',
             'Date: '.date('r', time()),
             'X-Priority: 3',

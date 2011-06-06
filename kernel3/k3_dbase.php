@@ -225,7 +225,7 @@ class FDataBase extends FEventDispatcher
         if (!$query)
             return false;
 
-        $start_time = F('Timer')->MicroTime();
+        $start_time = F()->Timer->MicroTime();
 
         $this->qResult = null;
 
@@ -244,7 +244,7 @@ class FDataBase extends FEventDispatcher
             throw new FException('SQL Error '.$err[0].' ('.$this->dbType.' '.$err[1].'): '.$err[2]);
         }
 
-        $query_time = F('Timer')->MicroTime() - $start_time;
+        $query_time = F()->Timer->MicroTime() - $start_time;
 
         $this->queriesCount++;
         $this->queriesTime += $query_time;
@@ -349,7 +349,17 @@ class FDBSelect
         if (is_array($joinOn) && count($joinOn))
         {
             foreach ($joinOn as $field => &$toField)
-                $this->joins[$tableAlias][$field] = $toField;
+            {
+                if (FStr::isWord($field))
+                {
+                    if (is_string($toField) && FStr::isWord($toField))
+                        $this->joins[$tableAlias][$field] = array($this->_determineTableAlias(), $toField);
+                    else
+                        $this->joins[$tableAlias][$field] = $toField;
+                }
+                else
+                    $this->joins[$tableAlias][] = $toField;
+            }
         }
         elseif (is_string($joinOn))
             $this->joins[$tableAlias] = $joinOn;
@@ -410,7 +420,12 @@ class FDBSelect
         $this->_determineTableAlias($tableAlias);
 
         if (FStr::isWord($where))
+        {
+            if (isset($this->fields[$where]) && is_array($this->fields[$where]))
+                list($tableAlias, $where) = $this->fields[$where];
+                
             $this->where[] = array($tableAlias, $where, $value, (boolean) $whereOr);
+        }
         elseif (preg_match('#(?<!\w|\\\\)\?#', $where))
             $this->where[] = array($where, $value, (boolean) $whereOr);
         else
@@ -493,8 +508,11 @@ class FDBSelect
         return $this->fetch(self::FETCH_ONE, $add_params);
     }
     
-    protected function _determineTableAlias(&$tableAlias)
+    protected function _determineTableAlias(&$tableAlias = false)
     {
+        if (is_null($tableAlias))
+            return null;
+            
         if (!$tableAlias)
             list($tableAlias) = array_keys($this->tables);
         else

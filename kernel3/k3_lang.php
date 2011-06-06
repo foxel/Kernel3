@@ -44,7 +44,7 @@ class FLNGData // extends FEventDispatcher
 
         function FLang($key, $params = false, $load = false)
         {
-            return F('LNG')->lang($key, $params, $load);
+            return F()->LNG->lang($key, $params, $load);
         }
     }
 
@@ -83,7 +83,7 @@ class FLNGData // extends FEventDispatcher
         if ($aldata = FCache::get($cachename))
         {
             $this->auto_loads[$hash] = $aldata;
-            F('Timer')->logEvent($directory.' lang autoloads installed (from global cache)');
+            F()->Timer->logEvent($directory.' lang autoloads installed (from global cache)');
         }
         else
         {
@@ -106,7 +106,7 @@ class FLNGData // extends FEventDispatcher
                 ksort($aldata);
                 FCache::set($cachename, $aldata);
                 $this->auto_loads[$hash] = $aldata;
-                F('Timer')->logEvent($filename.' lang autoloads installed (from filesystem)');
+                F()->Timer->logEvent($filename.' lang autoloads installed (from filesystem)');
             }
             else
             {
@@ -135,7 +135,7 @@ class FLNGData // extends FEventDispatcher
                 $this->lang = $Ldata + $this->lang;
                 if (isset($Ldata['__LNG']))
                     $this->lang_name = strtoupper($Ldata['__LNG']);
-                F('Timer')->logEvent('"'.$filename.'" language loaded (from global cache)');
+                F()->Timer->logEvent('"'.$filename.'" language loaded (from global cache)');
             }
             elseif (!file_exists($filename))
             {
@@ -147,7 +147,7 @@ class FLNGData // extends FEventDispatcher
                     $this->lang_name = strtoupper($Ldata['__LNG']);
                 FCache::set($cachename, $Ldata);
                 $this->lang = $Ldata + $this->lang;
-                F('Timer')->logEvent('"'.$filename.'" language file loaded (from lang file)');
+                F()->Timer->logEvent('"'.$filename.'" language file loaded (from lang file)');
                 //trigger_error('LANG: error parsing '.$this->lang_name.'.'.$part.' lang file', E_USER_WARNING );
             }
             else
@@ -208,10 +208,10 @@ class FLNGData // extends FEventDispatcher
 
         if (!$now)
         {
-            $now = F('Timer')->qTime();
-            $correct = 0;     //(int) F('Config')->Get('time_correction', 'common', 0);
-            $time_f  = 'H:i'; //F('Config')->Get('def_time_format', 'visual', 'H:i');
-            $no_rels = false; //(bool) F('Config')->Get('force_no_rel_time', 'common', false);
+            $now = F()->Timer->qTime();
+            $correct = 0;     //(int) F()->Config->Get('time_correction', 'common', 0);
+            $time_f  = 'H:i'; //F()->Config->Get('def_time_format', 'visual', 'H:i');
+            $no_rels = false; //(bool) F()->Config->Get('force_no_rel_time', 'common', false);
         }
 
         if (!is_array($this->time_tr))
@@ -254,7 +254,7 @@ class FLNGData // extends FEventDispatcher
             $timestamp = $now;
 
         if (!is_numeric($tz))
-            $tz = intval($this->timeZone); //(int) F('Config')->Get('time_zone', 'common', 0);
+            $tz = intval($this->timeZone); //(int) F()->Config->Get('time_zone', 'common', 0);
         else
             $tz = intval($tz);
 
@@ -270,7 +270,7 @@ class FLNGData // extends FEventDispatcher
         }
 
         if (!$format)
-            $format = 'd M Y H:i'; //F('Config')->Get('def_date_format', 'visual', 'd M Y H:i');
+            $format = 'd M Y H:i'; //F()->Config->Get('def_date_format', 'visual', 'd M Y H:i');
 
         $timetodraw = $timestamp + $tzc;
         if (FMisc::timeDST($timestamp, $tz))

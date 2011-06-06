@@ -101,7 +101,7 @@ class FGPC
             }
 
             if ($from == self::COOKIE)
-                $val = F('HTTP')->getCookie($svar_name);
+                $val = F()->HTTP->getCookie($svar_name);
             elseif (isset($source[$svar_name]))
                 $val = $source[$svar_name];
             else

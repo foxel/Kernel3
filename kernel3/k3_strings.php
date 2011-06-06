@@ -505,7 +505,7 @@ class FStr
             $url = $scheme.'://';
         }
         else
-            $url = (F('HTTP')->secure) ? 'https://' : 'http://';
+            $url = (F()->HTTP->secure) ? 'https://' : 'http://';
 
         if (isset($url_p['host']))
         {
@@ -525,14 +525,14 @@ class FStr
         }
         else
         {
-            $url.= ($force_host) ? $force_host : F('HTTP')->srvName;
+            $url.= ($force_host) ? $force_host : F()->HTTP->srvName;
             if (isset($url_p['path']))
             {
                 if ($url_p['path']{0} != '/')
-                    $url_p['path'] = '/'.F('HTTP')->rootDir.'/'.$url_p['path'];
+                    $url_p['path'] = '/'.F()->HTTP->rootDir.'/'.$url_p['path'];
             }
             else
-                $url_p['path'] = '/'.F('HTTP')->rootDir.'/'.F_SITE_INDEX;
+                $url_p['path'] = '/'.F()->HTTP->rootDir.'/'.F_SITE_INDEX;
 
             $url_p['path'] = preg_replace('#(\/|\\\)+#', '/', $url_p['path']);
             $url.= $url_p['path'];
@@ -696,7 +696,7 @@ class FStr
         {
             return self::$chrs[$encoding];
         }
-        elseif ($data = F('Cache')->Get($cachename))
+        elseif ($data = FCache::get($cachename))
         {
             return (self::$chrs[$encoding] = $data);
         }
@@ -709,7 +709,7 @@ class FStr
                 $table[hexdec($part[1])] = self::_hexToChr($part[2]);
             }
 
-            F('Cache')->Set($cachename, $table);
+            FCache::set($cachename, $table);
             return (self::$chrs[$encoding] = $table);
         }
         else

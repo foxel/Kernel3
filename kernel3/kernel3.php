@@ -263,7 +263,7 @@ class F extends FEventDispatcher
         FMisc::obFree();
         header ($_SERVER["SERVER_PROTOCOL"].' 503 Service Unavailable');
         header('Content-Type: text/html; charset='.self::INTERNAL_ENCODING);
-        print '<html><head><title>'.F('LNG')->lang('ERR_CRIT_PAGE', false, true).'</title></head><body><h1>'.F('LNG')->lang('ERR_CRIT_PAGE', false, true).'</h1>'.F('LNG')->lang('ERR_CRIT_MESS', false, true).'</body></html>';
+        print '<html><head><title>'.$this->LNG->lang('ERR_CRIT_PAGE', false, true).'</title></head><body><h1>'.$this->LNG->lang('ERR_CRIT_PAGE', false, true).'</h1>'.$this->LNG->lang('ERR_CRIT_MESS', false, true).'</body></html>';
     }
 
     /** Handles errors, writes logs and throws exceptions for critical errors

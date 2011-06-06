@@ -237,17 +237,17 @@ final class FHTTPInterface extends FEventDispatcher
                     $filemime.= '; charset="'.F::INTERNAL_ENCODING.'"';
                 }
                 else
-                    $filename = F('LNG')->Translit($filename);
+                    $filename = F()->LNG->Translit($filename);
             }
 
             header('Last-Modified: '.gmdate('D, d M Y H:i:s ', $FileTime).'GMT');
-            header('Expires: '.date('r', F('Timer')->qTime() + 3600*24), true);
+            header('Expires: '.date('r', F()->Timer->qTime() + 3600*24), true);
             header('Content-Transfer-Encoding: binary');
             header('Content-Disposition: '.$disposition.'; filename="'.$filename.'"');
             header('Content-Type: '.$filemime);
             header('Content-Length: '.($FileSize - $SeekFile));
             header('Accept-Ranges: bytes');
-            header('X-QF-GenTime: '.F('Timer')->timeSpent());
+            header('X-QF-GenTime: '.F()->Timer->timeSpent());
 
             if ($NeedRange)
             {
@@ -292,9 +292,9 @@ final class FHTTPInterface extends FEventDispatcher
         {
             $this->throwEventRef('HTML_parse', $this->buffer);
 
-            $statstring = sprintf(F('LNG')->lang('FOOT_STATS_PAGETIME'), F('Timer')->timeSpent()).' ';
-            if (F()->ping('DBase') && F('DBase')->queriesCount)
-                $statstring.= sprintf(F('LNG')->lang('FOOT_STATS_SQLSTAT'), F('DBase')->queriesCount, F('DBase')->queriesTime).' ';
+            $statstring = sprintf(F()->LNG->lang('FOOT_STATS_PAGETIME'), F()->Timer->timeSpent()).' ';
+            if (F()->ping('DBase') && F()->DBase->queriesCount)
+                $statstring.= sprintf(F()->LNG->lang('FOOT_STATS_SQLSTAT'), F()->DBase->queriesCount, F()->DBase->queriesTime).' ';
 
             $this->buffer = str_replace('<!--Page-Stats-->', $statstring, $this->buffer);
             $c_type = (preg_match('#[\w\-]+/[\w\-]+#', $c_type)) ? $c_type : 'text/html';
@@ -329,7 +329,7 @@ final class FHTTPInterface extends FEventDispatcher
 
 
         if ($force_cache > 0)
-            header('Expires: '.date('r', F('Timer')->qTime() + $force_cache), true);
+            header('Expires: '.date('r', F()->Timer->qTime() + $force_cache), true);
         else
             header('Cache-Control: no-cache');
 
@@ -337,7 +337,7 @@ final class FHTTPInterface extends FEventDispatcher
             header('Content-Disposition: attachment; filename="'.$send_filename.'"');
 
         header('Content-Length: '.strlen($this->buffer));
-        header('X-K3-Page-GenTime: '.F('Timer')->timeSpent());
+        header('X-K3-Page-GenTime: '.F()->Timer->timeSpent());
         print $this->buffer;
         exit();
     }
@@ -364,7 +364,7 @@ final class FHTTPInterface extends FEventDispatcher
 
 
         if ($force_cache > 0)
-            header('Expires: '.date('r', F('Timer')->qTime() + $force_cache), true);
+            header('Expires: '.date('r', F()->Timer->qTime() + $force_cache), true);
         else
             header('Cache-Control: no-cache');
 
@@ -374,7 +374,7 @@ final class FHTTPInterface extends FEventDispatcher
             header('Content-Disposition: attachment; filename="'.$send_filename.'"');
 
         header('Content-Length: '.strlen($data));
-        header('X-K3-Page-GenTime: '.F('Timer')->timeSpent());
+        header('X-K3-Page-GenTime: '.F()->Timer->timeSpent());
         print $data;
         exit();
     }

@@ -249,8 +249,8 @@ class FVISInterface extends FEventDispatcher
             'URLEN'     => array('FStr', 'urlencode'),
             'JS_DEF'    => array('FStr', 'JSDefine'),
             'PHP_DEF'   => array('FStr', 'PHPDefine'),
-            'FTIME'     => Array(F('LNG'), 'timeFormat'),
-            'FBYTES'    => Array(F('LNG'), 'sizeFormat'),
+            'FTIME'     => Array(F()->LNG, 'timeFormat'),
+            'FBYTES'    => Array(F()->LNG, 'sizeFormat'),
             'STRFORMAT' => 'sprintf',
             );
 
@@ -268,8 +268,8 @@ class FVISInterface extends FEventDispatcher
         $this->CSS_loaded = false;
         $this->JS_loaded  = Array();
         $this->vis_consts = Array(
-            'TIME' => F('Timer')->qTime(),
-            'ROOTURL' => F('HTTP')->rootUrl,
+            'TIME' => F()->Timer->qTime(),
+            'ROOTURL' => F()->HTTP->rootUrl,
             );
 
         if ($keep_nodes)
@@ -342,7 +342,7 @@ class FVISInterface extends FEventDispatcher
         if ($aldata = FCache::get($cachename))
         {
             $this->auto_loads[$hash] = $aldata;
-            F('Timer')->logEvent($directory.' autoloads installed (from global cache)');
+            F()->Timer->logEvent($directory.' autoloads installed (from global cache)');
         }
         else
         {
@@ -365,7 +365,7 @@ class FVISInterface extends FEventDispatcher
                 ksort($aldata);
                 FCache::set($cachename, $aldata);
                 $this->auto_loads[$hash] = $aldata;
-                F('Timer')->logEvent($filename.' autoloads installed (from filesystem)');
+                F()->Timer->logEvent($filename.' autoloads installed (from filesystem)');
             }
             else
             {
@@ -380,12 +380,12 @@ class FVISInterface extends FEventDispatcher
     public function loadECSS($filename)
     {
         $hash = FStr::pathHash($filename);
-        $cachename = self::CPREFIX.$this->cPrefix.F('LNG')->ask().'.'.$hash;
+        $cachename = self::CPREFIX.$this->cPrefix.F()->LNG->ask().'.'.$hash;
 
         if ($Cdata = FCache::get($cachename))
         {
             $this->CSS_data = $Cdata;
-            F('Timer')->logEvent($filename.' CSS file loaded (from global cache)');
+            F()->Timer->logEvent($filename.' CSS file loaded (from global cache)');
         }
         else
         {
@@ -395,7 +395,7 @@ class FVISInterface extends FEventDispatcher
 
                 FCache::set($cachename, $Cdata);
                 $this->CSS_data = $Cdata;
-                F('Timer')->logEvent($filename.' CSS file loaded (from ECSS file)');
+                F()->Timer->logEvent($filename.' CSS file loaded (from ECSS file)');
             }
             else
                 trigger_error('VIS: error loading '.$filename.' ECSS file', E_USER_WARNING );
@@ -411,13 +411,13 @@ class FVISInterface extends FEventDispatcher
 
         if (!in_array($hash, $this->JS_loaded))
         {
-            $cachename = self::JPREFIX.$this->cPrefix.F('LNG')->ask().'.'.$hash;
+            $cachename = self::JPREFIX.$this->cPrefix.F()->LNG->ask().'.'.$hash;
 
             if ($JSData = FCache::get($cachename))
             {
                 $this->JS_data.= FStr::ENDL.$JSData;
 
-                F('Timer')->logEvent('"'.$filename.'" JScript loaded (from global cache)');
+                F()->Timer->logEvent('"'.$filename.'" JScript loaded (from global cache)');
             }
             else
             {
@@ -433,7 +433,7 @@ class FVISInterface extends FEventDispatcher
                     $this->JS_data.= FStr::ENDL.$JSData;
 
                     FCache::set($cachename, $JSData);
-                    F('Timer')->logEvent('"'.$filename.'" JScript loaded (from EJS file)');
+                    F()->Timer->logEvent('"'.$filename.'" JScript loaded (from EJS file)');
                 }
                 else
                     trigger_error('VIS: error loading "'.$filename.'" EJS file', E_USER_WARNING );
@@ -450,7 +450,7 @@ class FVISInterface extends FEventDispatcher
 
         if (!in_array($hash, $this->VIS_loaded))
         {
-            $cachename = self::VPREFIX.$this->cPrefix.F('LNG')->ask().'.'.$hash;
+            $cachename = self::VPREFIX.$this->cPrefix.F()->LNG->ask().'.'.$hash;
 
             if (list($Tdata, $VCSS, $VJS) = FCache::get($cachename))
             {
@@ -458,7 +458,7 @@ class FVISInterface extends FEventDispatcher
                 $this->VCSS_data .= FStr::ENDL.$VCSS;
                 $this->VJS_data  .= FStr::ENDL.$VJS;
 
-                F('Timer')->logEvent('"'.$filename.'" visuals loaded (from global cache)');
+                F()->Timer->logEvent('"'.$filename.'" visuals loaded (from global cache)');
             }
             else
             {
@@ -490,7 +490,7 @@ class FVISInterface extends FEventDispatcher
                     $this->VJS_data  .= FStr::ENDL.$VJS;
 
                     FCache::set($cachename, Array($Tdata, $VCSS, $VJS) );
-                    F('Timer')->logEvent('"'.$filename.'" visuals loaded (from VIS file)');
+                    F()->Timer->logEvent('"'.$filename.'" visuals loaded (from VIS file)');
                 }
                 else
                     trigger_error('VIS: error loading or parsing "'.$filename.'" VIS file for style "'.$this->style_name.'"', E_USER_WARNING );
@@ -717,7 +717,7 @@ class FVISInterface extends FEventDispatcher
             'F_INDEX' => F_INDEX,
             );
 
-        $consts['F_ROOT'] = F('HTTP')->rootUrl;
+        $consts['F_ROOT'] = F()->HTTP->rootUrl;
 
         $consts = $this->vis_consts;
 
@@ -997,7 +997,7 @@ class FVISInterface extends FEventDispatcher
         Static $__COUNTER=1;
         /* Static $F_SID;
         if (!$F_SID)
-            $F_SID = F('Session')->SID; */
+            $F_SID = F()->Session->SID; */
 
         $COUNTER = $__COUNTER++;
         $RANDOM = dechex(rand(0x1FFF, getrandmax()));
@@ -1025,7 +1025,7 @@ class FVISInterface extends FEventDispatcher
         Static $__COUNTER=1;
         /* Static $F_SID;
         if (!$F_SID)
-            $F_SID = F('Session')->SID; */
+            $F_SID = F()->Session->SID; */
 
         $COUNTER = $__COUNTER++;
         $RANDOM = dechex(rand(0x1FFF, getrandmax()));
@@ -1158,10 +1158,10 @@ class FVISInterface extends FEventDispatcher
             foreach ($params as &$val)
                 $val = ($val[0] == '"') ? substr($val, 1, -1) : '{'.$val.'}';
 
-            $data = F('LNG')->lang($lng, $params);
+            $data = F()->LNG->lang($lng, $params);
         }
         else
-            $data = F('LNG')->lang($lng);
+            $data = F()->LNG->lang($lng);
 
         return $data;
     }

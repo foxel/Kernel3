@@ -49,8 +49,11 @@ class FSession extends FEventDispatcher
 
     private function __construct() { }
     
-    public function setDBase(FDataBase $dbo, $tbname = false)
+    public function setDBase(FDataBase $dbo = null, $tbname = false)
     {
+        if (is_null($dbo))
+            $dbo = F()->DBase;
+
         if (!$dbo || !$dbo->check() || ($this->mode & self::MODE_STARTED))
             return false;
             
@@ -72,7 +75,7 @@ class FSession extends FEventDispatcher
 
         $this->mode |= $mode & (self::MODES_ALLOW);
 
-        $this->SID = F('HTTP')->getCookie(self::SID_NAME);
+        $this->SID = F()->HTTP->getCookie(self::SID_NAME);
         if ($ForceSID = FGPC::getString('ForceFSID', FGPC::POST, FStr::HEX))
             $this->SID = $ForceSID;
 
@@ -95,15 +98,15 @@ class FSession extends FEventDispatcher
             $this->throwEventRef('preopen', $this->mode, $this->SID);
 
             if (!($this->mode & self::MODE_FIXED))
-                F('HTTP')->setCookie(self::SID_NAME, $this->SID);
+                F()->HTTP->setCookie(self::SID_NAME, $this->SID);
 
             // allows mode changes and any special reactions
             $this->throwEventRef('opened', $this->mode, $this->SID);
 
             if (!($this->mode & self::MODE_NOURLS) && ($this->mode & self::MODE_URLS)) // TODO: allowing from config
             {
-                F('HTTP')->addEventHandler('HTML_parse', Array(&$this, 'HTMLURLsAddSID') );
-                F('HTTP')->addEventHandler('URL_Parse', Array(&$this, 'addSID') );
+                F()->HTTP->addEventHandler('HTML_parse', Array(&$this, 'HTMLURLsAddSID') );
+                F()->HTTP->addEventHandler('URL_Parse', Array(&$this, 'addSID') );
             }
 
             FMisc::addShutdownCallback(Array(&$this, 'close'));
@@ -111,7 +114,7 @@ class FSession extends FEventDispatcher
             return true;
         }
         else
-            F('HTTP')->setCookie(self::SID_NAME);
+            F()->HTTP->setCookie(self::SID_NAME);
         
         $this->mode = $old_mode;
         return false;
@@ -128,9 +131,9 @@ class FSession extends FEventDispatcher
         if (!is_array($sess) || !$sess)
             return false;
             
-        if ($sess['ip'] != F('HTTP')->IPInt 
-            || $sess['lastused'] < (F('Timer')->qTime() - self::LIFETIME)
-            || $sess['clsign'] != F('HTTP')->getClientSignature($this->secu_lvl))
+        if ($sess['ip'] != F()->HTTP->IPInt 
+            || $sess['lastused'] < (F()->Timer->qTime() - self::LIFETIME)
+            || $sess['clsign'] != F()->HTTP->getClientSignature($this->secu_lvl))
         {
             FCache::drop(self::CACHEPREFIX.$this->SID);
             return false;       
@@ -147,7 +150,7 @@ class FSession extends FEventDispatcher
             ? $vars
             : Array();
 
-        F('Timer')->logEvent('Session data loaded');
+        F()->Timer->logEvent('Session data loaded');
 
         return true;
     }
@@ -167,7 +170,7 @@ class FSession extends FEventDispatcher
             ? $vars
             : Array();
 
-        F('Timer')->logEvent('Session data created');
+        F()->Timer->logEvent('Session data created');
 
         return true;
     }
@@ -183,10 +186,10 @@ class FSession extends FEventDispatcher
         $this->throwEventRef('presave', $this->pool);
 
         $q_arr = Array(
-            'ip'       => F('HTTP')->IPInt,
-            'clsign'   => F('HTTP')->getClientSignature($this->secu_lvl),
+            'ip'       => F()->HTTP->IPInt,
+            'clsign'   => F()->HTTP->getClientSignature($this->secu_lvl),
             'vars'     => serialize($this->pool),
-            'lastused' => F('Timer')->qTime(),
+            'lastused' => F()->Timer->qTime(),
             'clicks'   => $this->clicks,
             );
 
@@ -202,12 +205,12 @@ class FSession extends FEventDispatcher
         else
         {
             $q_arr['sid'] = $this->SID;
-            $q_arr['starttime'] = F('Timer')->qTime();
+            $q_arr['starttime'] = F()->Timer->qTime();
             $this->db_object->doInsert($this->db_tbname, $q_arr, true);
         }
 
         // delete old session data
-        $this->db_object->doDelete($this->db_tbname, Array('lastused' => '< '.(F('Timer')->qTime() - self::LIFETIME)), FDataBase::SQL_USEFUNCS );
+        $this->db_object->doDelete($this->db_tbname, Array('lastused' => '< '.(F()->Timer->qTime() - self::LIFETIME)), FDataBase::SQL_USEFUNCS );
 
         return true;
     }
@@ -326,7 +329,7 @@ class FSession extends FEventDispatcher
         }
 
         if (preg_match('#^\w+:#', $url))
-            if (strpos($url, F('HTTP')->rootUrl) !== 0)
+            if (strpos($url, F()->HTTP->rootUrl) !== 0)
                 return $vars[1].$vars[3].' = '.$bounds.$url.$bounds;
 
         $url = FStr::urlAddParam($url, self::SID_NAME, $this->SID, true);
