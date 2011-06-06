@@ -17,6 +17,7 @@ $p = F()->FlexyStore('qf2_userinfo')
         'sex' => 'int',
         ));
 $p->joinToSelect($s, 'user');
+$s->where('city', 'Tomsk');
 
 $string = $s->toString();
 

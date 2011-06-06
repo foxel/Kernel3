@@ -78,7 +78,7 @@ class FFlexyStore
                     continue;
 
                 $tbAlias = $propName.'_data';
-                $select->joinLeft($this->tbname, array('obj_id' => 'id', 'key' => '\''.$propName.'\''), $tbAlias, array($propName => $propType));
+                $select->joinLeft($this->tbname, array('obj_id' => 'id', 'key' => $select->getDBO()->quote($propName)), $tbAlias, array($propName => $propType));
             }
 
         return $select;
@@ -97,10 +97,7 @@ class FFlexyStoreFactory
         return self::$self;
     }
 
-    private function __construct()
-    {
-
-    }
+    private function __construct() {}
 
     public function create($tableName, FDataBase $dbo = null, $textTbname = false)
     {

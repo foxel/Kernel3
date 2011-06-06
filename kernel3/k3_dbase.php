@@ -489,6 +489,11 @@ class FDBSelect
             'flags'  => $this->flags,
             );
     }
+
+    public function getDBO()
+    {
+        return $this->dbo;
+    }
     
     public function fetch($fetch_mode = self::FETCH_ALL, $add_params = 0)
     {
