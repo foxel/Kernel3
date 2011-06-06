@@ -3,3 +3,4 @@ VIS      => FVISInterface|k3_vis2.php
 Parser   => FParser|k3_parser.php
 Captcha  => FCaptcha|k3_captcha.php
 Mail     => FMail|k3_mailer.php
+FlexyStore => FFlexyStoreFactory|k3_flexystore.php
