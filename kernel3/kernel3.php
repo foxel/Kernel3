@@ -90,7 +90,7 @@ foreach ($base_modules_files as $fname)
     $base_modules_stats[] = filemtime($fname).'|'.filesize($fname);
 $kernel_codecache_dir = is_writable(F_KERNEL_DIR) ? F_KERNEL_DIR : F_CODECACHE_DIR;
 $base_modules_stats = md5(implode('|', $base_modules_stats));
-$base_modules_file = $kernel_codecache_dir.'k3.compiled.'.$base_modules_stats;
+$base_modules_file = $kernel_codecache_dir.'.k3.compiled.'.$base_modules_stats;
 if (extension_loaded('bcompiler') && file_exists($base_modules_file.'.bc'))
     require_once($base_modules_file.'.bc');
 elseif (file_exists($base_modules_file.'.php'))
@@ -98,7 +98,7 @@ elseif (file_exists($base_modules_file.'.php'))
 else
 {
     foreach (scandir($kernel_codecache_dir) as $fname)
-        if (preg_match('#^k3\.compiled\.[0-9a-fA-F]{32}\.(php|bc)?$#', $fname))
+        if (preg_match('#^.k3\.compiled\.[0-9a-fA-F]{32}\.(php|bc)?$#', $fname))
             unlink($kernel_codecache_dir.$fname);
     $base_modules_eval = '';
     foreach ($base_modules_files as $fname)
@@ -109,7 +109,7 @@ else
         {
             $fileHandle = fopen($base_modules_file.'.bc', 'w');
             bcompiler_write_header($fileHandle);
-            bcompiler_write_file($fileHandle, $base_modules_file); 
+            bcompiler_write_file($fileHandle, $base_modules_file.'.php'); 
             bcompiler_write_footer($fileHandle);
             fclose($fileHandle); 
             unset($fileHandle);
