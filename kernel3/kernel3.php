@@ -100,9 +100,11 @@ else
     foreach (scandir($kernel_codecache_dir) as $fname)
         if (preg_match('#^.k3\.compiled\.[0-9a-fA-F]{32}\.(php|bc)?$#', $fname))
             unlink($kernel_codecache_dir.$fname);
-    $base_modules_eval = '';
+    $base_modules_eval = array();
     foreach ($base_modules_files as $fname)
-        $base_modules_eval.= preg_replace('#^\s*\<\?php\s*|^\s*\<\?\s*|\?\>\s*$#D', '', php_strip_whitespace($fname));
+        $base_modules_eval[] = preg_replace('#^\s*\<\?php\s*|^\s*\<\?\s*|\?\>\s*$#D', '', php_strip_whitespace($fname));
+    $base_modules_eval = preg_replace('#(?<!^)if\s+\(!defined\(\'F_STARTED\'\)\)\s+die\(\'[^\']+\'\)\;\s*#', '', implode(PHP_EOL, $base_modules_eval));
+
     if (file_put_contents($base_modules_file.'.php', "<?php\n".$base_modules_eval."\n?>"))
     {
         if (function_exists('bcompiler_write_file'))
