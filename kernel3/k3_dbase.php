@@ -525,6 +525,11 @@ class FDBSelect
 
         return $tableAlias;
     }
+
+    public function __sleep()
+    {
+        return array('tables', 'fields', 'where', 'joins', 'joints', 'order', 'group', 'limit', 'flags');
+    }
 }
 
 ?>

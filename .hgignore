@@ -1,4 +1,4 @@
-glob:kernel3/k3_bases-*
+glob:kernel3/k3.compiled.*
 glob:tests/data
 glob:tests/*.log
 glob:tests/*.file

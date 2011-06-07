@@ -37,6 +37,9 @@ if (!defined('F_LOGS_ROOT'))
 /**#@+ site data storing root directory (can be defined before outside the kernel) */
 if (!defined('F_DATA_ROOT'))
     define('F_DATA_ROOT', F_SITE_ROOT.'data'.DIRECTORY_SEPARATOR);
+/**#@+ site code cache directory (can be defined before outside the kernel) */
+if (!defined('F_CODECACHE_DIR'))
+    define('F_CODECACHE_DIR', F_SITE_ROOT);
 /**#@+*/
 
 Error_Reporting(0);
@@ -85,21 +88,22 @@ $base_modules_files = Array(
 $base_modules_stats = Array();
 foreach ($base_modules_files as $fname)
     $base_modules_stats[] = filemtime($fname).'|'.filesize($fname);
+$kernel_codecache_dir = is_writable(F_KERNEL_DIR) ? F_KERNEL_DIR : F_CODECACHE_DIR;
 $base_modules_stats = md5(implode('|', $base_modules_stats));
-$base_modules_file  = F_KERNEL_DIR.'k3_bases-'.$base_modules_stats.'.krninc';
+$base_modules_file = $kernel_codecache_dir.'k3.compiled.'.$base_modules_stats;
 if (extension_loaded('bcompiler') && file_exists($base_modules_file.'.bc'))
     require_once($base_modules_file.'.bc');
-elseif (file_exists($base_modules_file))
-    require_once($base_modules_file);
+elseif (file_exists($base_modules_file.'.php'))
+    require_once($base_modules_file.'.php');
 else
 {
-    foreach (scandir(F_KERNEL_DIR) as $fname)
-        if (preg_match('#^k3_bases\-[0-9a-fA-F]{32}\.krninc(\.bc)?$#', $fname))
-            unlink(F_KERNEL_DIR.$fname);
+    foreach (scandir($kernel_codecache_dir) as $fname)
+        if (preg_match('#^k3\.compiled\.[0-9a-fA-F]{32}\.(php|bc)?$#', $fname))
+            unlink($kernel_codecache_dir.$fname);
     $base_modules_eval = '';
     foreach ($base_modules_files as $fname)
         $base_modules_eval.= preg_replace('#^\s*\<\?php\s*|^\s*\<\?\s*|\?\>\s*$#D', '', php_strip_whitespace($fname));
-    if (file_put_contents($base_modules_file, "<?php\n".$base_modules_eval."\n?>"))
+    if (file_put_contents($base_modules_file.'.php', "<?php\n".$base_modules_eval."\n?>"))
     {
         if (function_exists('bcompiler_write_file'))
         {
@@ -120,7 +124,7 @@ else
     }
     unset($base_modules_eval);
 }
-unset($base_modules_files, $base_modules_stats, $base_modules_file);
+unset($kernel_codecache_dir, $base_modules_files, $base_modules_stats, $base_modules_file);
 /**#@+*/
 
 /**

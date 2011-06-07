@@ -46,7 +46,7 @@ class FFlexyStore
     public function addClass($className, array $clInfo = null)
     {
         if (isset($this->classes[$className]))
-            return new FNullObject;
+            return $this;
 
         $this->classes[$className] = array();
 
@@ -83,11 +83,23 @@ class FFlexyStore
 
         return $select;
     }
-    
+
+    public function __sleep()
+    {
+        return array('tbname', 'textTbname', 'classes', 'types');
+    }
+
+    public function __wakeup()
+    {
+        if (is_null($this->dbo))
+            $this->dbo = F()->DBase;
+    }
 }
 
 class FFlexyStoreFactory
 {
+    const CACHEPREFIX = 'FlexyStores.';
+    
     private static $self = null;
 
     public static function getInstance()
@@ -109,9 +121,14 @@ class FFlexyStoreFactory
         return new FFlexyStore($tableName, $dbo, $textTbname);
     }
 
-    public function CreateCached($cachename, $tableName, FDataBase $dbo = null, $textTbname = false)
+    public function createCached($cachename, $tableName, FDataBase $dbo = null, $textTbname = false)
     {
-        // TODO:
+        $obj = FCache::get(self::CACHEPREFIX.$cachename);
+        if (!($obj instanceof FFlexyStore))
+            $obj = new FFlexyStore($tableName, $dbo, $textTbname);
+        FCache::set(self::CACHEPREFIX.$cachename, $obj);
+        
+        return $obj;
     }
 
 }
