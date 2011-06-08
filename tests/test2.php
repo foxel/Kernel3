@@ -9,6 +9,7 @@ print 'Visualizer Demo<br />';
 FCache::clear();
 F('VIS')->loadTemplates('test.vis');
 F('VIS')->addData(0, 'PAGE_TITLE', 'basic test');
+F('VIS')->addData(0, 'PAGE_SUBTITLE', 'subtitle');
 
 print '<pre>'.FStr::PHPDefine(get_loaded_extensions()).'</pre><br />';
 print F('HTTP')->rootUrl.'<br />';

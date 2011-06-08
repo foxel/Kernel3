@@ -729,7 +729,7 @@ class FVISInterface extends FEventDispatcher
         $text = $this->templLang($text);
 
         $text = preg_replace('#(?<=\})\n\s*?(?=\{\w)#', '', $text);
-        preg_match_all('#\{(\!?)((?>\w+))(?:\:((?:(?>-?[0-9]+|\w+|\"[^\"]*\")(?:[\!=\>\<]{1,2}(?:-?[0-9]+|\w+|\"[^\"]*\"))?|\||)*))?\}|[^\{]+|\{#', $text, $struct, PREG_SET_ORDER);
+        preg_match_all('#\{([\!\/]?)((?>\w+))(?:\:((?:(?>-?[0-9]+|\w+|\"[^\"]*\")(?:[\!=\>\<]{1,2}(?:-?[0-9]+|\w+|\"[^\"]*\"))?|\||)*))?\}|[^\{]+|\{#', $text, $struct, PREG_SET_ORDER);
 
         $writes_to = 'OUT';
         $text = '$'.$writes_to.' = <<<FTEXT'.FStr::ENDL;
@@ -748,7 +748,9 @@ class FVISInterface extends FEventDispatcher
 
             if (isset($part[2]) && ($tag = strtoupper($part[2])))
             {
-                $got_a = ($part[1]) ? true : false;
+                $got_a = ($part[1] == '!') ? true : false;
+                if ($part[1] == '/')
+                    $tag = '/'.$tag;
 
                 $params = Array();
                 if (isset($part[3]))
@@ -834,7 +836,7 @@ class FVISInterface extends FEventDispatcher
                     $text.= FStr::ENDL.'FTEXT;'.FStr::ENDL.'for ($I = '.$this->templVISParamCB($pp1, $vars, $consts).'; $I <= '.$this->templVISParamCB($pp2, $vars, $consts).'; $I+= '.$this->templVISParamCB($pp3, $vars, $consts).') {'.FStr::ENDL.'$'.$writes_to.'.= <<<FTEXT'.FStr::ENDL;
                     $jstext.= '";'.FStr::ENDL.'for (I = '.$this->templVISParamCB($p1, $vars, $consts, false, true).'; I <= '.$this->templVISParamCB($p2, $vars, $consts, false, true).'; I+= '.$this->templVISParamCB($p3, $vars, $consts, false, true).') {'.FStr::ENDL.$writes_to.'+= "';
                 }
-                elseif ($tag == 'ENDFOR')
+                elseif ($tag == 'ENDFOR' || $tag == '/FOR')
                 {
                     if ($in_for)
                     {
@@ -924,7 +926,7 @@ class FVISInterface extends FEventDispatcher
                         $jstext.= '";}'.FStr::ENDL.'else if (true) {'.FStr::ENDL.$writes_to.'+= "';
                     }
                 }
-                elseif ($tag == 'ENDIF')
+                elseif ($tag == 'ENDIF' || $tag == '/IF')
                 {
                     if ($iflevel)
                     {
@@ -935,7 +937,7 @@ class FVISInterface extends FEventDispatcher
                 }
                 else
                 {
-                    $varname = $tag;
+                    $varname = strtoupper($part[2]);
                     if (isset($consts[$varname]))
                     {
                         $text.= FStr::addslashesHeredoc($consts[$varname], 'FTEXT');
