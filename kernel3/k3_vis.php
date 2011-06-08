@@ -853,7 +853,7 @@ class FVISInterface extends FEventDispatcher
                     if (!isset($params[1]) || !count($params[1]))
                         continue;
                     $visname = $params[1][0];
-                    $text.= FStr::ENDL.'FTEXT;'.FStr::ENDL.'$'.$writes_to.(($got_a) ? '' : '.').'= $this->parseVIS(\''.$visname.'\'';
+                    $text.= FStr::ENDL.'FTEXT;'.FStr::ENDL.'$'.$writes_to.(($got_a) ? '' : '.').'= $_vis->parseVIS(\''.$visname.'\'';
                     if (count($params[1]) > 1)
                     {
                         if ($params[1][1] == '_')
@@ -1005,19 +1005,17 @@ class FVISInterface extends FEventDispatcher
         $vis = strtoupper($vis);
         if (!isset($this->templates[$vis]) && !$this->tryAutoLoad($vis))
             return implode(FStr::ENDL, $data);
+        
+        if (!isset($this->templates[$vis]['F']))
+            $this->templates[$vis]['F'] = create_function(
+                '&$_vis, &$_v, &$_in, &$_c', 
+                'if (extract($_v, EXTR_SKIP)) { 
+                extract($_in, EXTR_REFS | EXTR_OVERWRITE | EXTR_PREFIX_ALL, \'IN\'); 
+                extract($_c, EXTR_REFS | EXTR_OVERWRITE | EXTR_PREFIX_ALL, \'C\'); }
+                $OUT = \'\';
+                '.$this->templates[$vis]['T'].' return $OUT;');
 
-        if (extract($this->templates[$vis]['V'], EXTR_SKIP))
-        {
-            extract($data, EXTR_REFS | EXTR_OVERWRITE | EXTR_PREFIX_ALL, 'IN');
-            extract($this->vis_consts, EXTR_REFS | EXTR_OVERWRITE | EXTR_PREFIX_ALL, 'C');
-        }
-
-        $OUT = '';
-
-        if (eval($this->templates[$vis]['T']) === false)
-            trigger_error('VIS: error running "'.$vis.'" template. CODE ['.$this->templates[$vis]['T'].']', E_USER_ERROR);
-
-        return $OUT;
+        return call_user_func_array($this->templates[$vis]['F'], Array(&$this, &$this->templates[$vis]['V'], &$data, &$this->vis_consts));
     }
 
     public function prepJSFunc($vis, $data = Array())
@@ -1216,7 +1214,7 @@ class FVISInterface extends FEventDispatcher
         {
             $code = $for_js
                 ? 'FVIS.callParseFunctionArr(\''.$parsewith.'\', ['.implode(', ', $dyn_pars_js).'])'
-                : '$this->callParseFunctionArr(\''.$parsewith.'\', Array('.implode(', ', $dyn_pars).'))';
+                : '$_vis->callParseFunctionArr(\''.$parsewith.'\', Array('.implode(', ', $dyn_pars).'))';
             if ($do_schars)
                 $code = $for_js
                     ? 'FStr.smartHTMLSchars('.$code.')'
@@ -1266,7 +1264,7 @@ class FVISInterface extends FEventDispatcher
         {
             $code = $for_js
                 ? 'FVIS.callParseFunction(\''.$parsewith.'\', '.$val.')'
-                : '$this->callParseFunction(\''.$parsewith.'\', $'.$val.')';
+                : '$_vis->callParseFunction(\''.$parsewith.'\', $'.$val.')';
             if ($do_schars)
                 $code = $for_js
                     ? 'FStr.smartHTMLSchars('.$code.')'
@@ -1276,7 +1274,7 @@ class FVISInterface extends FEventDispatcher
         return $code;
     }
 
-    private function callParseFunction($func_name, $data) //parsing data with funcParser
+    public function callParseFunction($func_name, $data) //parsing data with funcParser
     {
         if (!isset($this->func_parsers[$func_name]))
             return $data;
@@ -1285,7 +1283,7 @@ class FVISInterface extends FEventDispatcher
         return call_user_func($func_parser, $data);
     }
 
-    private function callParseFunctionArr($func_name, $data) //parsing data with funcParser
+    public function callParseFunctionArr($func_name, $data) //parsing data with funcParser
     {
         if (!isset($this->func_parsers[$func_name]))
             return '';
