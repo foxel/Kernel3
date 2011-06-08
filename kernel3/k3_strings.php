@@ -399,9 +399,16 @@ class FStr
         return !!preg_match('#^'.self::PHPWORD_MASK.'$#D', $string);
     }
 
-    static public function isEmail($string)
+    static public function isEmail($string, $checkDNS = false)
     {
-        return !!preg_match('#^'.self::EMAIL_MASK.'$#D', $string);
+        $res = !!preg_match('#^'.self::EMAIL_MASK.'$#D', $string);
+        if ($res && $checkDNS)
+        {
+            list($user, $domain) = split('@',$string);
+            $res = checkdnsrr($domain, 'MX');
+        }
+
+        return $res;
     }
 
     static public function isUrl($string)
