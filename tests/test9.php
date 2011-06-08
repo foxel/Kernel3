@@ -25,7 +25,7 @@ $page = '<html><head><!--Meta-Content-Type--><title>'.F_SITE_INDEX.'</title></he
 <body>
 '.$string.'
 <hr>'.highlight_file(__FILE__, true).'
-<hr><!--Page-Stats--></body>';
+<hr><!--Page-Stats--></body></html>';
 F('HTTP')->write($page);
 F('HTTP')->sendBuffer();
 ?>

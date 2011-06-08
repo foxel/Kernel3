@@ -19,10 +19,10 @@ else
     F()->MetaFile->save($file, 'test1.file');
 }
 
-$page = '
+$page = '<html><head><!--Meta-Content-Type--><title>'.F_SITE_INDEX.'</title></head>
 <body>('.F('LNG')->sizeFormat($file->size()).') <a href="'.F_SITE_INDEX.'?download">download test4.tar</a>
 <hr>'.highlight_file(__FILE__, true).'
-<hr><!--Page-Stats--></body>';
+<hr><!--Page-Stats--></body></html>';
 F('HTTP')->write($page);
 F('HTTP')->sendBuffer();
 ?>
