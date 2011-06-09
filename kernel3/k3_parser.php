@@ -115,14 +115,10 @@ class FParser extends FEventDispatcher
 
     public function addPreg($mask, $data, $func = null)
     {
-        static $preg_lk = null;
-        if (!$preg_lk)
-            $preg_lk = (PHP_VERSION >= '4.3.0') ? '${0}' : '$0$99'; // ${n} was added only in PHP 4.3.0 so this is a trick
-
         $id = count($this->pregs);
         $mask = '#(?<=\s|^)'.$mask.'(?=\s|$)#';
         $data = strtr($data, Array('\\' => '\\\\', '$' => '\\$'));
-        $data = strtr($data, Array('{data}' => $preg_lk));
+        $data = strtr($data, Array('{data}' => '${0}'));
         $new_preg = Array(
             'mask' => $mask,
             'data' => $data,

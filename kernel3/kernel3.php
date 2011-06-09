@@ -16,7 +16,7 @@ if (defined('F_STARTED'))
 define ('F_STARTED', True);
 
 // let's check the kernel requirements
-if (PHP_VERSION < '5.1.0')
+if (version_compare(PHP_VERSION, '5.1.0', '<'))
     die('PHP 5.1.0 required');
 
 /** kernel files directory */
