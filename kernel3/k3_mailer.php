@@ -150,8 +150,8 @@ class FMail
             'Date: '.date('r', time()),
             'X-Priority: 3',
             'X-MSMail-Priority: Normal',
-            'X-Mailer: QuickFox',
-            'X-MimeOLE: QuickFox',
+            'X-Mailer: Kernel 3',
+            'X-MimeOLE: Kernel 3',
             );
 
         if (count($m_cc))
