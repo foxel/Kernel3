@@ -4,3 +4,4 @@ glob:tests/data
 glob:tests/*.log
 glob:tests/*.file
 glob:*.php0
+glob:*.diff
