@@ -138,13 +138,16 @@ class FStr
     {
         if (!$recode_to)
             $recode_to = self::INT_ENCODING;
-        //if (self::$useMB && $out = mb_encode_mimeheader($string, $recode_to, 'B'))
-        //    return $out;
+        if (self::$useMB && $out = mb_encode_mimeheader($string, $recode_to, 'B'))
+            return $out;
 
         if ($recode_to && $recoded = self::strRecode($string, $recode_to))
             $string = $recoded;
         else
             $recode_to = self::INT_ENCODING;
+
+        if (!strlen($string))
+            return $string;
 
         if ($Quoted_Printable)
             $out = '=?'.$recode_to.'?Q?'.strtr(rawurlencode($string), '%', '=').'?=';

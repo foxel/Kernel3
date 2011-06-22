@@ -20,7 +20,7 @@ class FMail
     private $text    = '';
     private $parts   = Array();
 
-    public function __construct($subject, $from_name = false, $from_addr = false)
+    public function __construct($subject = false, $from_name = false, $from_addr = false)
     {
         if (!FStr::isEmail($from_addr))
             $from_addr = 'no-reply@'.F()->HTTP->srvName;
@@ -35,31 +35,41 @@ class FMail
         $this->parts   = Array();
     }
 
-    public function addTo($addr, $name)
+    public function setSubject($subject)
     {
-        if (!FStr::isEmail($addr))
-            return false;
+        $this->subject = ($subject) ? (string) $subject : 'no-subject';
 
-        $this->send_to[$addr] = (string) $name;
-        return true;
+        return $this;
     }
 
-    public function addCopy($addr, $name)
+    public function addTo($addr, $name = false)
     {
-        if (!FStr::isEmail($addr))
-            return false;
+        if (FStr::isEmail($addr))
+            $this->send_to[$addr] = (string) $name;
+        else
+            trigger_error('Mailer: email address is invalid', E_USER_WARNING);
 
-        $this->copy_to[$addr] = (string) $name;
-        return true;
+        return $this;
     }
 
-    public function addBcc($addr, $name)
+    public function addCopy($addr, $name = false)
     {
-        if (!FStr::isEmail($addr))
-            return false;
+        if (FStr::isEmail($addr))
+            $this->copy_to[$addr] = (string) $name;
+        else
+            trigger_error('Mailer: email address is invalid', E_USER_WARNING);
+            
+        return $this;
+    }
 
-        $this->bcc_to[$addr] = (string) $name;
-        return true;
+    public function addBcc($addr, $name = false)
+    {
+        if (FStr::isEmail($addr))
+            $this->bcc_to[$addr] = (string) $name;
+        else
+            trigger_error('Mailer: email address is invalid', E_USER_WARNING);
+            
+        return $this;
     }
 
     public function setBody($text, $is_html = false)
@@ -70,7 +80,7 @@ class FMail
         return $this;
     }
 
-    public function attachFile($file, $filename = '', $filemime = '')
+    public function attachFile($file, $filename = false, $filemime = false)
     {
         if ($filedata = file_get_contents($file))
         {
@@ -94,14 +104,34 @@ class FMail
             $data.= self::BR; // closing headers
             $data.= chunk_split(base64_encode($filedata), 76, self::BR);
             $this->parts[] = $data;
-            unset($filedata, $data);
-            return true;
+            unset ($filedata, $data);
         }
+        else
+            trigger_error('Mailer: error reading file to attach', E_USER_WARNING);
 
-        return false;
+        return $this;
     }
 
     public function send($recode_to = '')
+    {
+        list ($m_to, $m_subject, $m_body, $m_headers) = $this->prepare($recode_to);
+        $m_headers = implode(self::BR, $m_headers);
+        
+        return mail($m_to, $m_subject, $m_body, $m_headers);
+    }
+
+    public function toString($recode_to = '')
+    {
+        list ($m_to, $m_subject, $m_body, $m_headers) = $this->prepare($recode_to);
+
+        array_unshift($m_headers, 'To: '.$m_to);
+        array_unshift($m_headers, 'Subject: '.$m_subject);
+        $m_headers = implode(self::BR, $m_headers);
+
+        return implode(self::BR.self::BR, array($m_headers, $m_body));
+    }
+
+    protected function prepare($recode_to = '')
     {
         $m_from = FStr::strToMime($this->from[1], $recode_to).' <'.$this->from[0].'>';
         $m_subject = FStr::strToMime($this->subject, $recode_to);
@@ -132,17 +162,20 @@ class FMail
             $m_to = implode(', ', $m_to);
         else
             $m_to = 'Undisclosed-Recipients';
+        //$m_headers[] = 'To: '.$m_to;
 
         if ($recode_to && $m_text = FStr::strRecode($this->text, $recode_to))
             $m_encoding = $recode_to;
         else
         {
             $m_text = $this->text;
-            $m_encoding = QF_INTERNAL_ENCODING;
+            $m_encoding = F::INTERNAL_ENCODING;
         }
+
         $m_type = ($this->is_html)
             ? 'text/html'
             : 'text/plain';
+
         if (count($this->parts)) //multipart message
         {
             $t_headers = Array(
@@ -169,15 +202,21 @@ class FMail
                 );
             $m_body = $m_text;
         }
-        $m_headers = implode(self::BR, $m_headers);
-        return mail($m_to, $m_subject, $m_body, $m_headers);
-    }
 
-    public static function create($subject, $from_name = false, $from_addr = false)
+        return array($m_to, $m_subject, $m_body, $m_headers);
+    }
+    
+
+    public static function create($subject = false, $from_name = false, $from_addr = false)
     {
         return new FMail($subject, $from_name, $from_addr);
     }
     
+    public static function _Call($subject = false, $from_name = false, $from_addr = false)
+    {
+        return new FMail($subject, $from_name, $from_addr);
+    }
+
     public static function getInstance()
     {
         return new StaticInstance('FMail');

@@ -308,9 +308,12 @@ class F extends FEventDispatcher
      * @param array $arguments
      */
     public function __call($name, $arguments)
-    {        if (isset($this->pool[$name]) || $this->runModule($name))
-            if (method_exists($this->pool[$name], '_Call'))
+    {        $mod_class = $this->classes[$name];
+
+        if (isset($this->pool[$name]) || $this->runModule($name))
+            if (method_exists($mod_class, '_Call'))
                 return call_user_func_array(Array(&$this->pool[$name],  '_Call'), $arguments);
+                
         return null;
     }
 }
