@@ -16,10 +16,9 @@ abstract class FBaseClass
 
     public function __get($name)
     {
-        if (isset($this->pool[$name]))
-            return $this->pool[$name];
-
-        return null;
+        return (isset($this->pool[$name]))
+            ? $this->pool[$name]
+            : null;
     }
 
     public function __set($name, $val)
@@ -30,6 +29,11 @@ abstract class FBaseClass
     public function __isset($name)
     {
         return isset($this->pool[$name]);
+    }
+
+    public function __unset($name)
+    {
+        return false;
     }
 
     public function __call($name, $arguments)
@@ -49,9 +53,37 @@ abstract class FBaseClass
 }
 
 /** data pool class for quick storing read-only data */
-class FDataPool extends FBaseClass 
+class FDataPool extends FBaseClass implements ArrayAccess
 {
-    private function __construct(Array $data) { $this->pool = $data; }
+    public function __construct(Array &$data, $byLink = false)
+    {
+        if ($byLink)
+            $this->pool = &$data;
+        else
+            $this->pool = $data;
+    }
+
+    public function offsetGet($name)
+    {
+        return (isset($this->pool[$name]))
+            ? $this->pool[$name]
+            : null;
+    }
+
+    public function offsetSet($name, $val)
+    {
+        return $val;
+    }
+
+    public function offsetExists($name)
+    {
+        return isset($this->pool[$name]);
+    }
+
+    public function offsetUnset($name)
+    {
+        return false;
+    }
 }
 
 /** basic event dispatcher class */
