@@ -21,6 +21,7 @@ class FDataBase extends FEventDispatcher
     const SQL_DISTINCT  = 64;
     const SQL_MULINSERT = 128;
     const SQL_CALCROWS  = 256;
+    const SQL_CRREPLACE = 512;
 
     private $dbDrivers = Array('mysql' => 'mysql');
     private $dbDSNType = Array('mysql' => 'mysql');
@@ -113,6 +114,21 @@ class FDataBase extends FEventDispatcher
         }
         else
             return null;
+    }
+
+    public function createView($name, $select, $flags = 0)
+    {
+        if (!$this->c)
+            throw new FException('DB is not connected');
+
+        if ($select instanceof FDBSelect)
+            $select = $select->toString();
+
+        if (!is_string($select))
+            return false;
+            
+        $query = $this->qc->createView($name, $select, $flags);
+        return $this->query($query, true, true);
     }
 
     // simple one table select
@@ -511,6 +527,11 @@ class FDBSelect
     public function fetchOne($add_params = 0)
     {
         return $this->fetch(self::FETCH_ONE, $add_params);
+    }
+
+    public function createView($name, $add_params = 0)
+    {
+        return $this->dbo->createView($name, $this, $this->flags | (int) $add_params);
     }
     
     protected function _determineTableAlias(&$tableAlias = false)

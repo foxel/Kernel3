@@ -4,22 +4,18 @@ define ('STARTED', True);
 
 require_once 'kernel3.php';
 
-F('DBase')->connect(Array('dbname' => 'dev.quickfox'), 'k3tester', false);
-$s = F()->DBase->select('qf2_users', 'u')
-    ->calculateRows()
+F('DBase')->connect(Array('dbname' => 'dev.sandbox'), 'k3tester', false);
+$s = F()->DBase->select('objects', 'u')
+    ->where('class_id', 'user')
     ;
-$p = F()->FlexyStore('qf2_userinfo')
-    ->addClass('user', array(
-        'url' => 'str',
-        'visits' => 'int',
-        'city' => 'str',
-        'brthday' => 'time',
-        'sex' => 'int',
-        ));
+$p = F()->FlexyStore('object_values', null, 'object_texts')
+    ->loadClassesFromDB('object_class_fields');
 $p->joinToSelect($s, 'user');
 $s->where('city', 'Tomsk');
 
 $string = $s->toString();
+if (FGPC::getBin('execute'))
+    $string.= '<pre>'.FStr::phpDefine($s->fetchAll()).'</pre>';
 
 $page = '<html><head><!--Meta-Content-Type--><title>'.F_SITE_INDEX.'</title></head>
 <body>

@@ -9,12 +9,12 @@
 if (!defined('F_STARTED'))
     die('Hacking attempt');
 
-class FFlexyStore
+class FFlexyStore extends FBaseClass
 {
     const TYPE_STRING = 'str';
     const TYPE_INT    = 'int';
     const TYPE_FLOAT  = 'float';
-    const TYPE_TIME   = 'time';
+    const TYPE_TIME   = 'int';
     const TYPE_TEXT   = 'text';
 
     protected $dbo = null;
@@ -29,7 +29,7 @@ class FFlexyStore
         self::TYPE_TEXT,
         );
 
-    public $classes = array();
+    protected $classes = array();
 
     public function __construct($tableName, FDataBase $dbo = null, $textTbname = false)
     {
@@ -39,6 +39,25 @@ class FFlexyStore
         $this->dbo = $dbo;
         $this->tbname = $tableName;
         $this->textTbname = $textTbname ? $textTbname : $this->tbname;
+        $this->pool['classes'] = new FDataPool($this->classes, true);
+
+        return $this;
+    }
+
+    public function loadClassesFromDB($tableName)
+    {
+        $newClasses = array();
+        $rows = $this->dbo->doSelectAll($tableName);
+        foreach ($rows as &$row)
+        {
+            if (!isset($newClasses[$row['class_id']]))
+                $newClasses[$row['class_id']] = array();
+
+            $newClasses[$row['class_id']][$row['key']] = $row['type'];
+        }
+
+        foreach ($newClasses as $className => $class)
+            $this->classes[$className] = $class;
 
         return $this;
     }
@@ -78,7 +97,7 @@ class FFlexyStore
                     continue;
 
                 $tbAlias = $propName.'_data';
-                $select->joinLeft($this->tbname, array('obj_id' => 'id', 'key' => $select->getDBO()->quote($propName)), $tbAlias, array($propName => $propType));
+                $select->joinLeft($propType == 'text' ? $this->textTbname : $this->tbname, array('obj_id' => 'id', 'key' => $select->getDBO()->quote($propName)), $tbAlias, array($propName => $propType));
             }
 
         return $select;

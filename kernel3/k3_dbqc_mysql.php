@@ -108,7 +108,7 @@ class FDBaseQCmysql
                     else
                         $joinOn[] = (string) $toField;
                 }
-                $tables = '('.$tables.')'.$joinTypes[$selectInfo['joints'][$tableAlias]].$table.' ON ('.implode(', ', $joinOn).')';
+                $tables = '('.$tables.')'.$joinTypes[$selectInfo['joints'][$tableAlias]].$table.' ON ('.implode(' AND ', $joinOn).')';
             }
             else
                 $tables.= ', '.$table;
@@ -438,6 +438,16 @@ class FDBaseQCmysql
 
         return $query;
     }
+
+    public function createView($name, $select, $flags = 0)
+    {
+        $query = 'CREATE ';
+        if ($flags & FDataBase::SQL_CRREPLACE)
+            $query.= 'OR REPLACE ';
+        $query.= 'VIEW `'.$name.'` AS ('.$select.')';
+
+        return $query;
+    }
     
     private function _parseWhere($where, $flags = 0, $tbl_pref = '')
     {
@@ -537,7 +547,7 @@ class FDBaseQCmysql
                 }
 
                 if (($flags & FDataBase::SQL_USEFUNCS) && ($part = $this->_parseFieldFunc($field, $val, true)))
-                    $string.= ($string ? '('.$string.')'.$delim : '').$part;
+                    $string = ($string ? '('.$string.')'.$delim : '').$part;
                 elseif (is_scalar($val))
                 {
                     if (is_bool($val))
@@ -554,7 +564,7 @@ class FDBaseQCmysql
                     $part = (is_null($tblPref))
                         ? preg_replace('#(?<!\w|\\\\)\?#', $val, $field)
                         : $field.' = '.$val;
-                    $string.= ($string ? '('.$string.')'.$delim : '').$part;
+                    $string = ($string ? '('.$string.')'.$delim : '').$part;
                 }
                 elseif (is_array($val) && count($val))
                 {
@@ -587,10 +597,10 @@ class FDBaseQCmysql
                     }
                 }
                 elseif (is_null($val) && !is_null($tblPref))
-                    $string.= ($string ? '('.$string.')'.$delim : '').$field.' IS NULL';
+                    $string = ($string ? '('.$string.')'.$delim : '').$field.' IS NULL';
             }
             else
-                $string.= ($string ? '('.$string.')'.$delim : '').$val;
+                $string = ($string ? '('.$string.')'.$delim : '').$val;
             
         }
 
