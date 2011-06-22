@@ -171,6 +171,18 @@ abstract class FDataStream extends FBaseClass
     protected $mode = 0;
     public function mode() { return $this->mode; }
     public function mtime() { return time(); }
+    public function toString()
+    {
+        if ($this->open('rb'))
+        {
+            $this->seek(0);
+            $data = '';
+            $this->read($data, $this->size());
+            return $data;
+        }
+        else
+            return '';
+    }
 }
 
 /** file data streaming */
@@ -221,6 +233,7 @@ class FStringStream extends FDataStream
         $this->pos+= strlen($data);
         return strlen($data);
     }
+    public function toString() { return $this->string; }
 }
 
 /** special class to represent class with static methods as object */
