@@ -37,6 +37,8 @@ class FVISNode extends FBaseClass // FEventDispatcher
     public function setType($type)
     {
         $this->type = (string) $type;
+
+        return $this;
     }
 
     public function parse($force_reparse = false, Array $add_vars = Array())
@@ -86,78 +88,80 @@ class FVISNode extends FBaseClass // FEventDispatcher
     
     public function sort($varname, $rsort = false) // sorting. For array nodes only
     {
-        if (!($this->flags && self::VISNODE_ARRAY))
-            return false;
+        if ($this->flags && self::VISNODE_ARRAY)
+            F2DArray::sort($this->vars, $varname, $rsort);
         
-        F2DArray::sort($this->vars, $varname, $rsort);
-        
-        return true;
+        return $this;
     }
 
     public function addData($varname, $data, $replace = false)
     {
         if (!$data || !$varname)
-            return false;
-
-        $varname = strtoupper($varname);
-        if (is_array($data))
-            $data = implode(' ', $data);
-        if (!isset($this->vars[$varname]) || $replace)
-            $this->vars[$varname] = Array($data);
+            trigger_error('VIS: no data to add', E_USER_WARNING);
         else
-            $this->vars[$varname][] = $data;
-
-        return true;
+        {
+            $varname = strtoupper($varname);
+            if (is_array($data))
+                $data = implode(' ', $data);
+            if (!isset($this->vars[$varname]) || $replace)
+                $this->vars[$varname] = Array($data);
+            else
+                $this->vars[$varname][] = $data;
+        }
+        
+        return $this;
     }
 
-    public function addDataArray($data_arr, $prefix = '', $delimiter = '')
+    public function addDataArray(array $data_arr, $prefix = '', $delimiter = '')
     {
-        if (!is_array($data_arr) || !is_string($prefix))
-            return false;
-
-        if ($this->flags && self::VISNODE_ARRAY)
+        if (empty($data_arr) || !is_string($prefix))
+            trigger_error('VIS: no data to add', E_USER_WARNING);
+        else
         {
-            if (is_array($data_arr) && count($data_arr))
+            if ($this->flags && self::VISNODE_ARRAY)
             {
-                $this->vars = Array();
-                $in = 0;
-                foreach ($data_arr as $arr)
-                    if (is_array($arr))
-                    {
-                        $this->vars[$in] = Array();
-                        foreach ($arr as $key => $var)
+                if (is_array($data_arr) && count($data_arr))
+                {
+                    $this->vars = Array();
+                    $in = 0;
+                    foreach ($data_arr as $arr)
+                        if (is_array($arr))
                         {
-                            $key = strtoupper($prefix.$key);
-                            if (is_array($var))
-                                $var = implode(' ', $var);
-                            $this->vars[$in][$key] = $var;
+                            $this->vars[$in] = Array();
+                            foreach ($arr as $key => $var)
+                            {
+                                $key = strtoupper($prefix.$key);
+                                if (is_array($var))
+                                    $var = implode(' ', $var);
+                                $this->vars[$in][$key] = $var;
+                            }
+
+                            $this->vars[$in]['_POS'] = $in;
+
+                            $in++;
                         }
 
-                        $this->vars[$in]['_POS'] = $in;
+                    $this->vars[0]['_IS_FIRST'] = '1';
+                    $this->vars[$in-1]['_IS_LAST'] = '1';
+                }
 
-                        $in++;
-                    }
-
-                $this->vars[0]['_IS_FIRST'] = '1';
-                $this->vars[$in-1]['_IS_LAST'] = '1';
+                if (strlen($delimiter))
+                    $this->vars['_DELIM'] = (string) $delimiter;
             }
-
-            if (strlen($delimiter))
-                $this->vars['_DELIM'] = (string) $delimiter;
+            else
+                foreach ($data_arr as $key => $var)
+                {
+                    $key = strtoupper($prefix.$key);
+                    if (is_array($var))
+                        $var = implode(' ', $var);
+                    if (!isset($this->vars[$key]))
+                        $this->vars[$key] = Array($var);
+                    else
+                        $this->vars[$key][] = $var;
+                }
         }
-        else
-            foreach ($data_arr as $key => $var)
-            {
-                $key = strtoupper($prefix.$key);
-                if (is_array($var))
-                    $var = implode(' ', $var);
-                if (!isset($this->vars[$key]))
-                    $this->vars[$key] = Array($var);
-                else
-                    $this->vars[$key][] = $var;
-            }
-
-        return true;
+        
+        return $this;
     }
 
     public function addNode($template, $varname, $data_arr = false, $globname = null)
@@ -176,12 +180,15 @@ class FVISNode extends FBaseClass // FEventDispatcher
     public function appendChild($varname, FVISNode $node)
     {
         if (!$node || !$varname)
-            return false;
-
-        $varname = strtoupper($varname);
-        // TODO: loops checking
-        $this->subs[$varname][] = $node;
-        return true;
+            trigger_error('VIS: no data to add', E_USER_WARNING);
+        else
+        {
+            $varname = strtoupper($varname);
+            // TODO: loops checking
+            $this->subs[$varname][] = $node;
+        }
+        
+        return $this;
     }
 
     public function clear()
@@ -189,6 +196,8 @@ class FVISNode extends FBaseClass // FEventDispatcher
         $this->vars = Array();
         $this->subs = Array();
         $this->parsed = '';
+
+        return $this;
     }
 
     public function __toString()
@@ -272,17 +281,19 @@ class FVISInterface extends FEventDispatcher
             'ROOTURL' => F()->HTTP->rootUrl,
             );
 
-        if ($keep_nodes)
-            return;
+        if (!$keep_nodes)
+        {
+            //clearing nodes
+            foreach ($this->nodes as $node)
+                if ($node)
+                    $node->clear();
 
-        //clearing nodes
-        foreach ($this->nodes as $node)
-            if ($node)
-                $node->clear();
-
-        array_splice($this->nodes, 1);
-        $this->named = Array('PAGE' => 0, 'MAIN' => 0);
-        $this->root_node = 0;
+            array_splice($this->nodes, 1);
+            $this->named = Array('PAGE' => 0, 'MAIN' => 0);
+            $this->root_node = 0;
+        }
+        
+        return $this;
     }
 
     public function setRootNode($node)
@@ -290,53 +301,45 @@ class FVISInterface extends FEventDispatcher
         if (!is_int($node))
             $node = $this->findNodeId($node);
 
-        if (is_null($node))
-            return false;
-
         if (!isset($this->nodes[$node]))
-        {
             trigger_error('VIS: trying to set a fake node', E_USER_WARNING);
-            return false;
-        }
+        else
+            $this->root_node = $node;
         
-        $this->root_node = $node;
-        
-        return true;
+        return $this;
     }
 
-    public function setVConsts($consts, $no_replace = false)
+    public function setVConsts(array $consts, $no_replace = false)
     {
-        if (!is_array($consts))
-            return false;
-
         $this->vis_consts = ($no_replace)
             ? $this->vis_consts + $consts
             : $consts + $this->vis_consts;
 
-        return true;
+        return $this;
     }
 
     public function addFuncParser($name, $callback)
     {
         if (!$name || !is_callable($callback))
-            return false;
-            
-        $name = strtoupper($name);
+            trigger_error('VIS: no function use', E_USER_WARNING);
+        else
+        {
+            $name = strtoupper($name);
         
-        if (isset($this->func_parsers[$name]))
-            return false;
-
-        $this->func_parsers[$name] = $callback;
-
-        return true;
+            if (!isset($this->func_parsers[$name]))
+                $this->func_parsers[$name] = $callback;
+        }
+        
+        return $this;
     }
 
     public function addAutoLoadDir($directory, $file_suff = '.vis')
     {
         $directory = FStr::path($directory);
         $hash = FStr::pathHash($directory);
+
         if (isset($this->auto_loads[$hash]))
-            return true;
+            return $this;
 
         $cachename = self::VPREFIX.'ald-'.$hash;
         if ($aldata = FCache::get($cachename))
@@ -368,13 +371,10 @@ class FVISInterface extends FEventDispatcher
                 F()->Timer->logEvent($filename.' autoloads installed (from filesystem)');
             }
             else
-            {
                 trigger_error('VIS: error installing '.$directory.' auto loading directory', E_USER_WARNING );
-                return false;
-            }
         }
 
-        return true;
+        return $this;
     }
 
     public function loadECSS($filename)
@@ -402,7 +402,8 @@ class FVISInterface extends FEventDispatcher
         }
 
         $this->CSS_loaded = $hash;
-        return true;
+
+        return $this;
     }
 
     public function loadEJS($filename)
@@ -441,7 +442,8 @@ class FVISInterface extends FEventDispatcher
 
             $this->JS_loaded[] = $hash;
         }
-        return true;
+
+        return $this;
     }
 
     public function loadTemplates($filename)
@@ -498,7 +500,8 @@ class FVISInterface extends FEventDispatcher
 
             $this->VIS_loaded[] = $hash;
         }
-        return true;
+
+        return $this;
     }
 
     // parsing functions

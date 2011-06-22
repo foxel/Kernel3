@@ -123,6 +123,8 @@ final class FHTTPInterface extends FEventDispatcher
             }
         }
         $this->pool['cPrefix'] = (string) $new_prefix;
+
+        return $this;
     }
 
     public function getCookie($name)
@@ -138,6 +140,8 @@ final class FHTTPInterface extends FEventDispatcher
 
         if (!$no_nl)
             $this->buffer.= "\n";
+
+        return $this;
     }
 
     public function writeFromOB($append = false, $no_nl = false)
@@ -150,6 +154,8 @@ final class FHTTPInterface extends FEventDispatcher
         ob_clean();
         if (!$no_nl)
             $this->buffer.= "\n";
+
+        return $this;
     }
 
     public function getOB()
@@ -162,6 +168,8 @@ final class FHTTPInterface extends FEventDispatcher
     public function clearBuffer()
     {
         $this->buffer = '';
+
+        return $this;
     }
 
     public function sendDataStream(FDataStream $stream, $filename, $filemime = false, $filemtime = false, $flags = 0)
@@ -383,16 +391,19 @@ final class FHTTPInterface extends FEventDispatcher
     public function setCookiesDomain($domain)
     {
         if (!preg_match('#[\w\.]+\w\.\w{2,4}#', $domain))
-            return false;
-        $my_domain = '.'.ltrim(strtolower($this->SrvName), '.');
-        $domain    = '.'.ltrim(strtolower($domain), '.');
-        $len = strlen($domain);
-        if (substr($my_domain, -$len) == $domain)
+            trigger_error('Tried to set incorrect cookies domain.', E_USER_WARNING);
+        else
         {
-            $this->pool['cDomain'] = $domain;
-            return true;
+            $my_domain = '.'.ltrim(strtolower($this->SrvName), '.');
+            $domain    = '.'.ltrim(strtolower($domain), '.');
+            $len = strlen($domain);
+            if (substr($my_domain, -$len) == $domain)
+                $this->pool['cDomain'] = $domain;
+            else
+                trigger_error('Tried to set incorrect cookies domain.', E_USER_WARNING);
         }
-        return false;
+
+        return $this;
     }
 
     // Sets cookie with root dir parameter (needed on sites with many independent systems in folders)
@@ -480,6 +491,8 @@ final class FHTTPInterface extends FEventDispatcher
 
         if (isset($codes[$stat_code]))
             header(implode(' ', Array($_SERVER["SERVER_PROTOCOL"], $stat_code, $codes[$stat_code])), true, $stat_code);
+        
+        return $this;
     }
 
     // returns client signature based on browser, ip and proxy
