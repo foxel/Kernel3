@@ -11,7 +11,7 @@ if ($email=F('GPC')->getString('email', FGPC::POST))
     if (FStr::isEmail($email, true))
     {
         $emailObj = F()->Mail()
-            ->setSubject('foo')
+            ->setSubject('foo Моя тема')
             ->addTo($email)
             ->setBody('<html><body>'.highlight_file(__FILE__, true).'</body></html>', true)
             ->attachFile(__FILE__);

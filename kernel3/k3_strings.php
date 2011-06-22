@@ -134,11 +134,11 @@ class FStr
         }
     }
 
-    static public function strToMime($string, $recode_to = '', $Quoted_Printable = false)
+    static public function strToMime($string, $recode_to = '', $quotedPrintable = false)
     {
         if (!$recode_to)
             $recode_to = self::INT_ENCODING;
-        if (self::$useMB && $out = mb_encode_mimeheader($string, $recode_to, 'B'))
+        if (self::$useMB && $out = mb_encode_mimeheader($string, $recode_to, $quotedPrintable ? 'Q' : 'B'))
             return $out;
 
         if ($recode_to && $recoded = self::strRecode($string, $recode_to))
@@ -149,7 +149,7 @@ class FStr
         if (!strlen($string))
             return $string;
 
-        if ($Quoted_Printable)
+        if ($quotedPrintable)
             $out = '=?'.$recode_to.'?Q?'.strtr(rawurlencode($string), '%', '=').'?=';
         else
             $out = '=?'.$recode_to.'?B?'.base64_encode($string).'?=';
