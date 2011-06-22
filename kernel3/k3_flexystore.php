@@ -44,10 +44,10 @@ class FFlexyStore extends FBaseClass
         return $this;
     }
 
-    public function loadClassesFromDB($tableName)
+    public function loadClassesFromDB($tableName, $classNames = null)
     {
         $newClasses = array();
-        $rows = $this->dbo->doSelectAll($tableName);
+        $rows = $this->dbo->doSelectAll($tableName, '*', $classNames ? Array('class_id' => $classNames) : false);
         foreach ($rows as &$row)
         {
             if (!isset($newClasses[$row['class_id']]))
@@ -62,13 +62,21 @@ class FFlexyStore extends FBaseClass
         return $this;
     }
 
-    public function pushClassesToDB($tableName)
+    public function pushClassesToDB($tableName, $classNames = null)
     {
+        if ($classNames && !is_array($classNames))
+            $classNames = array($classNames);
+            
         foreach ($this->classes as $className => &$class)
         {
+            if ($classNames && !in_array($className, $classNames))
+                continue;
+
             $this->dbo->doDelete($tableName, array('class_id' => $className));
+            $insert = array();
             foreach ($class as $key => $type)
-                $this->dbo->doInsert($tableName, array('class_id' => $className, 'key' => $key, 'type' => $type));
+                $insert[] = array('class_id' => $className, 'key' => $key, 'type' => $type);
+            $this->dbo->doInsert($tableName, $insert, false, FDataBase::SQL_MULINSERT);
         }
 
         return $this;

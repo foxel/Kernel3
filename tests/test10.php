@@ -9,7 +9,10 @@ $s = F()->DBase->select('objects', 'u')
     ->where('class_id', 'user')
     ;
 $p = F()->FlexyStore('object_values', null, 'object_texts')
-    ->loadClassesFromDB('object_class_fields');
+    ->loadClassesFromDB('object_class_fields', 'user')
+    ->addClassProperty('user', 'frieadwnds', 'text')
+    //->pushClassesToDB('object_class_fields', 'user')
+    ;
 $p->joinToSelect($s, 'user');
 $s->where('city', 'Tomsk');
 
