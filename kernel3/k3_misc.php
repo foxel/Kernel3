@@ -217,6 +217,7 @@ class FStringStream extends FDataStream
     public function write($data)
     {
         $this->string = substr_replace($this->string, $data, $this->pos, 0);
+        $this->len = strlen($this->string);
         $this->pos+= strlen($data);
         return strlen($data);
     }
