@@ -62,6 +62,18 @@ class FFlexyStore extends FBaseClass
         return $this;
     }
 
+    public function pushClassesToDB($tableName)
+    {
+        foreach ($this->classes as $className => &$class)
+        {
+            $this->dbo->doDelete($tableName, array('class_id' => $className));
+            foreach ($class as $key => $type)
+                $this->dbo->doInsert($tableName, array('class_id' => $className, 'key' => $key, 'type' => $type));
+        }
+
+        return $this;
+    }
+
     public function addClass($className, array $clInfo = null)
     {
         if (isset($this->classes[$className]))
@@ -81,6 +93,14 @@ class FFlexyStore extends FBaseClass
     {
         if (isset($this->classes[$className]) && in_array($propType, $this->types))
             $this->classes[$className][$propName] = $propType;
+        
+        return $this;
+    }
+
+    public function dropClassProperty($className, $propName)
+    {
+        if (isset($this->classes[$className]) && isset($this->classes[$className][$propName]))
+            unset($this->classes[$className][$propName]);
         
         return $this;
     }
