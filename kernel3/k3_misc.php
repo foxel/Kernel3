@@ -178,6 +178,7 @@ abstract class FDataStream extends FBaseClass
             $this->seek(0);
             $data = '';
             $this->read($data, $this->size());
+            $this->close();
             return $data;
         }
         else
