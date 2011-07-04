@@ -417,9 +417,7 @@ final class FHTTPInterface extends FEventDispatcher
         if ($value === false && !isset($_COOKIE[$name]))
             return true;
             
-        $res = ($no_domain)
-            ? setcookie($name, $value, $expire, $root)
-            : setcookie($name, $value, $expire, $root, $this->pool['cDomain']);
+        $res = setcookie($name, $value, $expire, $root, ($no_domain) ? false : $this->pool['cDomain'], $this->pool['secure']);
         
         if ($res)
             $_COOKIE[$name] = $value;
