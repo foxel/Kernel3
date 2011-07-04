@@ -86,7 +86,7 @@ final class FHTTPInterface extends FEventDispatcher
                 $this->pool['extRef'] = true;
         }
 
-        if (isset($_SERVER['HTTPS']) && ($_SERVER['HTTPS'] == 'on'))
+        if (isset($_SERVER['HTTPS']) && ($_SERVER['HTTPS'] != 'off'))
             $this->pool['secure'] = true;
 
         if (headers_sent($file, $line))
