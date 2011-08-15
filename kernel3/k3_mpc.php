@@ -131,7 +131,7 @@ class FMPC extends FBaseClass
         {
             $this->curTrack  = $this->status['song'];
             $this->nextTrack = $this->status['nextsong'];
-            list ($this->curTrackPos, $this->curTrackLen) = split(':', $this->status['time']);
+            list ($this->curTrackPos, $this->curTrackLen) = explode(':', $this->status['time'], 2);
         } 
         else
         {
