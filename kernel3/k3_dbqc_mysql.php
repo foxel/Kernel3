@@ -150,7 +150,7 @@ class FDBaseQCmysql
                     $order[] = $field.($part[2] ? ' DESC' : ' ASC');
                 }
                 else
-                    $order[] = '('.$part.')';
+                    $order[] = $part;
             if (count($order))
                 $query.= ' ORDER BY '.implode(', ', $order);
         }
