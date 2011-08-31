@@ -18,6 +18,8 @@ DATETIME_PAST_SECS: %1$d seconds ago
 ---
 DATETIME_PAST_MINS: %1$d minutes ago
 ---
+DATETIME_PAST_HOURS: %1$d hours ago
+---
 DATETIME_TODAY: today %1$s
 ---
 DATETIME_YESTERDAY: yesterday %1$s

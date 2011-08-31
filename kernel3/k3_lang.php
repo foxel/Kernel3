@@ -290,8 +290,11 @@ class FLNGData // extends FEventDispatcher
             $out = sprintf($this->privateLang('DATETIME_PAST_SECS'), ($now - $timestamp));
         elseif ($timestamp > ($now - 3600))
             $out = sprintf($this->privateLang('DATETIME_PAST_MINS'), round(($now - $timestamp)/60));
-        elseif ($timetodraw > $today)
-            $out = sprintf($this->privateLang('DATETIME_TODAY'), gmdate($time_f, $timetodraw));
+        elseif ($timetodraw > $today) {
+            $out = ($timestamp > ($now - 3*3600))
+                ? sprintf($this->privateLang('DATETIME_PAST_HOURS'), round(($now - $timestamp)/3600))
+                : sprintf($this->privateLang('DATETIME_TODAY'), gmdate($time_f, $timetodraw));
+        }
         elseif ($timetodraw > $yesterday)
             $out = sprintf($this->privateLang('DATETIME_YESTERDAY'), gmdate($time_f, $timetodraw));
         else

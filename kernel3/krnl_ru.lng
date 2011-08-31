@@ -26,6 +26,8 @@ DATETIME_PAST_SECS: %1$d сек. назад
 ---
 DATETIME_PAST_MINS: %1$d мин. назад
 ---
+DATETIME_PAST_HOURS: %1$d ч. назад
+---
 DATETIME_TODAY: сегодня %1$s
 ---
 DATETIME_YESTERDAY: вчера %1$s
