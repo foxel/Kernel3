@@ -5,3 +5,6 @@ glob:tests/*.log
 glob:tests/*.file
 glob:*.php0
 glob:*.diff
+glob:*.swp
+glob:*.sess
+glob:tags
