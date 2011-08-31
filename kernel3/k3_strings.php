@@ -37,6 +37,15 @@ class FStr
 
     private function __construct() {}
 
+    private static $self = null;
+
+    public static function getInstance()
+    {
+        if (!self::$self)
+            self::$self = new StaticInstance('FStr');
+        return self::$self;
+    }
+
     static public function initEncoders()
     {
         self::$useMB = extension_loaded('mbstring');

@@ -25,6 +25,17 @@ class FCache
     static private $cache_folder = '';
     static private $qTime = 0;
 
+    private function __construct() {}
+
+    private static $self = null;
+
+    public static function getInstance()
+    {
+        if (!self::$self)
+            self::$self = new StaticInstance('FCache');
+        return self::$self;
+    }
+
     static public function initCacher()
     {
         self::$cache_folder = F_DATA_ROOT.'cache';

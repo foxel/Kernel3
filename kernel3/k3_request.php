@@ -35,6 +35,15 @@ class FGPC
 
     private function __construct() {}
 
+    private static $self = null;
+
+    public static function getInstance()
+    {
+        if (!self::$self)
+            self::$self = new StaticInstance('FGPC');
+        return self::$self;
+    }
+
     public static function init()
     {
         self::$CPrefix = self::DEF_COOKIE_PREFIX;

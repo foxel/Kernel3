@@ -159,10 +159,10 @@ class F extends FEventDispatcher
 
     private function __construct()
     {        $this->pool['Timer'] = new FTimer();
-        $this->pool['Cache'] = new StaticInstance('FCache');
-        $this->pool['Str']   = new StaticInstance('FStr');
+        $this->pool['Cache'] = FCache::getInstance();
+        $this->pool['Str']   = FStr::getInstance();
         $this->pool['HTTP']  = FHTTPInterface::getInstance();
-        $this->pool['GPC']   = new StaticInstance('FGPC');
+        $this->pool['GPC']   = FGPC::getInstance();
         $this->pool['LNG']   = FLNGData::getInstance();
         //$this->pool['DBase'] = new FDataBase();
         $this->classes['DBase'] = 'FDataBase';
