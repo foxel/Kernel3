@@ -12,7 +12,8 @@ if (!defined('F_STARTED'))
 
 /** base kernel class */
 abstract class FBaseClass
-{    protected $pool = Array();
+{
+    protected $pool = Array();
 
     public function __get($name)
     {
@@ -160,7 +161,8 @@ abstract class FEventDispatcher extends FBaseClass
 
 /** basic data streaming abstraction class */
 abstract class FDataStream extends FBaseClass
-{    abstract public function open($mode = 'rb');
+{
+    abstract public function open($mode = 'rb');
     abstract public function close();
     abstract public function EOF();
     abstract public function size();
@@ -265,7 +267,8 @@ final class StaticInstance
 
 /** special null object for object actions error handling */
 final class FNullObject
-{    private $message = '';
+{
+    private $message = '';
 
     public function __construct($var_id = 'Object') { $this->message = $var_id.' is not defined but used as object'; }
 
@@ -277,7 +280,7 @@ final class FNullObject
 }
 
 class FException extends Exception
-{
+{
 }
 
 
@@ -483,7 +486,8 @@ final class FMisc
     // recursively builds a linear array of references to all the scalar elements of array or object based tree
     // usefull for iterating complex data trees
     static public function linearize(&$data)
-    {        $res = Array();
+    {
+        $res = Array();
         if (is_scalar($data))
             $res[] =& $data;
         if (is_array($data) || is_object($data))
@@ -510,7 +514,8 @@ final class FMisc
 
         if ($do_change) // selecting iteration mode here (optimization)
             foreach ($linear as &$val)
-            {                $args[0] =&$val;
+            {
+                $args[0] =&$val;
                 $val = call_user_func_array($func_link, $args);
             }
         else

@@ -119,7 +119,8 @@ class FLNGData // extends FEventDispatcher
     }
 
     public function load($filename)
-    {        $this->loadLanguage($filename);
+    {
+        $this->loadLanguage($filename);
     }
 
     public function loadLanguage($filename)

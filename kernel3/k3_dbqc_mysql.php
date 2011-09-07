@@ -12,7 +12,8 @@ class FDBaseQCmysql
     private $pdo = null;
 
     public function __construct(PDO $pdo)
-    {        // html charset transformation table TODO: filling
+    {
+        // html charset transformation table TODO: filling
         static $charSets = Array(); 
         
         // html charset names to SQL ones converting

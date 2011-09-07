@@ -110,7 +110,8 @@ final class FHTTPInterface extends FEventDispatcher
 
         // special for chenging prefix without dropping down the session
         if ($do_rename)
-        {            $o_prefix = $this->pool['cPrefix'].'_';
+        {
+            $o_prefix = $this->pool['cPrefix'].'_';
             foreach ($_COOKIE as $val => $var)
             {
                 if (strpos($val, $o_prefix) === 0)
@@ -128,7 +129,8 @@ final class FHTTPInterface extends FEventDispatcher
     }
 
     public function getCookie($name)
-    {        $name = $this->pool['cPrefix'].'_'.$name;
+    {
+        $name = $this->pool['cPrefix'].'_'.$name;
 
         return (isset($_COOKIE[$name])) ? $_COOKIE[$name] : null;
     }
@@ -139,7 +141,7 @@ final class FHTTPInterface extends FEventDispatcher
             $this->buffer.= (string) $text;
 
         if (!$no_nl)
-            $this->buffer.= "\n";
+            $this->buffer.= PHP_EOL;
 
         return $this;
     }
@@ -153,7 +155,7 @@ final class FHTTPInterface extends FEventDispatcher
 
         ob_clean();
         if (!$no_nl)
-            $this->buffer.= "\n";
+            $this->buffer.= PHP_EOL;
 
         return $this;
     }

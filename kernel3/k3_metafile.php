@@ -32,14 +32,16 @@ final class FMetaFileFactory
 }
 
 class FMetaFilePart
-{    public $o = null;
+{
+    public $o = null;
     public $s = 0;
     public $l = 0;
     public $p = 0;
 }
 
 class FMetaFile extends FDataStream
-{    private $parts = Array();
+{
+    private $parts = Array();
     private $sel_part = -1;
     private $pos = 0;
     private $fsize = 0;
@@ -61,7 +63,8 @@ class FMetaFile extends FDataStream
     }
 
     public function add(FDataStream $part)
-    {        if (!$part->size())
+    {
+        if (!$part->size())
             return false;
         $i = count($this->parts);
         $this->parts[$i] = $p = new FMetaFilePart();
@@ -106,7 +109,8 @@ class FMetaFile extends FDataStream
 
         $adata = $data = '';
         while ($len)
-        {            $rlen = min($len, $this->parts[$this->sel_part]->l - ($this->pos - $this->parts[$this->sel_part]->p));
+        {
+            $rlen = min($len, $this->parts[$this->sel_part]->l - ($this->pos - $this->parts[$this->sel_part]->p));
             $glen = $this->parts[$this->sel_part]->o->read($adata, $rlen);
             if ($glen < $rlen)
                 $adata.= str_repeat($this->fillchr, $rlen - $glen);
@@ -152,11 +156,13 @@ class FMetaFile extends FDataStream
     public function mtime() { return $this->mtime; }
 
     public function toFile($filename)
-    {        if (!$filename)
+    {
+        if (!$filename)
             return false;
 
         if ($out = fopen($filename, 'wb'))
-        {            $this->open();
+        {
+            $this->open();
             $buff = '';
             while($this->read($buff, 1048576)) // 1MB
                 fwrite($out, $buff);
@@ -169,7 +175,8 @@ class FMetaFile extends FDataStream
 }
 
 class FMetaTar extends FMetaFile
-{    private $conts = Array();
+{
+    private $conts = Array();
     private $root_link = '';
     public function __construct($root_link = false)
     {
@@ -224,7 +231,8 @@ class FMetaTar extends FMetaFile
         if (is_file($filename))
             parent::add(new FFileStream($filename));
         elseif ($odir = opendir($filename))
-        {            if (!is_callable($ch_callback))
+        {
+            if (!is_callable($ch_callback))
                 $ch_callback = null;
 
             while ($dfile = readdir($odir))

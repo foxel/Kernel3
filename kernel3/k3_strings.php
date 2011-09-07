@@ -29,7 +29,7 @@ class FStr
     const CHR_CACHEPREFIX = 'FSTR.CHR.';
     const INT_ENCODING = F_INTERNAL_ENCODING;
 
-    const ENDL = "\n";
+    const ENDL = PHP_EOL;
 
     private static $ltts = Array(); // alphabetic chars data array
     private static $chrs = Array(); // Charconv tables
@@ -290,7 +290,7 @@ class FStr
     {
         $text = str_replace(Array('\\', '$'), Array('\\\\', '\\$'), $text);
         if ($heredoc_id)
-            $text = str_replace("\n\r?".$heredoc_id, "\n ".$heredoc_id, $text);
+            $text = str_replace('([\r\n])'.$heredoc_id, '$1 '.$heredoc_id, $text);
         return $text;
     }
 
@@ -349,7 +349,8 @@ class FStr
         elseif (is_null($data))
             $def = 'null';
         elseif (is_array($data) || is_object($data))
-        {            $def = "Array (\n";
+        {
+            $def = 'Array ('.PHP_EOL;
             $fields = Array();
             $maxlen = 0;
             foreach( $data as $key => $val )
@@ -358,7 +359,7 @@ class FStr
                 $field.= self::PHPDefine($val, $tabs+1);
                 $fields[]= $pref.$field;
             }
-            $def.=implode(" ,\n", $fields)."\n".$pref.') ';
+            $def.=implode(' ,'.PHP_EOL, $fields).PHP_EOL.$pref.') ';
         }
         else
             $def = '\''.addslashes($data).'\'';
@@ -583,7 +584,8 @@ class FStr
     }
 
     static public function pathHash($path)
-    {        return md5(realpath($path)); // TODO: maybe this needs to be modified
+    {
+        return md5(realpath($path)); // TODO: maybe this needs to be modified
     }
 
     // private functions
@@ -770,6 +772,7 @@ class FStr
     }
 
 }
+
 FStr::initEncoders();
 
 ?>

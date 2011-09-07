@@ -57,7 +57,8 @@ class FDataBase extends FEventDispatcher
     }
 
     public function connect($params, $username = '', $password = '', $tbPrefix = 'qf_', $options = Array())
-    {        $conn_pars = Array();
+    {
+        $conn_pars = Array();
         if (!is_array($params))
             return false;
         foreach ($params as $key => $value)
@@ -275,7 +276,8 @@ class FDataBase extends FEventDispatcher
     }
 
     public function quote($string)
-    {        if (!$this->c)
+    {
+        if (!$this->c)
             throw new FException('DB is not connected');
 
         return $this->c->quote($string);

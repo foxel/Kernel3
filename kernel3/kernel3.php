@@ -134,7 +134,8 @@ unset($kernel_codecache_dir, $base_modules_files, $base_modules_stats, $base_mod
  * used to control all the modules
  */
 class F extends FEventDispatcher
-{    /** internal encoding (usually UTF-8) */
+{
+    /** internal encoding (usually UTF-8) */
     const INTERNAL_ENCODING = F_INTERNAL_ENCODING;
     /** kernel files directory */
     const KERNEL_DIR = F_KERNEL_DIR;
@@ -158,7 +159,8 @@ class F extends FEventDispatcher
     private $clclose = Array();
 
     private function __construct()
-    {        $this->pool['Timer'] = new FTimer();
+    {
+        $this->pool['Timer'] = new FTimer();
         $this->pool['Cache'] = FCache::getInstance();
         $this->pool['Str']   = FStr::getInstance();
         $this->pool['HTTP']  = FHTTPInterface::getInstance();
@@ -191,7 +193,8 @@ class F extends FEventDispatcher
      * @param string $name Name of the kernel module to access. If empty - kernel object returned
      */
     public static function kernel($name = null)
-    {        if (!self::$self)
+    {
+        if (!self::$self)
             self::$self = new F();
         return is_null($name)
             ? self::$self
@@ -240,7 +243,8 @@ class F extends FEventDispatcher
                 : ($this->pool[$mod_name] = new $mod_class());
 
             if ($res)
-            {                if (method_exists($mod_class, '_Start'))
+            {
+                if (method_exists($mod_class, '_Start'))
                     $this->pool[$mod_name]->_Start();
                 if (method_exists($mod_class, '_Close'))
                     $this->clclose[] = Array(&$this->pool[$mod_name], '_Close');
@@ -258,11 +262,12 @@ class F extends FEventDispatcher
      * @ignore
      */
     public function handleException(Exception $e)
-    {        $logfile = F_LOGS_ROOT.'fatal.log';
+    {
+        $logfile = F_LOGS_ROOT.'fatal.log';
         $eName = get_class($e).(($e instanceof ErrorException) ? '['.self::$ERR_TYPES[$e->getSeverity()].']' : '');
         if ($logfile = fopen($logfile, 'ab'))
         {
-            fwrite($logfile, date('[d M Y H:i]').' '.$eName.': '.$e->getMessage().'. File: '.$e->getFile().'. Line: '.$e->getLine().".\r\n".$e->getTraceAsString().".\r\n");
+            fwrite($logfile, date('[d M Y H:i]').' '.$eName.': '.$e->getMessage().'. File: '.$e->getFile().'. Line: '.$e->getLine().'.'.PHP_EOL.$e->getTraceAsString().'.'.PHP_EOL);
             fclose($logfile);
         }
 
@@ -285,7 +290,7 @@ class F extends FEventDispatcher
             $logfile = fopen(F_LOGS_ROOT.'error.log', 'ab');
         $eName = isset(self::$ERR_TYPES[$c]) ? '['.self::$ERR_TYPES[$c].']' : '[UNKNOWN ERROR]';
         if ($logfile)
-            fwrite($logfile, date('[d M Y H:i]').' '.$eName.': '.$m.'. File: '.$f.'. Line: '.$l.".\r\n".FStr::PHPDefine(array_slice(debug_backtrace(),1)).".\r\n");
+            fwrite($logfile, date('[d M Y H:i]').' '.$eName.': '.$m.'. File: '.$f.'. Line: '.$l.'.'.PHP_EOL.FStr::PHPDefine(array_slice(debug_backtrace(),1)).'.'.PHP_EOL);
     }
 
     /** Handles accessing to modules in F()->module form
@@ -293,7 +298,8 @@ class F extends FEventDispatcher
      * @param string $name Name of module to access
      */
     public function __get($name)
-    {        if (isset($this->pool[$name]))
+    {
+        if (isset($this->pool[$name]))
             return $this->pool[$name];
         elseif (isset($this->classes[$name]) && $this->runModule($name))
             return $this->pool[$name];
@@ -308,7 +314,8 @@ class F extends FEventDispatcher
      * @param array $arguments
      */
     public function __call($name, $arguments)
-    {        $mod_class = $this->classes[$name];
+    {
+        $mod_class = $this->classes[$name];
 
         if (isset($this->pool[$name]) || $this->runModule($name))
             if (method_exists($mod_class, '_Call'))

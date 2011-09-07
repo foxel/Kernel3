@@ -36,7 +36,8 @@ class FTimer
     }
 
     public function getTimer($id, $reset = false)
-    {        if (!isset($this->timePoints[$id]))
+    {
+        if (!isset($this->timePoints[$id]))
             return false;
         $out = $this->microTime() - $this->timePoints[$id];
         if ($reset)
@@ -57,11 +58,13 @@ class FTimer
     }
 
     public function getLog()
-    {        return $this->timeLog;
+    {
+        return $this->timeLog;
     }
 
     public function qTime()
-    {        return $this->qTime;
+    {
+        return $this->qTime;
     }
 
     public function setQTime($time)

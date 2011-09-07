@@ -215,7 +215,8 @@ class FParser extends FEventDispatcher
                     $state_nobb = true;
                 }
                 elseif ($tagname == $this->parabreaker)
-                {                    while ($subtname = $this->TStackLast())
+                {
+                    while ($subtname = $this->TStackLast())
                     {
                         $subtmode = $this->tags[$subtname]['mode'];
                         if ($subtmode & self::BBTAG_BLLEV)
