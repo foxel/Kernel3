@@ -68,7 +68,7 @@ class FDBaseQCmysql
                     if (FStr::isWord($field))
                         $field = '`'.$field.'`';
                     if ($val[0])
-                        $field = $val[0].'.'.$field;
+                        $field = '`'.$val[0].'`.'.$field;
                 }
                 else
                     $field = '('.strval($val).')';
@@ -89,9 +89,13 @@ class FDBaseQCmysql
         $tables = '';
         foreach ($selectInfo['tables'] as $tableAlias => $tableName)
         {
-            $table = (FStr::isWord($tableName))
-                ? '`'.$tableName.'` as '.$tableAlias
-                : '('.$tableName.') as '.$tableAlias;
+            if ($tableAlias != $tableName) {
+                $table = (FStr::isWord($tableName))
+                    ? '`'.$tableName.'` as `'.$tableAlias.'`'
+                    : '('.$tableName.') as `'.$tableAlias.'`';
+            }
+            else 
+                $table = '`'.$tableName.'`';
             
             if (!$tables)
                 $tables = $table;
@@ -103,8 +107,8 @@ class FDBaseQCmysql
                     if (is_string($field)) 
                     {
                         $joinOn[] = is_array($toField)
-                            ? $tableAlias.'.`'.$field.'` = '.$toField[0].'.`'.$toField[1].'`'
-                            : $tableAlias.'.`'.$field.'` = '.$toField;
+                            ? '`'.$tableAlias.'`.`'.$field.'` = '.$toField[0].'.`'.$toField[1].'`'
+                            : '`'.$tableAlias.'`.`'.$field.'` = '.$toField;
                     }
                     else
                         $joinOn[] = (string) $toField;
@@ -129,7 +133,7 @@ class FDBaseQCmysql
                 {
                     $field = '`'.$part[1].'`';
                     if ($part[0])
-                        $field = $part[0].'.'.$field;
+                        $field = '`'.$part[0].'`.'.$field;
                     $group[] = $field;
                 }
                 else
@@ -147,7 +151,7 @@ class FDBaseQCmysql
                 {
                     $field = '`'.$part[1].'`';
                     if ($part[0])
-                        $field = $part[0].'.'.$field;
+                        $field = '`'.$part[0].'`.'.$field;
                     $order[] = $field.($part[2] ? ' DESC' : ' ASC');
                 }
                 else
@@ -544,11 +548,13 @@ class FDBaseQCmysql
                 {
                     $field = '`'.$field.'`';
                     if ($tblPref)
-                        $field = $tblPref.'.'.$field;
+                        $field = '`'.$tblPref.'`.'.$field;
                 }
 
                 if (($flags & FDataBase::SQL_USEFUNCS) && ($part = $this->_parseFieldFunc($field, $val, true)))
-                    $string = ($string ? '('.$string.')'.$delim : '').$part;
+                    $string = $string 
+                        ? '('.$string.')'.$delim.'('.$part.')'
+                        : $part;
                 elseif (is_scalar($val))
                 {
                     if (is_bool($val))
@@ -565,7 +571,9 @@ class FDBaseQCmysql
                     $part = (is_null($tblPref))
                         ? preg_replace('#(?<!\w|\\\\)\?#', $val, $field)
                         : $field.' = '.$val;
-                    $string = ($string ? '('.$string.')'.$delim : '').$part;
+                    $string = $string 
+                        ? '('.$string.')'.$delim.'('.$part.')'
+                        : $part;
                 }
                 elseif (is_array($val) && count($val))
                 {
@@ -594,15 +602,26 @@ class FDBaseQCmysql
                         $part = (is_null($tblPref))
                             ? preg_replace('#(?<!\w|\\\\)\?#', implode(', ', $nvals), $field)
                             : $field.' IN ('.implode(', ', $nvals).')';
-                        $string.= ($string ? '('.$string.')'.$delim : '').$part;
+                        $string = $string 
+                            ? '('.$string.')'.$delim.'('.$part.')'
+                            : $part;
                     }
                 }
                 elseif (is_null($val) && !is_null($tblPref))
-                    $string = ($string ? '('.$string.')'.$delim : '').$field.' IS NULL';
+                {
+                    $part = $field.' IS NULL';
+                    $string = $string 
+                        ? '('.$string.')'.$delim.'('.$part.')'
+                        : $part;
+                }
             }
-            else
-                $string = ($string ? '('.$string.')'.$delim : '').$val;
-            
+            else 
+            {
+                $part = $val;
+                $string = $string 
+                    ? '('.$string.')'.$delim.'('.$part.')'
+                    : $part;
+            }
         }
 
         return $string;
@@ -682,7 +701,8 @@ class FDBaseQCmysql
             '<'  => '%1$s < %2$s',  '<=' => '%1$s <= %2$s',
             '>'  => '%1$s > %2$s',  '>=' => '%1$s >= %2$s',
             '<>' => '%1$s <> %2$s', '!=' => '%1$s != %2$s',
-            'LIKE' => '%1$s LIKE %2$s', 'ISNULL' => 'ISNULL(%1$s) = %2$s',
+            'LIKE' => '%1$s LIKE %2$s', '!LIKE' => '%1$s NOT LIKE %2$s',
+            'ISNULL' => 'ISNULL(%1$s) = %2$s',
             );
 
         if (!is_string($data))

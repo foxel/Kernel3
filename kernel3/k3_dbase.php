@@ -327,7 +327,7 @@ class FDBSelect
     public function __construct($tableName, $tableAlias = false, array $fields = null, FDataBase $dbo = null)
     {
         if (!$tableAlias || !is_string($tableAlias))
-            $tableAlias = 't'.count($this->tables);
+            $tableAlias = $tableName;
 
         $this->dbo = (!is_null($dbo))
             ? $dbo
@@ -358,7 +358,9 @@ class FDBSelect
     public function join($tableName, $joinOn, $tableAlias = false, array $fields = null, $joinType = self::JOIN_INNER)
     {
         if (!$tableAlias || !is_string($tableAlias))
-            $tableAlias = 't'.count($this->tables);
+            $tableAlias = isset($this->tables[$tableName])
+                ? 't'.count($this->tables)
+                : $tableName;
 
         $this->tables[$tableAlias] = (string) $tableName;
         $this->joins[$tableAlias]  = array();
@@ -370,8 +372,14 @@ class FDBSelect
             {
                 if (FStr::isWord($field))
                 {
-                    if (is_string($toField) && FStr::isWord($toField))
-                        $this->joins[$tableAlias][$field] = array($this->_determineTableAlias(), $toField);
+                    if (is_string($toField)) {
+                        $refTableAlias = $this->_determineTableAliasWithColumn($toField);
+                        if (FStr::isWord($toField)) {
+                            $this->joins[$tableAlias][$field] = array($refTableAlias, $toField);
+                        } 
+                        else 
+                            $this->joins[$tableAlias][$field] = $toField;
+                    }
                     else
                         $this->joins[$tableAlias][$field] = $toField;
                 }
@@ -397,12 +405,12 @@ class FDBSelect
     
     public function column($column, $alias = false, $tableAlias = false)
     {
-        $this->_determineTableAlias($tableAlias);
+        $this->_determineTableAliasWithColumn($column, $tableAlias);
 
         if ($column instanceof self)
             $expr = $column;
         elseif ($column == '*' || FStr::isWord($column))
-            $expr = array($tableAlias, $column);
+            $expr = array($tableAlias, $alias = $column);
         else
             $expr = (string) $column;
 
@@ -435,7 +443,7 @@ class FDBSelect
             return $this;
         }
 
-        $this->_determineTableAlias($tableAlias);
+        $this->_determineTableAliasWithColumn($where, $tableAlias);
 
         if (FStr::isWord($where))
         {
@@ -459,9 +467,9 @@ class FDBSelect
 
     public function order($order, $desc = false, $tableAlias = false)
     {
-        $this->_determineTableAlias($tableAlias);
+        $this->_determineTableAliasWithColumn($order, $tableAlias);
 
-        if (FStr::isWord($order)) // clumn given
+        if (FStr::isWord($order)) // column given
             $this->order[] = array($tableAlias, $order, (boolean) $desc);
         else
             $this->order[] = $order;
@@ -471,7 +479,7 @@ class FDBSelect
 
     public function group($group, $tableAlias = false)
     {
-        $this->_determineTableAlias($tableAlias);
+        $this->_determineTableAliasWithColumn($group, $tableAlias);
 
         if (FStr::isWord($group)) // column given
             $this->group[] = array($tableAlias, $group);
@@ -535,11 +543,24 @@ class FDBSelect
     {
         return $this->dbo->createView($name, $this, $this->flags | (int) $add_params);
     }
-    
-    protected function _determineTableAlias(&$tableAlias = false)
+
+    public function addFlags($add_params)
     {
-        if (is_null($tableAlias))
-            return null;
+        $this->flags |= (int) $add_params;
+        return $this;
+    }
+    
+    protected function _determineTableAliasWithColumn(&$field, &$tableAlias = false)
+    {
+        if (count($fParts = explode('.', $field)) == 2 // two parts separated by '.'
+            && (FStr::isWord($fParts[1]) || $fParts[1] == '*') // second part is field name
+            && FStr::isWord($fParts[0])) // first part is table alias name
+        {
+            $field = $fParts[1];
+            $tableAlias = $fParts[0];
+        }
+        elseif (is_null($tableAlias) || isset($this->fields[$field]))
+            return ($tableAlias = null);
             
         if (!$tableAlias)
             list($tableAlias) = array_keys($this->tables);
