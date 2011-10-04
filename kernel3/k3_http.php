@@ -237,11 +237,11 @@ final class FHTTPInterface extends FEventDispatcher
                 // Or you may use tricky_mode to force sending 8-bit UTF-8 filenames
                 //  via breaking some standarts. Opera will get it but IE not
                 //  so don't use it if you don't really need to
-                if ($flags & self::FILE_RFC2231)
+                if (($flags & self::FILE_RFC2231) == self::FILE_RFC2231)
                 {
                     $filename = FStr::strToRFC2231($filename);
                 }
-                if ($flags & self::FILE_RFC1522)
+                elseif ($flags & self::FILE_RFC1522)
                 {
                     $filename = FStr::strToMime($filename);
                 }
