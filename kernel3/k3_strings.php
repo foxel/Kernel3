@@ -143,6 +143,24 @@ class FStr
         }
     }
 
+    static public function strToRFC2231($string, $recode_to = '')
+    {
+        if (!$recode_to)
+            $recode_to = self::INT_ENCODING;
+
+        if ($recode_to && $recoded = self::strRecode($string, $recode_to))
+            $string = $recoded;
+        else
+            $recode_to = self::INT_ENCODING;
+
+        if (!strlen($string))
+            return $string;
+
+        $out = $recode_to.'\'\''.rawurlencode($string);
+
+        return $out;
+    }
+
     static public function strToMime($string, $recode_to = '', $quotedPrintable = false)
     {
         if (!$recode_to)
