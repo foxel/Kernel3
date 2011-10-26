@@ -19,7 +19,7 @@ final class FHTTPInterface extends FEventDispatcher
     const FILE_ATTACHMENT = 1;
     const FILE_RFC1522    = 8;
     const FILE_TRICKY     = 16;
-    const FILE_RFC2231    = 24; // 16+8
+    const FILE_RFC2231    = 32;
 
     private $buffer = '';
 
@@ -223,6 +223,7 @@ final class FHTTPInterface extends FEventDispatcher
             FMisc::obFree();
 
             $filename = preg_replace('#[\x00-\x1F]+#', '', $filename);
+            $dispositionHeader = array(&$disposition);
 
             if (preg_match('#[^\x20-\x7F]#', $filename))
             {
@@ -234,31 +235,37 @@ final class FHTTPInterface extends FEventDispatcher
                 //  selected language and all unknown chars will be replaced with '_'
                 //  if you want to send non-ASCII filename to FireFox you'll need to
                 //  set 'FHTTPInterface::FILE_RFC1522' flag
-                // Or you may use tricky_mode to force sending 8-bit UTF-8 filenames
-                //  via breaking some standarts. Opera will get it but IE not
+                // Or you may use tricky_mode to force sending urlencoded UTF-8 filenames.
+                //  IE will get it but other browsers probably not
                 //  so don't use it if you don't really need to
-                if (($flags & self::FILE_RFC2231) == self::FILE_RFC2231)
-                {
-                    $filename = FStr::strToRFC2231($filename);
+                if ($flags & self::FILE_RFC1522) {
+                    $dispositionParts[] = 'filename="'.FStr::strToMime($filename).'"';
                 }
-                elseif ($flags & self::FILE_RFC1522)
-                {
-                    $filename = FStr::strToMime($filename);
-                }
-                elseif ($flags & self::FILE_TRICKY)
-                {
+                elseif ($flags & self::FILE_TRICKY) {
                     if (preg_match('#^text/#i', $filemime))
                         $disposition = 'attachment';
-                    $filemime.= '; charset="'.F::INTERNAL_ENCODING.'"';
+                    $dispositionHeader[] = 'filename="'.rawurlencode($filename).'"';
+                    if (F::INTERNAL_ENCODING != 'utf-8') {
+                        $dispositionHeader[] = 'encoding="'.F::INTERNAL_ENCODING.'"';
+                    }
                 }
-                else
-                    $filename = F()->LNG->Translit($filename);
+                else {
+                    $dispositionHeader[] = 'filename="'.F()->LNG->Translit($filename).'"';
+                }
+
+                // RFC2231 filename* token for modern browsers
+                if ($flags & self::FILE_RFC2231) {
+                    $dispositionHeader[] = 'filename*='.FStr::strToRFC2231($filename);
+                }
+            }
+            else {
+                $dispositionHeader[] = 'filename="'.$filename.'"';
             }
 
             header('Last-Modified: '.gmdate('D, d M Y H:i:s ', $FileTime).'GMT');
             header('Expires: '.date('r', F()->Timer->qTime() + 3600*24), true);
             header('Content-Transfer-Encoding: binary');
-            header('Content-Disposition: '.$disposition.'; filename="'.$filename.'"');
+            header('Content-Disposition: '.implode('; ', $dispositionHeader));
             header('Content-Type: '.$filemime);
             header('Content-Length: '.($FileSize - $SeekFile));
             header('Accept-Ranges: bytes');

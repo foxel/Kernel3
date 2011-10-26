@@ -6,7 +6,7 @@ require_once 'kernel3.php';
 
 
 if (FGPC::getBin('image'))
-    F('HTTP')->sendFile('lightning.png', false, 'image/png');
+    F('HTTP')->sendFile('lightning.png', 'молния.png', 'image/png', false, FHTTPInterface::FILE_RFC2231);
 
 $page = '<html><head><!--Meta-Content-Type--><title>'.F_SITE_INDEX.'</title></head>
 <body><img src="'.F_SITE_INDEX.'?image" alt="image" />
