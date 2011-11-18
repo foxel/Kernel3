@@ -240,9 +240,9 @@ class FStringStream extends FDataStream
 }
 
 /** special class to represent class with static methods as object */
-final class StaticInstance
+class StaticInstance
 {
-    private $c = null;
+    protected $c = null;
 
     public function __construct($c)
     {
@@ -259,8 +259,12 @@ final class StaticInstance
 
     public function __get($p)
     {
-        if ($this->c)
-            return @constant($this->c.'::'.$p);
+        if ($this->c) {
+            return method_exists($this->c, 'get')
+                ? call_user_func(Array($this->c, 'get'), $p)
+                : @constant($this->c.'::'.$p);
+        }
+
         return null;
     }
 }

@@ -83,6 +83,7 @@ $base_modules_files = Array(
     F_KERNEL_DIR.'k3_lang.php',          // kernel 3 LNG interface
     F_KERNEL_DIR.'k3_dbase.php',         // kernel 3 database interface
     F_KERNEL_DIR.'k3_session.php',       // kernel 3 session extension
+    F_KERNEL_DIR.'k3_registry.php',      // kernel 3 registry extension
 );
 // we'll do some trick with caching base modules in one file
 $base_modules_stats = Array();
@@ -167,9 +168,11 @@ class F extends FEventDispatcher
         $this->pool['GPC']   = FGPC::getInstance();
         $this->pool['LNG']   = FLNGData::getInstance();
         //$this->pool['DBase'] = new FDataBase();
-        $this->classes['DBase'] = 'FDataBase';
-        $this->classes['Session'] = 
-        $this->classes['Sess'] = 'FSession';
+        $this->classes['DBase']    = 'FDataBase';
+        $this->classes['Session']  = 
+        $this->classes['Sess']     = 'FSession';
+        $this->classes['Registry'] = 'FRegistry';
+        $this->classes['Config']   = 'FConfig';
         //$this->pool['DBObject'] = new StaticInstance('FDBObject');
 
         
