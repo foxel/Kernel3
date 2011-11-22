@@ -42,7 +42,7 @@ class FDataBase extends FEventDispatcher
         if (!isset($this->dbDrivers[$dbaseType]))
             trigger_error($dbaseType.' driver is not supported by F DataBase manager', E_USER_ERROR);
         
-        require_once(F_KERNEL_DIR.'k3_dbqc_'.$this->dbDrivers[$dbaseType].'.php');
+        require_once(F_KERNEL_DIR.DIRECTORY_SEPARATOR.'k3_dbqc_'.$this->dbDrivers[$dbaseType].'.php');
 
         $this->pool['type']  =& $this->dbType;
         $this->pool['lastQueryResult'] =& $this->qResult;

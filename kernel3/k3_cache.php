@@ -38,7 +38,7 @@ class FCache
 
     static public function initCacher()
     {
-        self::$cache_folder = F_DATA_ROOT.'cache';
+        self::$cache_folder = F_DATA_ROOT.DIRECTORY_SEPARATOR.'cache';
         self::$qTime = time();
         if (!is_dir(self::$cache_folder))
             FMisc::mkdirRecursive(self::$cache_folder);

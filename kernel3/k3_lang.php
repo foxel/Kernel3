@@ -450,7 +450,7 @@ class FLNGData // extends FEventDispatcher
         $lngs = array_keys($this->getAcceptLang());
         $lngs[] = 'en';
         foreach ($lngs as $lng)
-            if (file_exists($file = F::KERNEL_DIR.'krnl_'.$lng.'.lng'))
+            if (file_exists($file = F::KERNEL_DIR.DIRECTORY_SEPARATOR.'krnl_'.$lng.'.lng'))
                 break;
         
         $cachename = self::CACHEPREFIX.'krnl_'.$lng;

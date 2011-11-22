@@ -20,7 +20,7 @@ if (version_compare(PHP_VERSION, '5.1.0', '<'))
     die('PHP 5.1.0 required');
 
 /** kernel files directory */
-define('F_KERNEL_DIR', dirname(__FILE__).DIRECTORY_SEPARATOR);
+define('F_KERNEL_DIR', dirname(__FILE__));
 /** Site index script file
  * Actually the file that had been opened in browser */
 define('F_SITE_INDEX', basename($_SERVER['PHP_SELF']));
@@ -30,13 +30,13 @@ if (!defined('F_INTERNAL_ENCODING'))
     define('F_INTERNAL_ENCODING', 'utf-8');
 /**#@+ site root directory (can be defined before outside the kernel) */
 if (!defined('F_SITE_ROOT'))
-    define('F_SITE_ROOT', dirname($_SERVER['SCRIPT_FILENAME']).DIRECTORY_SEPARATOR);
+    define('F_SITE_ROOT', dirname($_SERVER['SCRIPT_FILENAME']));
 /**#@+ directory to store logs (can be defined before outside the kernel) */
 if (!defined('F_LOGS_ROOT'))
     define('F_LOGS_ROOT', F_SITE_ROOT);
 /**#@+ site data storing root directory (can be defined before outside the kernel) */
 if (!defined('F_DATA_ROOT'))
-    define('F_DATA_ROOT', F_SITE_ROOT.'data'.DIRECTORY_SEPARATOR);
+    define('F_DATA_ROOT', F_SITE_ROOT.DIRECTORY_SEPARATOR.'data');
 /**#@+ site code cache directory (can be defined before outside the kernel) */
 if (!defined('F_CODECACHE_DIR'))
     define('F_CODECACHE_DIR', F_SITE_ROOT);
@@ -48,7 +48,7 @@ if (get_magic_quotes_runtime())
 set_time_limit(30);  // not '0' - once i had my script running for a couple of hours collecting GBytes of errors :)
 // here comes the fatal catcher :P
 register_shutdown_function(create_function('', 'if (($a = error_get_last()) && $a[\'type\'] == E_ERROR)
-    { file_put_contents(F_LOGS_ROOT.\'php_fatal.log\', sprintf(\'E%d "%s" at %s:%d\', $a[\'type\'], $a[\'message\'], $a[\'file\'], $a[\'line\']));
+    { file_put_contents(F_LOGS_ROOT.DIRECTORY_SEPARATOR.\'php_fatal.log\', sprintf(\'E%d "%s" at %s:%d\', $a[\'type\'], $a[\'message\'], $a[\'file\'], $a[\'line\']));
     $i = ob_get_level(); while ($i--) @ob_end_clean(); print \'Fatal error. Sorry :(\'; }'));
 
 /**#@+
@@ -74,16 +74,16 @@ set_error_handler(create_function('$c, $m, $f, $l', 'throw new ErrorException($m
  * @ignore
  */
 $base_modules_files = Array(
-    F_KERNEL_DIR.'k3_misc.php',          // kernel 3 classes and functions library
-    F_KERNEL_DIR.'k3_timer.php',         // kernel 3 basic classes
-    F_KERNEL_DIR.'k3_cache.php',         // kernel 3 cacher class
-    F_KERNEL_DIR.'k3_strings.php',       // kernel 3 strings parsing
-    F_KERNEL_DIR.'k3_http.php',          // kernel 3 HTTP interface
-    F_KERNEL_DIR.'k3_request.php',       // kernel 3 GPC interface
-    F_KERNEL_DIR.'k3_lang.php',          // kernel 3 LNG interface
-    F_KERNEL_DIR.'k3_dbase.php',         // kernel 3 database interface
-    F_KERNEL_DIR.'k3_session.php',       // kernel 3 session extension
-    F_KERNEL_DIR.'k3_registry.php',      // kernel 3 registry extension
+    F_KERNEL_DIR.DIRECTORY_SEPARATOR.'k3_misc.php',          // kernel 3 classes and functions library
+    F_KERNEL_DIR.DIRECTORY_SEPARATOR.'k3_timer.php',         // kernel 3 basic classes
+    F_KERNEL_DIR.DIRECTORY_SEPARATOR.'k3_cache.php',         // kernel 3 cacher class
+    F_KERNEL_DIR.DIRECTORY_SEPARATOR.'k3_strings.php',       // kernel 3 strings parsing
+    F_KERNEL_DIR.DIRECTORY_SEPARATOR.'k3_http.php',          // kernel 3 HTTP interface
+    F_KERNEL_DIR.DIRECTORY_SEPARATOR.'k3_request.php',       // kernel 3 GPC interface
+    F_KERNEL_DIR.DIRECTORY_SEPARATOR.'k3_lang.php',          // kernel 3 LNG interface
+    F_KERNEL_DIR.DIRECTORY_SEPARATOR.'k3_dbase.php',         // kernel 3 database interface
+    F_KERNEL_DIR.DIRECTORY_SEPARATOR.'k3_session.php',       // kernel 3 session extension
+    F_KERNEL_DIR.DIRECTORY_SEPARATOR.'k3_registry.php',      // kernel 3 registry extension
 );
 // we'll do some trick with caching base modules in one file
 $base_modules_stats = Array();
@@ -91,7 +91,7 @@ foreach ($base_modules_files as $fname)
     $base_modules_stats[] = filemtime($fname).'|'.filesize($fname);
 $kernel_codecache_dir = is_writable(F_KERNEL_DIR) ? F_KERNEL_DIR : F_CODECACHE_DIR;
 $base_modules_stats = md5(implode('|', $base_modules_stats));
-$base_modules_file = $kernel_codecache_dir.'.k3.compiled.'.$base_modules_stats;
+$base_modules_file = $kernel_codecache_dir.DIRECTORY_SEPARATOR.'.k3.compiled.'.$base_modules_stats;
 if (extension_loaded('bcompiler') && file_exists($base_modules_file.'.bc'))
     require_once($base_modules_file.'.bc');
 elseif (file_exists($base_modules_file.'.php'))
@@ -181,12 +181,12 @@ class F extends FEventDispatcher
 
         $this->pool['LNG']->_Start();
 
-        if ($CL_Config = FMisc::loadDatafile(self::KERNEL_DIR.'modules.qfc', FMisc::DF_SLINE, false, '|'))
+        if ($CL_Config = FMisc::loadDatafile(self::KERNEL_DIR.DIRECTORY_SEPARATOR.'modules.qfc', FMisc::DF_SLINE, false, '|'))
         {
             foreach ($CL_Config as $mod => $cfg)
             {
                 $this->classes[$mod] = ($cfg[1]) ? array_shift($cfg) : 'F'.$mod;
-                $this->clfiles[$mod] = self::KERNEL_DIR.array_shift($cfg);
+                $this->clfiles[$mod] = self::KERNEL_DIR.DIRECTORY_SEPARATOR.array_shift($cfg);
             }
         }
     }
@@ -266,7 +266,7 @@ class F extends FEventDispatcher
      */
     public function handleException(Exception $e)
     {
-        $logfile = F_LOGS_ROOT.'fatal.log';
+        $logfile = F_LOGS_ROOT.DIRECTORY_SEPARATOR.'fatal.log';
         $eName = get_class($e).(($e instanceof ErrorException) ? '['.self::$ERR_TYPES[$e->getSeverity()].']' : '');
         if ($logfile = fopen($logfile, 'ab'))
         {
@@ -290,7 +290,7 @@ class F extends FEventDispatcher
         if ($c & ~(E_WARNING | E_USER_WARNING | E_NOTICE | E_USER_NOTICE | E_STRICT | E_DEPRECATED | E_USER_DEPRECATED))
             throw new ErrorException($m, 0, $c, $f, $l);
         if ($logfile == null)
-            $logfile = fopen(F_LOGS_ROOT.'error.log', 'ab');
+            $logfile = fopen(F_LOGS_ROOT.DIRECTORY_SEPARATOR.'error.log', 'ab');
         $eName = isset(self::$ERR_TYPES[$c]) ? '['.self::$ERR_TYPES[$c].']' : '[UNKNOWN ERROR]';
         if ($logfile)
             fwrite($logfile, date('[d M Y H:i]').' '.$eName.': '.$m.'. File: '.$f.'. Line: '.$l.'.'.PHP_EOL.FStr::PHPDefine(array_slice(debug_backtrace(),1)).'.'.PHP_EOL);

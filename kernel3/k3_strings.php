@@ -701,7 +701,7 @@ class FStr
         {
             return (self::$ltts[$encoding] = $data);
         }
-        elseif ($data = file_get_contents(F_KERNEL_DIR.'/chars/'.$encoding.'.ltt')) // we'll try to load chars data
+        elseif ($data = file_get_contents(F_KERNEL_DIR.DIRECTORY_SEPARATOR.'chars'.DIRECTORY_SEPARATOR.$encoding.'.ltt')) // we'll try to load chars data
         {
             $table = Array();
             preg_match_all('#0x([0-9a-fA-F]{1,6})\[0x([0-9a-fA-F]{1,6})\]#', $data, $matches, PREG_SET_ORDER);
@@ -739,7 +739,7 @@ class FStr
         {
             return (self::$chrs[$encoding] = $data);
         }
-        elseif ($data = file_get_contents(F_KERNEL_DIR.'/chars/'.$encoding.'.chr')) // we'll try to load chars data
+        elseif ($data = file_get_contents(F_KERNEL_DIR.DIRECTORY_SEPARATOR.'chars'.DIRECTORY_SEPARATOR.$encoding.'.chr')) // we'll try to load chars data
         {
             $table = Array();
             preg_match_all('#0x([0-9a-fA-F]{1,6})\[0x([0-9a-fA-F]{1,6})\]#', $data, $matches, PREG_SET_ORDER);

@@ -98,7 +98,7 @@ class FRegistry
         }
     }
 
-    static public function setBackDB(FDataBase $dbo, $table)
+    static public function setBackDB(FDataBase $dbo, $table = false)
     {
         if (is_null($dbo)) {
             $dbo = F()->DBase;

@@ -32,7 +32,7 @@ final class FCaptcha extends FEventDispatcher
 
     private function __construct()
     {
-        $this->font = imagecreatefrompng(F_KERNEL_DIR.'font.png');
+        $this->font = imagecreatefrompng(F_KERNEL_DIR.DIRECTORY_SEPARATOR.'font.png');
         imagealphablending($this->font, true);
 		$this->char_w = imagesx($this->font)/strlen(self::FONT_CHARS);
 		$this->char_h = imagesy($this->font);
