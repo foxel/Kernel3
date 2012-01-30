@@ -98,7 +98,7 @@ foreach ($base_modules_files as $fname)
 $kernel_codecache_dir = is_writable(F_KERNEL_DIR) ? F_KERNEL_DIR : F_CODECACHE_DIR;
 $base_modules_stats = md5(implode('|', $base_modules_stats));
 $base_modules_file = $kernel_codecache_dir.DIRECTORY_SEPARATOR.'.k3.compiled.'.$base_modules_stats;
-if (extension_loaded('bcompiler') && file_exists($base_modules_file.'.bc'))
+if (false && extension_loaded('bcompiler') && file_exists($base_modules_file.'.bc'))
     require_once($base_modules_file.'.bc');
 elseif (file_exists($base_modules_file.'.php'))
     require_once($base_modules_file.'.php');
@@ -161,7 +161,6 @@ class F extends FEventDispatcher
         );
 
     static private $self = null;
-    private $defaultEnv = null;
     private $clfiles = Array();
     private $classes = Array();
     private $clclose = Array();
@@ -176,7 +175,8 @@ class F extends FEventDispatcher
         $this->pool['Cache']      = FCache::getInstance();
         $this->pool['Str']        = FStr::getInstance();
         $this->pool['HTTP']       = FHTTPInterface::getInstance();
-        $this->pool['Request']    = new K3_Request_HTTP();
+        $this->pool['appEnv']     = $e = $this->prepareDefaultEnvironment();
+        $this->pool['Request']    = $e->getRequest();
         $this->pool['LNG']        = FLNGData::getInstance();
         //$this->pool['DBase'] = new FDataBase();
         $this->classes['DBase']    = 'FDataBase';
@@ -218,10 +218,7 @@ class F extends FEventDispatcher
      */
     public function e()
     {
-        if (!$this->defaultEnv) {
-            $this->defaultEnv = $this->prepareDefaultEnvironment();
-        }
-        return $this->defaultEnv;
+        return $this->pool['appEnv'];
     }
 
     /**
@@ -229,8 +226,8 @@ class F extends FEventDispatcher
      */
     protected function prepareDefaultEnvironment()
     {
-        $env = new K3_Environment();
-        $env->setRequest($this->Request);
+        $env = new K3_Environment_HTTP();
+        $env->setRequest(new K3_Request_HTTP());
         return $env;
     }
 

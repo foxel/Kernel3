@@ -10,6 +10,9 @@ class K3_Request_HTTP extends K3_Request
     {
         parent::__construct();
         $this->doGPCStrip = (bool) get_magic_quotes_gpc();
+
+        if (isset($_SERVER['HTTPS']) && ($_SERVER['HTTPS'] != 'off'))
+            $this->pool['isSecure'] = true;
     }
 
     // useful for special inpur parsings
