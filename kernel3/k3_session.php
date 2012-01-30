@@ -105,8 +105,8 @@ class FSession extends FEventDispatcher
 
             if (!($this->mode & self::MODE_NOURLS) && ($this->mode & self::MODE_URLS)) // TODO: allowing from config
             {
-                F()->HTTP->addEventHandler('HTML_parse', Array(&$this, 'HTMLURLsAddSID') );
-                F()->HTTP->addEventHandler('URL_Parse', Array(&$this, 'addSID') );
+                F()->HTTP->addEventHandler('HTML_parse', Array($this, 'HTMLURLsAddSID') );
+                F()->HTTP->addEventHandler('URL_Parse', Array($this, 'addSID') );
             }
 
             FMisc::addShutdownCallback(Array(&$this, 'close'));

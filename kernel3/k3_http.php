@@ -576,10 +576,19 @@ final class FHTTPInterface extends FEventDispatcher
     public function obOutFilter($text)
     {
         //return $text;
-        if (!$this->buffer)
+        // if the buffer is empty then we get a direct writing without using FHTTP
+        if (!$this->buffer) {
+            // magic to set Content-Type if it's not set already
+            if (!preg_match('#^Content-Type: #mi', implode(PHP_EOL, headers_list()))) {
+                $cType = preg_match('#\<(\w+)\>.*\</\1\>#', $text)
+                    ? 'text/html'
+                    : 'text/plain';
+                header('Content-Type: '.$cType.'; charset='.F::INTERNAL_ENCODING);
+            }
             return false;
-        else
+        } else {
             return 'Output error. Sorry :(';
+        }
     }
 
     function _Close()
