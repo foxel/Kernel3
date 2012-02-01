@@ -247,8 +247,12 @@ class FVISInterface extends FEventDispatcher
     private $force_compact = true;  // forces to compact CSS/JS data
     private $root_node = 0;
 
-    private function __construct()
+    protected $env = null;
+
+    private function __construct(K3_Environment $env = null)
     {
+        $this->env = is_null($env) ? $env : F()->appEnv;
+
         $this->nodes[0] = new FVISNode('GLOBAL_HTMLPAGE');
         $this->named = Array('PAGE' => 0, 'MAIN' => 0);
         $this->func_parsers = Array(
@@ -277,9 +281,9 @@ class FVISInterface extends FEventDispatcher
         $this->CSS_loaded = false;
         $this->JS_loaded  = Array();
         $this->vis_consts = Array(
-            'TIME' => F()->Timer->qTime(),
-            'ROOTURL' => F()->HTTP->rootUrl,
-            );
+            'TIME'    => F()->Timer->qTime(),
+            'ROOTURL' => $this->env->rootUrl,
+        );
 
         if (!$keep_nodes)
         {
@@ -719,8 +723,6 @@ class FVISInterface extends FEventDispatcher
             'F_MARK'  => 'Powered by<br />Kernel 3<br />&copy; Foxel aka LION<br /> 2006 - 2009',
             'F_INDEX' => F_INDEX,
             );
-
-        $consts['F_ROOT'] = F()->HTTP->rootUrl;
 
         $consts = $this->vis_consts;
 

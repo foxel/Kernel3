@@ -528,10 +528,14 @@ class FStr
     }
 
     // generates full url
-    static public function fullUrl($url, $with_amps = false, $force_host = '')
+    static public function fullUrl($url, $with_amps = false, $force_host = '', K3_Environment $env = null)
     {
         if ($url[0] == '#')
             return $url;
+
+        if (is_null($env)) {
+            $env = F()->appEnv;
+        }
 
         $url_p = parse_url($url);
 
@@ -543,7 +547,7 @@ class FStr
             $url = $scheme.'://';
         }
         else
-            $url = (F()->HTTP->secure) ? 'https://' : 'http://';
+            $url = ($env->request->isSecure) ? 'https://' : 'http://';
 
         if (isset($url_p['host']))
         {
@@ -563,14 +567,14 @@ class FStr
         }
         else
         {
-            $url.= ($force_host) ? $force_host : F()->HTTP->srvName;
+            $url.= ($force_host) ? $force_host : $env->serverName;
             if (isset($url_p['path']))
             {
                 if ($url_p['path']{0} != '/')
-                    $url_p['path'] = '/'.F()->HTTP->rootDir.'/'.$url_p['path'];
+                    $url_p['path'] = '/'.$env->rootPath.'/'.$url_p['path'];
             }
             else
-                $url_p['path'] = '/'.F()->HTTP->rootDir.'/'.F_SITE_INDEX;
+                $url_p['path'] = '/'.$env->rootPath.'/'.F_SITE_INDEX;
 
             $url_p['path'] = preg_replace('#(\/|\\\)+#', '/', $url_p['path']);
             $url.= $url_p['path'];

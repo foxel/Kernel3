@@ -96,17 +96,16 @@ abstract class FEventDispatcher extends FBaseClass
 {
     private $events = Array();
 
-    private function __construct() {}
-
     public function addEventHandler($ev_name, $func_link)
     {
         $ev_name = strtolower($ev_name);
 
-        if (!is_callable($func_link))
-            return false;
+        if (is_callable($func_link)) {
+            $this->events[$ev_name][] = $func_link;
+            return true;
+        }
 
-        $this->events[$ev_name][] = $func_link;
-        return true;
+        return false;
     }
 
     // first three arguments may be parsed by link

@@ -12,19 +12,45 @@ if (!defined('F_STARTED'))
 
 // HTTP interface
 // Outputs data to user and manages cookies data
-final class FHTTPInterface extends FEventDispatcher
+final class FHTTPInterface implements I_K3_Deprecated
 {
-    const DEF_COOKIE_PREFIX = 'K3';
+    const DEF_COOKIE_PREFIX = K3_Environment::DEFAULT_COOKIE_PREFIX;
     // HTTP send content types
-    const FILE_ATTACHMENT = 1;
-    const FILE_RFC1522    = 8;
-    const FILE_TRICKY     = 16;
-    const FILE_RFC2231    = 32;
+    const FILE_ATTACHMENT = K3_Response::DISPOSITION_ATTACHMENT;
+    const FILE_RFC1522    = K3_Response::FILENAME_RFC1522;
+    const FILE_TRICKY     = K3_Response::FILENAME_TRICKY;
+    const FILE_RFC2231    = K3_Response::FILENAME_RFC2231;
 
-    private $buffer = '';
+    public function __get($varName)
+    {
+        switch ($varName) {
+            case 'IP':       return F()->appEnv->clientIP;
+            case 'IPInt':    return F()->appEnv->clientIPInteger;
+            case 'rootUrl':  return F()->appEnv->rootUrl;
+            case 'request':  return F()->appEnv->requestUrl;
+            case 'rootDir':  return F()->appEnv->rootPath;
+            case 'rootFull': return F()->appEnv->rootRealPath;
+            case 'srvName':  return F()->appEnv->serverName;
+            case 'srvPort':  return F()->appEnv->serverPort;
+            case 'referer':  return F()->appEnv->referer;
+            case 'extRef':   return F()->appEnv->refererIsExternal;
 
-    public $doHTML = true;
-    public $doGZIP = true;
+            case 'cDomain':  return F()->appEnv->cookieDomain;
+            case 'cPrefix':  return F()->appEnv->cookiePrefix;
+            case 'secure':   return F()->appEnv->request->isSecure;
+
+            case 'doHTML':   return F()->appEnv->response->doHTMLParse;
+            case 'doGZIP':   return F()->appEnv->response->useGZIP;
+        }
+    }
+
+    public function __set($varName, $value)
+    {
+        switch ($varName) {
+            case 'doHTML': F()->appEnv->Response->doHTMLParse = $value; break;
+            case 'doGZIP': F()->appEnv->Response->useGZIP = $value; break;
+        }
+    }
 
     private static $self = null;
 
@@ -37,107 +63,18 @@ final class FHTTPInterface extends FEventDispatcher
 
     private function __construct()
     {
-        $this->pool = Array(
-            'IP'       => '',
-            'IPInt'    => 0,
-            'rootUrl'  => '',
-            'request'  => '',
-            'rootDir'  => '',
-            'rootFull' => '',
-            'srvName'  => '',
-            'srvPort'  => 80,
-            'referer'  => '',
-            'extRef'   => false,
-
-            'cDomain'  => false,
-            'cPrefix'  => self::DEF_COOKIE_PREFIX,
-            'secure'   => false,
-            'isAjax'   => false,
-            );
-
-        $this->pool['IP']      = $_SERVER['REMOTE_ADDR'];
-        $this->pool['IPInt']   = ip2long($this->pool['IP']);
-        
-        // trick for x64/x86 compatibility
-        if ($this->pool['IPInt'] < 0)
-            $this->pool['IPInt'] = sprintf('%u', $this->pool['IPInt']);
-
-        $this->pool['srvName'] = isset($_SERVER['HTTP_HOST']) ? preg_replace('#:\d+#', '', $_SERVER['HTTP_HOST']) : $_SERVER['SERVER_NAME'];
-        $this->pool['srvPort'] = isset($_SERVER['SERVER_PORT']) ? (int) $_SERVER['SERVER_PORT'] : 80;
-        $this->pool['rootUrl'] = 'http://'.$this->pool['srvName'].(($this->pool['srvPort'] != 80) ? $this->pool['srvPort'] : '').'/';
-        
-        $this->pool['request'] = preg_replace('#\/|\\\+#', '/', trim($_SERVER['REQUEST_URI']));
-        $this->pool['request'] = preg_replace('#^/+#s', '', $this->pool['request']);
-
-        $this->pool['rootDir'] = dirname($_SERVER['PHP_SELF']);
-        $this->pool['rootDir'] = preg_replace('#\/|\\\+#', '/', $this->pool['rootDir']);
-
-        if ( $this->pool['rootDir'] = preg_replace('#^\/*|\/*$#', '', $this->pool['rootDir']) )
-        {
-            $this->pool['rootUrl'].= $this->pool['rootDir'].'/';
-            $this->pool['request'] = preg_replace('#^\/*'.$this->pool['rootDir'].'\/+#', '', $this->pool['request']);
-        }
-
-        $this->pool['rootFull'] = preg_replace(Array('#\/|\\\+#', '#\/*$#'), Array('/', ''), $_SERVER['DOCUMENT_ROOT']).$this->pool['rootDir'];
-
-        if (isset($_SERVER['HTTP_REFERER']) && ($this->pool['referer'] = trim($_SERVER['HTTP_REFERER'])))
-        {
-            if (strpos($this->pool['referer'], $this->pool['rootUrl']) === 0)
-                $this->pool['referer'] = substr($this->pool['referer'], strlen($this->pool['rootUrl']));
-            else
-                $this->pool['extRef'] = true;
-        }
-
-        if (isset($_SERVER['HTTPS']) && ($_SERVER['HTTPS'] != 'off'))
-            $this->pool['secure'] = true;
-
-        if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && ($_SERVER['HTTP_X_REQUESTED_WITH'] == 'XMLHttpRequest'))
-            $this->pool['isAjax'] = true;
-
-        if (headers_sent($file, $line))
-            trigger_error('QuickFox Kernel 3 HTTP initialization error (Headers already sent)', E_USER_ERROR);
-
-        if (!FMisc::obFree())
-            trigger_error('QuickFox Kernel 3 HTTP initialization error (Output buffering is started elsewhere)', E_USER_ERROR);
-
-        header('X-Powered-By: QuickFox kernel 3 (PHP/'.PHP_VERSION.')');
         ob_start(array( &$this, 'obOutFilter'));
-        ini_set ('default_charset', '');
-
-        //$this->pool['cPrefix'] = F()->Config->Get('cookie_prefix', 'common', self::DEF_COOKIE_PREFIX);
-        //F()->Config->Add_Listener('cookie_prefix', 'common', Array(&$this, 'setCPrefix'));
     }
 
     public function setCPrefix($new_prefix = false, $do_rename = false)
     {
-        if (!$new_prefix || !is_string($new_prefix))
-            $new_prefix = self::DEF_COOKIE_PREFIX;
-
-        // special for chenging prefix without dropping down the session
-        if ($do_rename)
-        {
-            $o_prefix = $this->pool['cPrefix'].'_';
-            foreach ($_COOKIE as $val => $var)
-            {
-                if (strpos($val, $o_prefix) === 0)
-                {
-                    $this->setCookie($val, false, false, false, false, true);
-                    $val = $new_prefix.'_'.substr($val, strlen($o_prefix));
-                    $this->setCookie($val, $var, false, false, false, true);
-                }
-                $_COOKIE[$val] = $var;
-            }
-        }
-        $this->pool['cPrefix'] = (string) $new_prefix;
-
+        F()->appEnv->setCookiePrefix($new_prefix, $do_rename);
         return $this;
     }
 
     public function getCookie($name)
     {
-        $name = $this->pool['cPrefix'].'_'.$name;
-
-        return (isset($_COOKIE[$name])) ? $_COOKIE[$name] : null;
+        return F()->appEnv->getCookie($name);
     }
 
     public function write($text, $no_nl = false)
@@ -153,14 +90,11 @@ final class FHTTPInterface extends FEventDispatcher
 
     public function writeFromOB($append = false, $no_nl = false)
     {
-        if ($append)
-            $this->buffer.= ob_get_contents();
-        else
-            $this->buffer = ob_get_contents();
+        if (!$append) 
+            F()->appEnv->response->clearBuffer();
 
+        F()->appEnv->response->write(ob_get_contents(), $no_nl);
         ob_clean();
-        if (!$no_nl)
-            $this->buffer.= PHP_EOL;
 
         return $this;
     }
@@ -174,30 +108,23 @@ final class FHTTPInterface extends FEventDispatcher
 
     public function clearBuffer()
     {
-        $this->buffer = '';
-
+        F()->appEnv->response->clearBuffer();
         return $this;
     }
 
     public function sendDataStream(FDataStream $stream, $filename, $filemime = false, $filemtime = false, $flags = 0)
     {
-        if (headers_sent())
+        $params = array(
+            'filename' => $filename
+        );
+        if ($filemime)  $params['mimeType'] = $filemime;
+        if ($filemtime) $params['contentTime'] = $filemtime;
+        if (isset($_SERVER['HTTP_RANGE']) && preg_match('#bytes\=(\d+)\-(\d*?)#i', $_SERVER['HTTP_RANGE'], $ranges))
         {
-            trigger_error('QuickFox Kernel 3 HTTP error', E_USER_ERROR);
-            return false;
+            $flags |= K3_Response::STREAM_SETRANGE;
+            $params['seekStream'] = intval($ranges[1]);
         }
 
-        ignore_user_abort(false);
-
-        if (!$filemime)
-            $filemime = 'application/octet-stream';
-
-        $filename = FStr::basename($filename);
-        $disposition = ($flags & self::FILE_ATTACHMENT)
-            ? 'attachment'
-            : 'inline';
-
-        $FileSize = $stream->size();
         $FileTime = (is_int($filemtime))
             ? $filemtime
             : $stream->mtime();
@@ -206,91 +133,16 @@ final class FHTTPInterface extends FEventDispatcher
             if ($FileTime <= $reqModTime)
             {
                 FMisc::obFree();
-                $this->setStatus(304);
-                header('Last-Modified: '.gmdate('D, d M Y H:i:s ', $FileTime).'GMT');
+                F()->appEnv->response
+                    ->clearBuffer()
+                    ->setStatusCode(304)
+                    ->setHeader('Last-Modified', gmdate('D, d M Y H:i:s ', $FileTime).'GMT')
+                    ->sendBuffer();
+
                 exit();
             }
-        
-        if (isset($_SERVER['HTTP_RANGE']) && preg_match('#bytes\=(\d+)\-(\d*?)#i', $_SERVER['HTTP_RANGE'], $ranges))
-        {
-            $NeedRange = true;
-            $SeekFile  = intval($ranges[1]);
-        }
-        else
-        {
-            $NeedRange = false;
-            $SeekFile  = 0;
-        }
 
-        if ($stream->open('rb'))
-        {
-            FMisc::obFree();
-
-            $filename = preg_replace('#[\x00-\x1F]+#', '', $filename);
-            $dispositionHeader = array(&$disposition);
-
-            if (preg_match('#[^\x20-\x7F]#', $filename))
-            {
-                // according to RFC 2183 all headers must contain only of ASCII chars
-                // according to RFC 1522 there is a way to represent non-ASCII chars
-                //  in MIME encoded strings like =?utf-8?B?0KTQsNC50LsuanBn?=
-                //  but actually only Gecko-based browsers accepted that type of message...
-                //  so in this part non-ASCII chars will be transliterated according to
-                //  selected language and all unknown chars will be replaced with '_'
-                //  if you want to send non-ASCII filename to FireFox you'll need to
-                //  set 'FHTTPInterface::FILE_RFC1522' flag
-                // Or you may use tricky_mode to force sending urlencoded UTF-8 filenames.
-                //  IE will get it but other browsers probably not
-                //  so don't use it if you don't really need to
-                if ($flags & self::FILE_RFC1522) {
-                    $dispositionParts[] = 'filename="'.FStr::strToMime($filename).'"';
-                }
-                elseif ($flags & self::FILE_TRICKY) {
-                    if (preg_match('#^text/#i', $filemime))
-                        $disposition = 'attachment';
-                    $dispositionHeader[] = 'filename="'.rawurlencode($filename).'"';
-                    if (F::INTERNAL_ENCODING != 'utf-8') {
-                        $dispositionHeader[] = 'encoding="'.F::INTERNAL_ENCODING.'"';
-                    }
-                }
-                else {
-                    $dispositionHeader[] = 'filename="'.F()->LNG->Translit($filename).'"';
-                }
-
-                // RFC2231 filename* token for modern browsers
-                if ($flags & self::FILE_RFC2231) {
-                    $dispositionHeader[] = 'filename*='.FStr::strToRFC2231($filename);
-                }
-            }
-            else {
-                $dispositionHeader[] = 'filename="'.$filename.'"';
-            }
-
-            header('Last-Modified: '.gmdate('D, d M Y H:i:s ', $FileTime).'GMT');
-            header('Expires: '.date('r', F()->Timer->qTime() + 3600*24), true);
-            header('Content-Transfer-Encoding: binary');
-            header('Content-Disposition: '.implode('; ', $dispositionHeader));
-            header('Content-Type: '.$filemime);
-            header('Content-Length: '.($FileSize - $SeekFile));
-            header('Accept-Ranges: bytes');
-            header('X-QF-GenTime: '.F()->Timer->timeSpent());
-
-            if ($NeedRange)
-            {
-                header($_SERVER['SERVER_PROTOCOL'] . ' 206 Partial Content');
-                header('Content-Range: bytes '.$SeekFile.'-'.($FileSize-1).'/'.$FileSize);
-            }
-
-            $stream->seek($SeekFile);
-            $buff = '';
-            while($stream->read($buff, 10485760)) // 10MB
-                print($buff);
-            $stream->close();
-
-            exit();
-        }
-        else
-            return false;
+        return F()->appEnv->response->sendDataStream($stream, $params, $flags);
     }
 
     public function sendFile($file, $filename = false, $filemime = false, $filemtime = false, $flags = 0)
@@ -306,103 +158,37 @@ final class FHTTPInterface extends FEventDispatcher
 
     public function sendBuffer($recode_to = '', $c_type = '', $force_cache = 0, $send_filename = '')
     {
-        if (headers_sent())
-        {
-            trigger_error('QuickFox Kernel 3 HTTP error', E_USER_ERROR);
-            return false;
+        $params = array();
+        $flags = 0;
+        if ($c_type)  $params['mimeType'] = $c_type;
+        if ($force_cache) $params['contentCacheTime'] = $force_cache;
+        if ($send_filename) {
+            $params['filename'] = $send_filename;
+            $flags |= K3_Response::DISPOSITION_ATTACHMENT;
         }
-
-        FMisc::obFree();
-
-        if ($this->doHTML)
-        {
-            $this->throwEventRef('HTML_parse', $this->buffer);
-
-            $statstring = sprintf(F()->LNG->lang('FOOT_STATS_PAGETIME'), F()->Timer->timeSpent()).' ';
-            if (F()->ping('DBase') && F()->DBase->queriesCount)
-                $statstring.= sprintf(F()->LNG->lang('FOOT_STATS_SQLSTAT'), F()->DBase->queriesCount, F()->DBase->queriesTime).' ';
-
-            $this->buffer = str_replace('<!--Page-Stats-->', $statstring, $this->buffer);
-            $c_type = (preg_match('#[\w\-]+/[\w\-]+#', $c_type)) ? $c_type : 'text/html';
-        }
-        else
-            $c_type = (preg_match('#[\w\-]+/[\w\-]+#', $c_type)) ? $c_type : 'text/plain';
-
-        if ($encoding = $recode_to)
-        {
-            if ($buffer = FStr::strRecode($this->buffer, $encoding))
-                $this->buffer = $buffer;
-            else
-                $encoding = F::INTERNAL_ENCODING;
-
-            header('Content-Type: '.$c_type.'; charset='.$encoding);
-            $meta_conttype = '<meta http-equiv="Content-Type" content="'.$c_type.'; charset='.$encoding.'" />';
-        }
-        else
-        {
-            header('Content-Type: '.$c_type.'; charset='.F::INTERNAL_ENCODING);
-            $meta_conttype = '<meta http-equiv="Content-Type" content="'.$c_type.'; charset='.F::INTERNAL_ENCODING.'" />';
-        }
-
-        if ($this->doHTML)
-            $this->buffer = str_replace('<!--Meta-Content-Type-->', $meta_conttype, $this->buffer);
-
-        if ($this->doGZIP)
-        {
-            if ($this->tryGZIPEncode($this->buffer))
-                header('Content-Encoding: gzip');
-        }
-
-
-        if ($force_cache > 0)
-            header('Expires: '.date('r', F()->Timer->qTime() + $force_cache), true);
-        else
-            header('Cache-Control: no-cache');
-
-        if ($send_filename)
-            header('Content-Disposition: attachment; filename="'.$send_filename.'"');
-
-        header('Content-Length: '.strlen($this->buffer));
-        header('X-K3-Page-GenTime: '.F()->Timer->timeSpent());
-        print $this->buffer;
-        exit();
+        return F()->appEnv->response->sendBuffer($recode_to, $params, $flags);
     }
 
     public function sendBinary($data = '', $c_type = '', $force_cache = 0, $send_filename = '')
     {
-        if (headers_sent())
-        {
-            trigger_error('QuickFox Kernel 3 HTTP error', E_USER_ERROR);
-            return false;
+        $params = array();
+        $flags = 0;
+        if ($data) {
+            F()->appEnv->response
+                ->setDoHTMLParse(false)
+                ->clearBuffer()
+                ->write($data);
+        }
+        $params['mimeType'] = (preg_match('#[\w\-]+/[\w\-]+#', $c_type)) ? $c_type : 'application/octet-stream';
+        if ($force_cache) $params['contentCacheTime'] = $force_cache;
+        if ($send_filename) {
+            $params['filename'] = $send_filename;
+            $flags |= K3_Response::DISPOSITION_ATTACHMENT;
         }
 
         FMisc::obFree();
 
-        $c_type = (preg_match('#[\w\-]+/[\w\-]+#', $c_type)) ? $c_type : 'application/octet-stream';
-
-        header('Content-Type: '.$c_type);
-
-        if (false && $this->doGZIP)
-        {
-            if ($this->tryGZIPEncode($this->buffer))
-                header('Content-Encoding: gzip');
-        }
-
-
-        if ($force_cache > 0)
-            header('Expires: '.date('r', F()->Timer->qTime() + $force_cache), true);
-        else
-            header('Cache-Control: no-cache');
-
-        $data = ($data) ? $data : $this->buffer;
-
-        if ($send_filename)
-            header('Content-Disposition: attachment; filename="'.$send_filename.'"');
-
-        header('Content-Length: '.strlen($data));
-        header('X-K3-Page-GenTime: '.F()->Timer->timeSpent());
-        print $data;
-        exit();
+        return F()->appEnv->response->sendBuffer($recode_to, $params, $flags);
     }
 
     // sets cookies domain (checks if current client request is sent on that domain or it's sub)
@@ -427,55 +213,20 @@ final class FHTTPInterface extends FEventDispatcher
     // Sets cookie with root dir parameter (needed on sites with many independent systems in folders)
     public function setCookie($name, $value = false, $expire = false, $root = false, $no_domain = false, $no_prefix = false)
     {
-        if (!$root)
-            $root = ($this->pool['rootDir']) ? '/'.$this->pool['rootDir'].'/' : '/';
-        if (!$no_prefix)
-            $name = $this->pool['cPrefix'].'_'.$name;
-            
-        if ($value === false && !isset($_COOKIE[$name]))
-            return true;
-            
-        $res = setcookie($name, $value, $expire, $root, ($no_domain) ? false : $this->pool['cDomain'], $this->pool['secure']);
-        
-        if ($res)
-            $_COOKIE[$name] = $value;
-        
-        return $res;
+        return F()->appEnv->setCookie($name, $value, $expire, $root, !$no_prefix, !$no_domain);
     }
 
     // Redirecting function
     public function redirect($url)
     {
-        if (headers_sent())
-        {
-            trigger_error('QuickFox Kernel 3 HTTP error', E_USER_ERROR);
-            return false;
-        }
-
-        if (strstr(urldecode($url), "\n") || strstr(urldecode($url), "\r"))
-            trigger_error('Tried to redirect to potentially insecure url.', E_USER_ERROR);
-
         FMisc::obFree();
 
-        $url = FStr::fullUrl($url);
-        $this->throwEventRef('URL_Parse', $url );
-        $hurl = strtr($url, Array('&' => '&amp;'));
-
-        // Redirect via an HTML form for PITA webservers
-        if (@preg_match('/Microsoft|WebSTAR|Xitami/', getenv('SERVER_SOFTWARE')))
-        {
-            header('Refresh: 0; URL='.$url);
-            echo '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"><html><head><meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1"><meta http-equiv="refresh" content="0; url='.$hurl.'"><title>Redirect</title></head><body><div align="center">If your browser does not support meta redirection please click <a href="'.$hurl.'">HERE</a> to be redirected</div></body></html>';
-            exit();
-        }
-
-        // Behave as per HTTP/1.1 spec for others
-        header('Location: '.$url);
-        exit();
+        F()->appEnv->response->sendRedirect($url);
     }
 
     public function setStatus($stat_code)
     {
+        return F()->appEnv->response->setStatusCode($stat_code);
         static $codes = Array(
             300 => 'Multiple Choices',
             301 => 'Moved Permanently',
@@ -514,76 +265,26 @@ final class FHTTPInterface extends FEventDispatcher
     // returns client signature based on browser, ip and proxy
     public function getClientSignature($level = 0)
     {
-        static $sign_parts = Array('HTTP_USER_AGENT'); //, 'HTTP_ACCEPT_CHARSET', 'HTTP_ACCEPT_ENCODING'
-        static $psign_parts = Array('HTTP_VIA', 'HTTP_X_FORWARDED_FOR', 'HTTP_X_REAL_IP');
-
-        $sign = Array();
-        foreach ($sign_parts as $key)
-            if (isset($_SERVER[$key]))
-                $sign[] = $_SERVER[$key];
-
-        if ($level > 0)
-        {
-            $ip = explode('.', $this->pool['IP']);
-            $sign[] = $ip[0];
-            $sign[] = $ip[1];
-            if ($level > 1)
-            {
-                $sign[] = $ip[2];
-                foreach ($psign_parts as $key)
-                    if (isset($_SERVER[$key]))
-                        $sign[] = $_SERVER[$key];
-            }
-            if ($level > 2)
-                $sign[] = $ip[3];
-        }
-
-        $sign = implode('|', $sign);
-        $sign = md5($sign);
-        return $sign;
-    }
-
-    // private functions
-    private function tryGZIPEncode(&$text, $level = 9)
-    {
-        if (!extension_loaded('zlib'))
-            return false;
-
-        $compress = false;
-        if ( strstr($_SERVER['HTTP_ACCEPT_ENCODING'], 'gzip') )
-            $compress = true;
-
-        $level = abs(intval($level)) % 10;
-
-        if ($compress)
-        {
-            $gzip_size = strlen($text);
-            $gzip_crc = crc32($text);
-
-
-            $text = gzcompress($text, $level);
-            $text = substr($text, 0, strlen($text) - 4);
-
-            $out = "\x1f\x8b\x08\x00\x00\x00\x00\x00";
-            $out.=  $text;
-            $out.=  pack('V', $gzip_crc);
-            $out.=  pack('V', $gzip_size);
-
-            $text = $out;
-        }
-        // $text = gzencode($text, $level); // strange but does not work on PHP 4.0.6
-
-        return $compress;
+        return F()->appEnv->getClientSignature($level);
     }
 
     // filters off OB output
     public function obOutFilter($text)
     {
         //return $text;
-        if (!$this->buffer)
+        // if the buffer is empty then we get a direct writing without using FHTTP
+        if (F()->appEnv->response->isEmpty()) {
+            // magic to set Content-Type if it's not set already
+            if (!preg_match('#^Content-Type: #mi', implode(PHP_EOL, headers_list()))) {
+                $cType = preg_match('#\<(\w+)\>.*\</\1\>#', $text)
+                    ? 'text/html'
+                    : 'text/plain';
+                header('Content-Type: '.$cType.'; charset='.F::INTERNAL_ENCODING);
+            }
             return false;
-        else
+        } else {
             return 'Output error. Sorry :(';
+        }
     }
 
     function _Close()
@@ -598,6 +299,10 @@ final class FHTTPInterface extends FEventDispatcher
             }
     }
 
+    public function addEventHandler($ev_name, $func_link)
+    {
+        F()->appEnv->response->addEventHandler($ev_name, $func_link);
+    }
 }
 
 ?>

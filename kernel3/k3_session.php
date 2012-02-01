@@ -25,6 +25,8 @@ class FSession extends FEventDispatcher
     private $db_object = null;
     private $db_tbname = 'sessions';
 
+    protected $env = null;
+
     const SID_NAME     = 'FSID';
     const LIFETIME     = 3600;
     const CACHEPREFIX  = 'F_SESSIONS.';
@@ -66,23 +68,25 @@ class FSession extends FEventDispatcher
         return true;
     }
 
-    public function open($mode = 0)
+    public function open($mode = 0, K3_Environment $env = null)
     {
         if ($this->mode & self::MODE_STARTED)
             return true;
-            
+
+        $this->env = is_null($env) ? F()->appEnv : $env;
+
         $old_mode = $this->mode;
 
         $this->mode |= $mode & (self::MODES_ALLOW);
 
-        $this->SID = F()->HTTP->getCookie(self::SID_NAME);
-        if ($ForceSID = FGPC::getString('ForceFSID', FGPC::POST, FStr::HEX))
+        $this->SID = $this->env->getCookie(self::SID_NAME);
+        if ($ForceSID = $this->env->request->getString('ForceFSID', K3_Request::POST, FStr::HEX))
             $this->SID = $ForceSID;
 
         if (!$this->SID)
         {
             $this->mode |= self::MODE_URLS;
-            $this->SID = FGPC::getString(self::SID_NAME, FGPC::ALL, FStr::HEX);
+            $this->SID = $this->env->request->getString(self::SID_NAME, K3_Request::ALL, FStr::HEX);
         } 
 
         if (!$this->SID || $this->tried || !$this->load())
@@ -98,15 +102,15 @@ class FSession extends FEventDispatcher
             $this->throwEventRef('preopen', $this->mode, $this->SID);
 
             if (!($this->mode & self::MODE_FIXED))
-                F()->HTTP->setCookie(self::SID_NAME, $this->SID);
+                $this->env->setCookie(self::SID_NAME, $this->SID);
 
             // allows mode changes and any special reactions
             $this->throwEventRef('opened', $this->mode, $this->SID);
 
             if (!($this->mode & self::MODE_NOURLS) && ($this->mode & self::MODE_URLS)) // TODO: allowing from config
             {
-                F()->HTTP->addEventHandler('HTML_parse', Array(&$this, 'HTMLURLsAddSID') );
-                F()->HTTP->addEventHandler('URL_Parse', Array(&$this, 'addSID') );
+                $this->env->response->addEventHandler('HTML_parse', Array($this, 'HTMLURLsAddSID') );
+                $this->env->response->addEventHandler('URL_Parse', Array($this, 'addSID') );
             }
 
             FMisc::addShutdownCallback(Array(&$this, 'close'));
@@ -114,7 +118,7 @@ class FSession extends FEventDispatcher
             return true;
         }
         else
-            F()->HTTP->setCookie(self::SID_NAME);
+            $this->env->setCookie(self::SID_NAME);
         
         $this->mode = $old_mode;
         return false;
@@ -131,9 +135,9 @@ class FSession extends FEventDispatcher
         if (!is_array($sess) || !$sess)
             return false;
             
-        if ($sess['ip'] != F()->HTTP->IPInt 
+        if ($sess['ip'] != $this->env->clientIPInteger 
             || $sess['lastused'] < (F()->Timer->qTime() - self::LIFETIME)
-            || $sess['clsign'] != F()->HTTP->getClientSignature($this->secu_lvl))
+            || $sess['clsign'] != $this->env->getClientSignature($this->secu_lvl))
         {
             FCache::drop(self::CACHEPREFIX.$this->SID);
             return false;       
@@ -186,8 +190,8 @@ class FSession extends FEventDispatcher
         $this->throwEventRef('presave', $this->pool);
 
         $q_arr = Array(
-            'ip'       => F()->HTTP->IPInt,
-            'clsign'   => F()->HTTP->getClientSignature($this->secu_lvl),
+            'ip'       => $this->env->clientIPInteger,
+            'clsign'   => $this->env->getClientSignature($this->secu_lvl),
             'vars'     => serialize($this->pool),
             'lastused' => F()->Timer->qTime(),
             'clicks'   => $this->clicks,
@@ -329,7 +333,7 @@ class FSession extends FEventDispatcher
         }
 
         if (preg_match('#^\w+:#', $url))
-            if (strpos($url, F()->HTTP->rootUrl) !== 0)
+            if (strpos($url, F()->appEnv->rootUrl) !== 0)
                 return $vars[1].$vars[3].' = '.$bounds.$url.$bounds;
 
         $url = FStr::urlAddParam($url, self::SID_NAME, $this->SID, true);

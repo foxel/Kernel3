@@ -20,10 +20,14 @@ class FMail
     private $text    = '';
     private $parts   = Array();
 
-    public function __construct($subject = false, $from_name = false, $from_addr = false)
+    public function __construct($subject = false, $from_name = false, $from_addr = false, K3_Environment $env = null)
     {
+        if (is_null($env)) {
+            $env = F()->appEnv;
+        }
+
         if (!FStr::isEmail($from_addr))
-            $from_addr = 'no-reply@'.F()->HTTP->srvName;
+            $from_addr = 'no-reply@'.$env->serverName;
 
         $this->send_to = Array();
         $this->copy_to = Array();
@@ -145,7 +149,7 @@ class FMail
 
         $m_headers = Array(
             'From: '.$m_from,
-            'Message-ID: <'.md5(uniqid(time())).'@'.F()->HTTP->srvName.'>',
+            'Message-ID: <'.md5(uniqid(time())).'@'.F()->appEnv->serverName.'>',
             'MIME-Version: 1.0',
             'Date: '.date('r', time()),
             'X-Priority: 3',
