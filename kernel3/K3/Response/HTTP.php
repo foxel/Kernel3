@@ -5,10 +5,30 @@ class K3_Response_HTTP extends K3_Response
     public function __construct(K3_Environment $env = null)
     {
         parent::__construct($env);
-        $this->pool['useGZIP'] = (boolean) strstr($_SERVER['HTTP_ACCEPT_ENCODING'], 'gzip');
+        $this->pool['useGZIP']    = (boolean) strstr($_SERVER['HTTP_ACCEPT_ENCODING'], 'gzip');
+        $this->pool['statusCode'] = 200;
 
         ini_set ('default_mimetype', '');
         ini_set ('default_charset', '');
+    }
+
+    public function startObHandling()
+    {
+        return ob_start(array($this, 'obOutputHanlder'));
+    }
+
+    public function obOutputHanlder($text)
+    {
+        //return $text;
+        // if the buffer is empty then we get a direct writing without using FHTTP
+        if ($this->isEmpty()) {
+            $this->doHTMLParse = preg_match('#\<(\w+)\>.*\</\1\>#', $text);
+            $this->setDefaultHeaders(array('contentLength' => strlen($text)));
+            $this->sendHeadersData();
+            return false;
+        } else {
+            return 'Output conflict. Sorry :(';
+        }
     }
 
     public function sendFile($file, array $params = array(), $flags = 0)

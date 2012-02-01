@@ -8,8 +8,8 @@ abstract class K3_Response extends K3_Environment_Element implements I_K3_Respon
     const FILENAME_TRICKY        = 16;
     const FILENAME_RFC2231       = 32;
 
-    private $buffer  = '';
-    private $headers = array();
+    protected $buffer  = '';
+    protected $headers = array();
 
     public function __construct(K3_Environment $env = null)
     {
@@ -197,7 +197,7 @@ abstract class K3_Response extends K3_Environment_Element implements I_K3_Respon
             $this->setHeader('Cache-Control', 'no-cache');
         }
         // disposition
-        $disposition = ($flags & self::FILE_ATTACHMENT)
+        $disposition = ($flags & self::DISPOSITION_ATTACHMENT)
             ? 'attachment'
             : 'inline';
         $dispositionHeader = array(&$disposition);
