@@ -24,6 +24,10 @@ abstract class FBaseClass
 
     public function __set($name, $val)
     {
+        $setter = 'set'.ucfirst($name);
+        if (method_exists($this, $setter)) {
+            $this->$setter($val);
+        }
         return $val;
     }
 
@@ -275,11 +279,11 @@ final class FNullObject
 
     public function __construct($var_id = 'Object') { $this->message = $var_id.' is not defined but used as object'; }
 
-    protected function __get($name) { throw new FException($this->message); }
+    public function __get($name) { throw new FException($this->message); }
 
-    protected function __set($name, $val) { throw new FException($this->message); }
+    public function __set($name, $val) { throw new FException($this->message); }
 
-    protected function __call($name, $arguments) { throw new FException($this->message); }
+    public function __call($name, $arguments) { throw new FException($this->message); }
 }
 
 class FException extends Exception

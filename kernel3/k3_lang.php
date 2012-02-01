@@ -48,7 +48,7 @@ class FLNGData // extends FEventDispatcher
         }
     }
 
-    private function __get($name)
+    public function __get($name)
     {
         if (isset($this->pool[$name]))
             return $this->pool[$name];
