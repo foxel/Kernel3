@@ -15,6 +15,10 @@ if (defined('F_STARTED'))
 /** kernel started flag */
 define ('F_STARTED', True);
 
+/** kernel debug flag */
+if (!defined('F_DEBUG'))
+    define('F_DEBUG', false);
+
 // let's check the kernel requirements
 if (version_compare(PHP_VERSION, '5.1.0', '<'))
     die('PHP 5.1.0 required');
@@ -42,7 +46,10 @@ if (!defined('F_CODECACHE_DIR'))
     define('F_CODECACHE_DIR', F_SITE_ROOT);
 /**#@+*/
 
-Error_Reporting(0);
+Error_Reporting(F_DEBUG ? E_ALL : 0);
+if (F_DEBUG) 
+    ini_set('display_errors', 'On');
+
 if (get_magic_quotes_runtime())
     set_magic_quotes_runtime(0);
 set_time_limit(30);  // not '0' - once i had my script running for a couple of hours collecting GBytes of errors :)
@@ -100,7 +107,7 @@ else
 {
     foreach (scandir($kernel_codecache_dir) as $fname)
         if (preg_match('#^.k3\.compiled\.[0-9a-fA-F]{32}\.(php|bc)?$#', $fname))
-            unlink($kernel_codecache_dir.$fname);
+            unlink($kernel_codecache_dir.DIRECTORY_SEPARATOR.$fname);
     $base_modules_eval = array();
     foreach ($base_modules_files as $fname)
         $base_modules_eval[] = preg_replace('#^\s*\<\?php\s*|^\s*\<\?\s*|\?\>\s*$#D', '', php_strip_whitespace($fname));
@@ -142,15 +149,15 @@ class F extends FEventDispatcher
     const KERNEL_DIR = F_KERNEL_DIR;
 
     static private $ERR_TYPES = Array(
-        E_ERROR        => 'PHP ERROR',
-        E_WARNING      => 'PHP WARNING',
-        E_NOTICE       => 'PHP NOTICE',
-        E_USER_ERROR   => 'USER ERROR',
-        E_USER_WARNING => 'USER WARNING',
-        E_USER_NOTICE  => 'USER NOTICE',
-        E_STRICT       => 'PHP5 STRICT',
-        E_DEPRECATED   => 'PHP DEPRECATED',
-        E_USER_DEPRECATED => 'USER DEPRECATED',
+        E_ERROR             => 'PHP ERROR',
+        E_WARNING           => 'PHP WARNING',
+        E_NOTICE            => 'PHP NOTICE',
+        E_USER_ERROR        => 'USER ERROR',
+        E_USER_WARNING      => 'USER WARNING',
+        E_USER_NOTICE       => 'USER NOTICE',
+        E_STRICT            => 'PHP5 STRICT',
+        E_DEPRECATED        => 'PHP DEPRECATED',
+        E_USER_DEPRECATED   => 'USER DEPRECATED',
         E_RECOVERABLE_ERROR => 'PHP RECOVERABLE',
         );
 
@@ -275,8 +282,10 @@ class F extends FEventDispatcher
         }
 
         FMisc::obFree();
-        header ($_SERVER["SERVER_PROTOCOL"].' 503 Service Unavailable');
-        header('Content-Type: text/html; charset='.self::INTERNAL_ENCODING);
+        if (!headers_sent()) {
+            header ($_SERVER["SERVER_PROTOCOL"].' 503 Service Unavailable');
+            header('Content-Type: text/html; charset='.self::INTERNAL_ENCODING);
+        }
         print '<html><head><title>'.$this->LNG->lang('ERR_CRIT_PAGE', false, true).'</title></head><body><h1>'.$this->LNG->lang('ERR_CRIT_PAGE', false, true).'</h1>'.$this->LNG->lang('ERR_CRIT_MESS', false, true).'</body></html>';
     }
 
@@ -287,13 +296,19 @@ class F extends FEventDispatcher
     public function logError($c, $m, $f = '', $l = 0)
     {
         static $logfile = null;
+
         if ($c & ~(E_WARNING | E_USER_WARNING | E_NOTICE | E_USER_NOTICE | E_STRICT | E_DEPRECATED | E_USER_DEPRECATED))
             throw new ErrorException($m, 0, $c, $f, $l);
+
         if ($logfile == null)
             $logfile = fopen(F_LOGS_ROOT.DIRECTORY_SEPARATOR.'error.log', 'ab');
+
         $eName = isset(self::$ERR_TYPES[$c]) ? '['.self::$ERR_TYPES[$c].']' : '[UNKNOWN ERROR]';
-        if ($logfile)
+        if ($logfile) {
+            flock($logfile, LOCK_EX);
             fwrite($logfile, date('[d M Y H:i]').' '.$eName.': '.$m.'. File: '.$f.'. Line: '.$l.'.'.PHP_EOL.FStr::PHPDefine(array_slice(debug_backtrace(),1)).'.'.PHP_EOL);
+            flock($logfile, LOCK_UN);
+        }
     }
 
     /** Handles accessing to modules in F()->module form

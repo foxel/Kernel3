@@ -49,7 +49,6 @@ class FMPC extends FBaseClass
     {
         $this->host = (string) $host;
         $this->port = (int) $port;
-        $this->password = $password ? (string) $password : null;
 
         // connecting
         $this->mpd_sock = fsockopen($this->host, $this->port, $errNo, $errStr, 10);
