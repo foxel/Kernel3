@@ -38,6 +38,7 @@ final class FHTTPInterface implements I_K3_Deprecated
             case 'cDomain':  return F()->appEnv->cookieDomain;
             case 'cPrefix':  return F()->appEnv->cookiePrefix;
             case 'secure':   return F()->appEnv->request->isSecure;
+            case 'isAjax':   return F()->appEnv->request->isAjax;
 
             case 'doHTML':   return F()->appEnv->response->doHTMLParse;
             case 'doGZIP':   return F()->appEnv->response->useGZIP;
