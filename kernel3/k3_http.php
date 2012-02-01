@@ -52,6 +52,7 @@ final class FHTTPInterface extends FEventDispatcher
             'cDomain'  => false,
             'cPrefix'  => self::DEF_COOKIE_PREFIX,
             'secure'   => false,
+            'isAjax'   => false,
             );
 
         $this->pool['IP']      = $_SERVER['REMOTE_ADDR'];
@@ -89,6 +90,9 @@ final class FHTTPInterface extends FEventDispatcher
 
         if (isset($_SERVER['HTTPS']) && ($_SERVER['HTTPS'] != 'off'))
             $this->pool['secure'] = true;
+
+        if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && ($_SERVER['HTTP_X_REQUESTED_WITH'] == 'XMLHttpRequest'))
+            $this->pool['isAjax'] = true;
 
         if (headers_sent($file, $line))
             trigger_error('QuickFox Kernel 3 HTTP initialization error (Headers already sent)', E_USER_ERROR);
