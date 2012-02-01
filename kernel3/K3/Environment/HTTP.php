@@ -5,6 +5,9 @@ class K3_Environment_HTTP extends K3_Environment
 
     public function __construct()
     {
+        parent::__construct();
+        $this->cookies =& $_COOKIE; // TODO: think if we need to get a copy instead
+
         $this->pool['clientIP']        = $_SERVER['REMOTE_ADDR'];
         $this->pool['clientIPInteger'] = ip2long($this->pool['clientIP']);
 
@@ -70,4 +73,36 @@ class K3_Environment_HTTP extends K3_Environment
         $sign = md5($sign);
         return $sign;
     }
+
+    public function setCookie($name, $value = false, $expire = false, 
+        $rootPath = false, $addPrefix = true, $setDomain = true)
+    {
+        if (!$rootPath) {
+            $rootPath = ($this->pool['rootPath']) ? '/'.$this->pool['rootPath'].'/' : '/';
+        }
+
+        if ($addPrefix) {
+            $name = $this->pool['cookiePrefix'].'_'.$name;
+        }
+
+        if ($value === false && !isset($this->cookies[$name])) {
+            return true;
+        }
+
+        $result = setcookie(
+            $name,
+            $value,
+            $expire,
+            $rootPath,
+            ($setDomain) ? $this->pool['cookieDomain'] : false, // domain
+            ($this->request instanceof I_K3_Request) && $this->request->isSecure // secure only
+        );
+
+        if ($result) {
+            $this->cookies[$name] = $value;
+        }
+
+        return $result;
+    }
+
 }

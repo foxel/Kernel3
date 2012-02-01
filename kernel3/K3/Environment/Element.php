@@ -9,11 +9,7 @@ abstract class K3_Environment_Element extends FEventDispatcher
 
     public function __construct(K3_Environment $env = null)
     {
-        if (is_null($env)) {
-            $env = E();
-        }
-
-        $this->setEnvironment(!is_null($env) ? $env : E());
+        $this->setEnvironment(!is_null($env) ? $env : F()->appEnv);
     }
 
     /**

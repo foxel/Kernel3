@@ -7,3 +7,4 @@ FlexyStore => FFlexyStoreFactory|k3_flexystore.php
 MPC      => FMPCFactory|k3_mpc.php
 # compatibility failback
 GPC      => FGPC|k3_request.php
+HTTP     => FHTTPInterface|k3_http.php

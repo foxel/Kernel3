@@ -6,9 +6,9 @@ class K3_Request_HTTP extends K3_Request
     protected $UPLOADS = null;
     protected $doGPCStrip = false;
 
-    public function __construct()
+    public function __construct(K3_Environment $env = null)
     {
-        parent::__construct();
+        parent::__construct($env);
         $this->doGPCStrip = (bool) get_magic_quotes_gpc();
 
         if (isset($_SERVER['HTTPS']) && ($_SERVER['HTTPS'] != 'off'))
@@ -34,7 +34,6 @@ class K3_Request_HTTP extends K3_Request
 
     public function get($varName, $source = self::ALL, $default = null)
     {
-
         $raw = $this->raw;
 
         if (isset($raw[$source][$varName])) {
@@ -43,7 +42,7 @@ class K3_Request_HTTP extends K3_Request
 
         // cookie requests are redirected
         if ($source == self::COOKIE) {
-            $val = F()->HTTP->getCookie($svarName);
+            $val = $this->env->getCookie($varName);
             return !is_null($val)
                 ? $val
                 : $default;

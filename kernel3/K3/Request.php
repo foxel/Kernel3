@@ -21,11 +21,13 @@ abstract class K3_Request extends K3_Environment_Element implements I_K3_Request
      */
     protected $stringRecodeFunc = null;
 
-    public function __construct() 
+    public function __construct(K3_Environment $env = null)
     {
         $this->pool = array(
             'isSecure' => false,
         );
+
+        parent::__construct($env);
     }
 
     /**

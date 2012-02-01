@@ -85,7 +85,6 @@ $base_modules_files = Array(
     F_KERNEL_DIR.DIRECTORY_SEPARATOR.'k3_timer.php',         // kernel 3 basic classes
     F_KERNEL_DIR.DIRECTORY_SEPARATOR.'k3_cache.php',         // kernel 3 cacher class
     F_KERNEL_DIR.DIRECTORY_SEPARATOR.'k3_strings.php',       // kernel 3 strings parsing
-    F_KERNEL_DIR.DIRECTORY_SEPARATOR.'k3_http.php',          // kernel 3 HTTP interface
     F_KERNEL_DIR.DIRECTORY_SEPARATOR.'k3_lang.php',          // kernel 3 LNG interface
     F_KERNEL_DIR.DIRECTORY_SEPARATOR.'k3_dbase.php',         // kernel 3 database interface
     F_KERNEL_DIR.DIRECTORY_SEPARATOR.'k3_session.php',       // kernel 3 session extension
@@ -106,7 +105,7 @@ else
 {
     foreach (scandir($kernel_codecache_dir) as $fname)
         if (preg_match('#^.k3\.compiled\.[0-9a-fA-F]{32}\.(php|bc)?$#', $fname))
-            unlink($kernel_codecache_dir.$fname);
+            unlink($kernel_codecache_dir.DIRECTORY_SEPARATOR.$fname);
     $base_modules_eval = array();
     foreach ($base_modules_files as $fname)
         $base_modules_eval[] = preg_replace('#^\s*\<\?php\s*|^\s*\<\?\s*|\?\>\s*$#D', '', php_strip_whitespace($fname));
@@ -174,9 +173,9 @@ class F extends FEventDispatcher
         $this->pool['Timer']      = new FTimer();
         $this->pool['Cache']      = FCache::getInstance();
         $this->pool['Str']        = FStr::getInstance();
-        $this->pool['HTTP']       = FHTTPInterface::getInstance();
         $this->pool['appEnv']     = $e = $this->prepareDefaultEnvironment();
         $this->pool['Request']    = $e->getRequest();
+        $this->pool['Response']   = $e->getResponse();
         $this->pool['LNG']        = FLNGData::getInstance();
         //$this->pool['DBase'] = new FDataBase();
         $this->classes['DBase']    = 'FDataBase';
@@ -227,7 +226,8 @@ class F extends FEventDispatcher
     protected function prepareDefaultEnvironment()
     {
         $env = new K3_Environment_HTTP();
-        $env->setRequest(new K3_Request_HTTP());
+        $env->setRequest(new K3_Request_HTTP($env));
+        $env->setResponse(new K3_Response_HTTP($env));
         return $env;
     }
 
@@ -293,8 +293,10 @@ class F extends FEventDispatcher
         }
 
         FMisc::obFree();
-        header ($_SERVER["SERVER_PROTOCOL"].' 503 Service Unavailable');
-        header('Content-Type: text/html; charset='.self::INTERNAL_ENCODING);
+        if (!headers_sent()) {
+            header ($_SERVER["SERVER_PROTOCOL"].' 503 Service Unavailable');
+            header('Content-Type: text/html; charset='.self::INTERNAL_ENCODING);
+        }
         print '<html><head><title>'.$this->LNG->lang('ERR_CRIT_PAGE', false, true).'</title></head><body><h1>'.$this->LNG->lang('ERR_CRIT_PAGE', false, true).'</h1>'.$this->LNG->lang('ERR_CRIT_MESS', false, true).'</body></html>';
     }
 
@@ -305,13 +307,19 @@ class F extends FEventDispatcher
     public function logError($c, $m, $f = '', $l = 0)
     {
         static $logfile = null;
+
         if ($c & ~(E_WARNING | E_USER_WARNING | E_NOTICE | E_USER_NOTICE | E_STRICT | E_DEPRECATED | E_USER_DEPRECATED))
             throw new ErrorException($m, 0, $c, $f, $l);
+
         if ($logfile == null)
             $logfile = fopen(F_LOGS_ROOT.DIRECTORY_SEPARATOR.'error.log', 'ab');
+
         $eName = isset(self::$ERR_TYPES[$c]) ? '['.self::$ERR_TYPES[$c].']' : '[UNKNOWN ERROR]';
-        if ($logfile)
+        if ($logfile) {
+            flock($logfile, LOCK_EX);
             fwrite($logfile, date('[d M Y H:i]').' '.$eName.': '.$m.'. File: '.$f.'. Line: '.$l.'.'.PHP_EOL.FStr::PHPDefine(array_slice(debug_backtrace(),1)).'.'.PHP_EOL);
+            flock($logfile, LOCK_UN);
+        }
     }
 
     /** Handles accessing to modules in F()->module form

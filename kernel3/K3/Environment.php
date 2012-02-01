@@ -2,12 +2,22 @@
 
 abstract class K3_Environment extends FEventDispatcher
 {
-    const DEF_COOKIE_PREFIX = 'K3';
+    const DEFAULT_COOKIE_PREFIX = 'K3';
 
     /**
      * var K3_Request
      */
     protected $request = null;
+
+    /**
+     * var K3_Response
+     */
+    protected $response = null;
+
+    /**
+     * var array
+     */
+    protected $cookies = array();
 
     public function __construct()
     {
@@ -24,7 +34,7 @@ abstract class K3_Environment extends FEventDispatcher
             'refererIsExternal' => false,
 
             'cookieDomain'      => false,
-            'cookiePrefix'      => self::DEF_COOKIE_PREFIX,
+            'cookiePrefix'      => self::DEFAULT_COOKIE_PREFIX,
         );
     }
 
@@ -45,27 +55,47 @@ abstract class K3_Environment extends FEventDispatcher
     public function __get($name)
     {
         $getterMethod = 'get'.ucfirst($name);
-        if (is_callable(array(&$this, $setterMethod))) {
+        if (method_exists($this, $getterMethod)) {
             return $this->$getterMethod();
         } else {
             return parent::__get($name);
         }
     }
 
-    /**
-     * setter
-     * @param  string $name
-     * @param  mixed $val
-     */
-    public function __set($name, $val)
+    public function setCookiePrefix($newPrefix = false, $renameOldCookies = false)
     {
-        $setterMethod = 'set'.ucfirst($name);
-        if (is_callable(array(&$this, $setterMethod))) {
-            $this->$setterMethod($val);
-        } else {
-            parent::__set($name, $val);
+        if (!$newPrefix || !is_string($newPrefix))
+            $newPrefix = self::DEFAULT_COOKIE_PREFIX;
+
+        // special for chenging prefix without dropping down the session
+        if ($renameOldCookies && $this->pool['cookiePrefix'] != $newPrefix)
+        {
+            $oldPrefix_ = $this->pool['cookiePrefix'].'_';
+            foreach ($this->cookies as $name => $value)
+            {
+                if (strpos($name, $oldPrefix_) === 0)
+                {
+                    $this->setCookie($name, false, false, false, false, true);
+                    $name = $newPrefix.'_'.substr($name, strlen($oldPrefix_));
+                    $this->setCookie($name, $value, false, false, false, true);
+                }
+                $this->cookies[$name] = $value;
+            }
         }
+        $this->pool['cookiePrefix'] = (string) $newPrefix;
+
+        return $this;
     }
+
+    public function getCookie($name)
+    {
+        $name = $this->pool['cookiePrefix'].'_'.$name;
+
+        return (isset($this->cookies[$name])) ? $this->cookies[$name] : null;
+    }
+
+    abstract public function setCookie($name, $value = false, $expire = false, 
+        $root = false, $addPrefix = true, $setDomain = true);
 
     /**
      * @param K3_Request $request
@@ -82,5 +112,22 @@ abstract class K3_Environment extends FEventDispatcher
     public function getRequest()
     {
         return $this->request;
+    }
+
+    /**
+     * @param K3_Response $response
+     */
+    public function setResponse(K3_Response $response = null)
+    {
+        $this->response = $response;
+        $this->response->setEnvironment($this);
+    }
+
+    /**
+     * @return K3_Response
+     */
+    public function getResponse()
+    {
+        return $this->response;
     }
 }

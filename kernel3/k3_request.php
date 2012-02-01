@@ -10,7 +10,7 @@
 if (!defined('F_STARTED'))
     die('Hacking attempt');
 
-class FGPC
+class FGPC implements I_K3_Deprecated
 {
     // GPC source types
     const ALL    = K3_Request::ALL;
