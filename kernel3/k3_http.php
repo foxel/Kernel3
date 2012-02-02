@@ -118,7 +118,7 @@ final class FHTTPInterface implements I_K3_Deprecated
         $params = array(
             'filename' => $filename
         );
-        if ($filemime)  $params['mimeType'] = $filemime;
+        if ($filemime)  $params['contentType'] = $filemime;
         if ($filemtime) $params['contentTime'] = $filemtime;
         if (isset($_SERVER['HTTP_RANGE']) && preg_match('#bytes\=(\d+)\-(\d*?)#i', $_SERVER['HTTP_RANGE'], $ranges))
         {
@@ -161,7 +161,7 @@ final class FHTTPInterface implements I_K3_Deprecated
     {
         $params = array();
         $flags = 0;
-        if ($c_type)  $params['mimeType'] = $c_type;
+        if ($c_type)  $params['contentType'] = $c_type;
         if ($force_cache) $params['contentCacheTime'] = $force_cache;
         if ($send_filename) {
             $params['filename'] = $send_filename;
@@ -180,7 +180,7 @@ final class FHTTPInterface implements I_K3_Deprecated
                 ->clearBuffer()
                 ->write($data);
         }
-        $params['mimeType'] = (preg_match('#[\w\-]+/[\w\-]+#', $c_type)) ? $c_type : 'application/octet-stream';
+        $params['contentType'] = (preg_match('#[\w\-]+/[\w\-]+#', $c_type)) ? $c_type : 'application/octet-stream';
         if ($force_cache) $params['contentCacheTime'] = $force_cache;
         if ($send_filename) {
             $params['filename'] = $send_filename;

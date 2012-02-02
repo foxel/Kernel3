@@ -22,8 +22,13 @@ class K3_Response_HTTP extends K3_Response
         //return $text;
         // if the buffer is empty then we get a direct writing without using FHTTP
         if ($this->isEmpty()) {
-            $this->doHTMLParse = preg_match('#\<(\w+)\>.*\</\1\>#', $text);
-            $this->setDefaultHeaders(array('contentLength' => strlen($text)));
+            $cType = preg_match('#\<(\w+)\>.*\</\1\>#', $text)
+                    ? 'text/html'
+                    : 'text/plain';
+            $this->setDefaultHeaders(array(
+                'contentLength' => strlen($text),
+                'contentType'   => 'Content-Type: '.$cType.'; charset='.F::INTERNAL_ENCODING,
+            ));
             $this->sendHeadersData();
             return false;
         } else {

@@ -53,8 +53,8 @@ abstract class K3_Response extends K3_Environment_Element implements I_K3_Respon
     {
         ignore_user_abort(false);
 
-        if (!isset($params['mimeType']))
-            $params['mimeType'] = 'application/octet-stream';
+        if (!isset($params['contentType']))
+            $params['contentType'] = 'application/octet-stream';
         if (!isset($params['contentTime']))
             $params['contentTime'] = $stream->mtime();
 
@@ -120,10 +120,10 @@ abstract class K3_Response extends K3_Environment_Element implements I_K3_Respon
                     $statstring.= sprintf(F()->LNG->lang('FOOT_STATS_SQLSTAT'), F()->DBase->queriesCount, F()->DBase->queriesTime).' ';
 
                 $this->buffer = str_replace('<!--Page-Stats-->', $statstring, $this->buffer);
-                $params['mimeType'] = (preg_match('#[\w\-]+/[\w\-]+#', $params['mimeType'])) ? $params['mimeType'] : 'text/html';
+                $params['contentType'] = (preg_match('#[\w\-]+/[\w\-]+#', $params['contentType'])) ? $params['contentType'] : 'text/html';
             }
             else
-                $params['mimeType'] = (preg_match('#[\w\-]+/[\w\-]+#', $params['mimeType'])) ? $params['mimeType'] : 'text/plain';
+                $params['contentType'] = (preg_match('#[\w\-]+/[\w\-]+#', $params['contentType'])) ? $params['contentType'] : 'text/plain';
 
             if ($encoding) {
                 if ($buffer = FStr::strRecode($this->buffer, $encoding))
@@ -134,12 +134,12 @@ abstract class K3_Response extends K3_Environment_Element implements I_K3_Respon
                 $encoding = F::INTERNAL_ENCODING;
             }
 
-            if (strpos($params['mimeType'], 'text/') === 0) {
-                $params['mimeType'] = $params['mimeType'].'; charset='.$encoding;
+            if (strpos($params['contentType'], 'text/') === 0) {
+                $params['contentType'] = $params['contentType'].'; charset='.$encoding;
             }
 
             if ($this->doHTMLParse) {
-                $meta_conttype = '<meta http-equiv="Content-Type" content="'.$params['mimeType'].'" />';
+                $meta_conttype = '<meta http-equiv="Content-Type" content="'.$params['contentType'].'" />';
                 $this->buffer = str_replace('<!--Meta-Content-Type-->', $meta_conttype, $this->buffer);
             }
 
@@ -182,8 +182,8 @@ abstract class K3_Response extends K3_Environment_Element implements I_K3_Respon
             $this->setHeader('Content-Length', $params['contentLength']);
         }
         // mime type
-        if (isset($params['mimeType'])) {
-            $this->setHeader('Content-Type', $params['mimeType']);
+        if (isset($params['contentType'])) {
+            $this->setHeader('Content-Type', $params['contentType']);
         }
         // modified time
         if (isset($params['contentTime'])) {
