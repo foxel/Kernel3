@@ -227,39 +227,8 @@ final class FHTTPInterface implements I_K3_Deprecated
 
     public function setStatus($stat_code)
     {
-        return F()->appEnv->response->setStatusCode($stat_code);
-        static $codes = Array(
-            300 => 'Multiple Choices',
-            301 => 'Moved Permanently',
-            302 => 'Found',
-            303 => 'See Other',
-            304 => 'Not Modified',
-            305 => 'Use Proxy',
-            307 => 'Temporary Redirect',
-            400 => 'Bad Request',
-            401 => 'Unauthorized',
-            402 => 'Payment Required',
-            403 => 'Forbidden',
-            404 => 'Not Found',
-            405 => 'Method Not Allowed',
-            406 => 'Not Acceptable',
-            407 => 'Proxy Authentication Required',
-            408 => 'Request Timeout',
-            409 => 'Conflict',
-            410 => 'Gone',
-            411 => 'Length Required',
-            412 => 'Precondition Failed',
-            415 => 'Unsupported Media Type',
-            416 => 'Requested Range Not Satisfiable',
-            417 => 'Expectation Failed',
-            500 => 'Internal Server Error',
-            501 => 'Not Implemented',
-            503 => 'Service Unavailable',
-            );
+        F()->appEnv->response->setStatusCode($stat_code);
 
-        if (isset($codes[$stat_code]))
-            header(implode(' ', Array($_SERVER["SERVER_PROTOCOL"], $stat_code, $codes[$stat_code])), true, $stat_code);
-        
         return $this;
     }
 

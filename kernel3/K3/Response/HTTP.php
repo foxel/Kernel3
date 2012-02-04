@@ -49,7 +49,7 @@ class K3_Response_HTTP extends K3_Response
 
     public function setStatusCode($statusCode)
     {
-        if (isset($codes[$stat_code])) {
+        if (isset(self::$statusCodes[$statusCode])) {
             parent::setStatusCode($statusCode);
         }
         return $this;
@@ -57,6 +57,9 @@ class K3_Response_HTTP extends K3_Response
 
     protected function sendHeadersData()
     {
+        // sending HTTP status
+        header(implode(' ', Array($_SERVER['SERVER_PROTOCOL'], $this->statusCode, self::$statusCodes[$this->statusCode])), true, $this->statusCode);
+
         foreach ($this->headers as $name => &$values) {
             $replace = true;
             foreach ((array) $values as $value) {
