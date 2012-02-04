@@ -301,7 +301,7 @@ final class FMisc
     const DF_BLOCK = 4;
     const DF_FROMSTR = 16; //flag
 
-    private static $dfMasks  = Array('', '', '#^\s*([\w\-\/]+)\s*=>(.*)$#m', '#^((?>\w+)):(.*?)\r?\n---#sm', '#<<\+ \'(?>(\w+))\'>>(.*?)<<- \'\\1\'>>#s');
+    private static $dfMasks  = Array('', '', '#^\s*([\w\-\.\/]+)\s*=>(.*)$#m', '#^((?>\w+)):(.*?)\r?\n---#sm', '#<<\+ \'(?>(\w+))\'>>(.*?)<<- \'\\1\'>>#s');
     private static $cbCode   = false;
     private static $sdCBacks = Array();
     private static $inited   = false;

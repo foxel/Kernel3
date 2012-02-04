@@ -16,22 +16,26 @@ class FVISNode extends FBaseClass // FEventDispatcher
     // node flags
     const VISNODE_ARRAY = 1; // node is an array of sametype nodes
 
-    private $type  = '';
-    private $vars  = Array();
-    private $subs  = Array();
-    private $flags = 0;
-    private $parsed = '';
-    private $isParsed = false;
+    protected $type  = '';
+    protected $vars  = Array();
+    protected $subs  = Array();
+    protected $flags = 0;
+    protected $parsed = '';
+    protected $isParsed = false;
+    protected $VIS   = null;
 
-    public function __construct($type, $flags = 0)
+    public function __construct($type, $flags = 0, FVISInterface $vis = null)
     {
         $this->type = (string) $type;
         $this->flags = $flags;
+        $this->VIS = is_null($vis) ? F()->VIS : $vis;
+
         $this->pool = Array(
-            'type'   => &$this->type,
-            'flags'  => &$this->flags,
-            'parsed' => &$this->isParsed,
-            );
+            'type'       => &$this->type,
+            'flags'      => &$this->flags,
+            'parsed'     => &$this->isParsed,
+            'visualizer' => &$this->VIS,
+        );
     }
 
     public function setType($type)
@@ -41,15 +45,21 @@ class FVISNode extends FBaseClass // FEventDispatcher
         return $this;
     }
 
+    public function setVisualizer(FVISInterface $vis)
+    {
+        $this->VIS = $vis;
+
+        return $this;
+    }
+
     public function parse($force_reparse = false, Array $add_vars = Array())
     {
-        $visualizer = FVISInterface::getInstance();
         $text = '';
 
         if ($this->isParsed && !$force_reparse)
             return $this->parsed;
 
-        $visualizer->checkVIS($this->type);
+        $this->VIS->checkVIS($this->type);
 
         if ($this->flags && self::VISNODE_ARRAY)
         {
@@ -58,7 +68,7 @@ class FVISNode extends FBaseClass // FEventDispatcher
             $i = 0;
             foreach ($this->vars as $data)
                 if (is_array($data))
-                    $parts[] = $visualizer->parseVIS($this->type, $data + Array('NODE_INDEX' => ++$i));
+                    $parts[] = $this->VIS->parseVIS($this->type, $data + Array('NODE_INDEX' => ++$i));
             $text = implode($delimiter, $parts);
         }
         else
@@ -77,7 +87,7 @@ class FVISNode extends FBaseClass // FEventDispatcher
                 foreach ($add_vars as $var => $vals)
                     $data[$var] = implode(FStr::ENDL, $vals);
 
-            $text = $visualizer->parseVIS($this->type, $data);
+            $text = $this->VIS->parseVIS($this->type, $data);
         }
 
         $this->parsed =& $text;
@@ -169,8 +179,7 @@ class FVISNode extends FBaseClass // FEventDispatcher
         if (!$varname)
             return false;
 
-        $visualizer = FVISInterface::getInstance();
-        if ($node = $visualizer->createNode($template, $data_arr, $globname))
+        if ($node = $this->VIS->createNode($template, $data_arr, $globname))
             if ($this->appendChild($varname, $node))
                 return $node;
 
@@ -222,38 +231,38 @@ class FVISInterface extends FEventDispatcher
     const VIS_STATIC =  1;
     const VIS_DINAMIC = 2;
 
-    private $templates  = Array();
+    protected $templates  = Array();
 
-    private $VCSS_data  = ''; // CSS loaded from visuals
-    private $VJS_data   = ''; // JS loaded from visuals
-    private $CSS_data   = '';
-    private $JS_data    = '';
-    private $Consts     = Array();
+    protected $VCSS_data  = ''; // CSS loaded from visuals
+    protected $VJS_data   = ''; // JS loaded from visuals
+    protected $CSS_data   = '';
+    protected $JS_data    = '';
+    protected $Consts     = Array();
 
     // nodes arrays
-    private $nodes      = Array();
-    private $named      = Array();
+    protected $nodes      = Array();
+    protected $named      = Array();
 
-    private $VIS_loaded = Array();
-    private $CSS_loaded = false;
-    private $JS_loaded  = Array();
+    protected $VIS_loaded = Array();
+    protected $CSS_loaded = false;
+    protected $JS_loaded  = Array();
 
-    private $vis_consts = Array();
-    private $func_parsers = Array();
+    protected $vis_consts = Array();
+    protected $func_parsers = Array();
 
-    private $auto_loads = Array();
+    protected $auto_loads = Array();
 
-    private $cPrefix = '';
-    private $force_compact = true;  // forces to compact CSS/JS data
-    private $root_node = 0;
+    protected $cPrefix = '';
+    protected $force_compact = true;  // forces to compact CSS/JS data
+    protected $root_node = 0;
 
     protected $env = null;
 
-    private function __construct(K3_Environment $env = null)
+    public function __construct(K3_Environment $env = null)
     {
         $this->env = is_null($env) ? $env : F()->appEnv;
 
-        $this->nodes[0] = new FVISNode('GLOBAL_HTMLPAGE');
+        $this->nodes[0] = new FVISNode('GLOBAL_HTMLPAGE', 0, $this);
         $this->named = Array('PAGE' => 0, 'MAIN' => 0);
         $this->func_parsers = Array(
             'FULLURL'   => array('FStr', 'fullUrl'),
@@ -556,7 +565,7 @@ class FVISInterface extends FEventDispatcher
         end($this->nodes);
         $id = key($this->nodes) + 1;
 
-        $this->nodes[$id] = new FVISNode($template);
+        $this->nodes[$id] = new FVISNode($template, 0, $this);
 
         if (is_array($data_arr))
             $this->nodes[$id]->addDataArray($data_arr);
@@ -633,7 +642,7 @@ class FVISInterface extends FEventDispatcher
         end($this->nodes);
         $id = key($this->nodes) + 1;
 
-        if ($this->nodes[$id] = new FVISNode($template, FVISNode::VISNODE_ARRAY))
+        if ($this->nodes[$id] = new FVISNode($template, FVISNode::VISNODE_ARRAY, $this))
         {
             $parent->appendChild($varname, $this->nodes[$id]);
 
@@ -676,10 +685,11 @@ class FVISInterface extends FEventDispatcher
         if (!$to_find)
             return 0;
 
-        if ($to_find instanceof FVISNode)
-            list($to_find) = array_keys($this->nodes, $to_find);
-        elseif (!is_numeric($to_find))
-        {
+        if ($to_find instanceof FVISNode) {
+            if (!in_array($to_find, $this->nodes, true))
+                array_push($this->nodes, $to_find);
+            list($to_find) = array_keys($this->nodes, $to_find, true);
+        } elseif (!is_numeric($to_find)) {
             $to_find = strtoupper($to_find);
             if (isset($this->named[$to_find]))
                 $to_find = $this->named[$to_find];
@@ -695,7 +705,7 @@ class FVISInterface extends FEventDispatcher
     {
         if ($to_find instanceof FVISNode)
         {
-            if (!in_array($to_find, $this->nodes))
+            if (!in_array($to_find, $this->nodes, true))
                 array_push($this->nodes, $to_find);
             return $to_find;
         }
