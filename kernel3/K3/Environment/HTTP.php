@@ -18,7 +18,7 @@ class K3_Environment_HTTP extends K3_Environment
         $this->pool['requestUrl'] = preg_replace('#^/+#s', '', $this->pool['requestUrl']);
 
         $this->pool['rootUrl']    = 'http://'.$this->pool['serverName'].(($this->pool['serverPort'] != 80) ? $this->pool['serverPort'] : '').'/';
-        $this->pool['rootPath']   = dirname($_SERVER['PHP_SELF']);
+        $this->pool['rootPath']   = F_SITE_ROOT; // dirname($_SERVER['SCRIPT_NAME']);
 
         if ( $this->pool['rootPath'] = trim($this->pool['rootPath'], '/\\') )
         {

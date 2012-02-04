@@ -25,13 +25,6 @@ class K3_Request_HTTP extends K3_Request
         return true;
     }
 
-    public function getURLParams()
-    {
-        $res = Array();
-        parse_str(parse_url($_SERVER['REQUEST_URI'], PHP_URL_QUERY), $res);
-        return $res;
-    }
-
     public function get($varName, $source = self::ALL, $default = null)
     {
         $raw = $this->raw;

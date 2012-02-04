@@ -16,4 +16,14 @@ abstract class K3_Application extends FEventDispatcher
     }
 
     abstract public function run();
+
+    public function getRequest()
+    {
+        return $this->env->getRequest();
+    }
+
+    public function getResponse()
+    {
+        return $this->env->getResponse();
+    }
 }

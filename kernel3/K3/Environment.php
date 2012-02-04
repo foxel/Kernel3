@@ -5,19 +5,24 @@ abstract class K3_Environment extends FEventDispatcher
     const DEFAULT_COOKIE_PREFIX = 'K3';
 
     /**
-     * var K3_Request
+     * @var K3_Request
      */
     protected $request = null;
 
     /**
-     * var K3_Response
+     * @var K3_Response
      */
     protected $response = null;
 
     /**
-     * var array
+     * @var array
      */
     protected $cookies = array();
+
+    /**
+     * @var array
+     */
+    protected $elements = array();
 
     public function __construct()
     {
@@ -129,5 +134,28 @@ abstract class K3_Environment extends FEventDispatcher
     public function getResponse()
     {
         return $this->response;
+    }
+
+    /**
+     * @param  string $name
+     * @param  mixed $element
+     * @return K3_Environment
+     */
+    public function put($name, $element)
+    {
+        $this->elements[$name] = $element;
+
+        return $this;
+    }
+
+    /**
+     * @param  string $name
+     * @return mixed
+     */
+    public function get($name)
+    {
+        return isset($this->elements[$name])
+            ? $this->elements[$name]
+            : null;
     }
 }
