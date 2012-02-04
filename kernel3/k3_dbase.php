@@ -26,7 +26,7 @@ class FDataBase extends FEventDispatcher
     private $dbDrivers = Array('mysql' => 'mysql');
     private $dbDSNType = Array('mysql' => 'mysql');
     private $dbType = null;
-    private $tbPrefix = 'qf_';
+    private $tbPrefix = '';
     private $c = null;
     private $qc = null;
     private $qResult = null;
@@ -44,19 +44,20 @@ class FDataBase extends FEventDispatcher
         
         require_once(F_KERNEL_DIR.DIRECTORY_SEPARATOR.'k3_dbqc_'.$this->dbDrivers[$dbaseType].'.php');
 
-        $this->pool['type']  =& $this->dbType;
-        $this->pool['lastQueryResult'] =& $this->qResult;
-        $this->pool['history'] =& $this->history;
-        $this->pool['queriesTime']  =& $this->queriesTime;
-        $this->pool['queriesCount'] =& $this->queriesCount;
+        $this->pool['type']                =& $this->dbType;
+        $this->pool['lastQueryResult']     =& $this->qResult;
+        $this->pool['history']             =& $this->history;
+        $this->pool['queriesTime']         =& $this->queriesTime;
+        $this->pool['queriesCount']        =& $this->queriesCount;
         $this->pool['lastSelectRowsCount'] =& $this->qCalcRows;
+        $this->pool['tbPrefix']            =& $this->tbPrefix;
 
         // deprecated 
         $this->pool['dbType']  =& $this->dbType;
         $this->pool['qResult'] =& $this->qResult;
     }
 
-    public function connect($params, $username = '', $password = '', $tbPrefix = 'qf_', $options = Array())
+    public function connect($params, $username = '', $password = '', $tbPrefix = '', $options = Array())
     {
         $conn_pars = Array();
         if (!is_array($params))
@@ -67,7 +68,7 @@ class FDataBase extends FEventDispatcher
         $this->c = new PDO($conn_pars, $username, $password, $options);
         $this->tbPrefix = (string) $tbPrefix;
         $qcDriver = 'FDBaseQC'.$this->dbDrivers[$this->dbType];
-        $this->qc = new $qcDriver($this->c);
+        $this->qc = new $qcDriver($this->c, $this);
         
         return true;
     }

@@ -9,9 +9,10 @@
  
 class FDBaseQCmysql
 {
-    private $pdo = null;
+    private $pdo  = null;
+    protected $db = null;
 
-    public function __construct(PDO $pdo)
+    public function __construct(PDO $pdo, FDataBase $db)
     {
         // html charset transformation table TODO: filling
         static $charSets = Array(); 
@@ -23,12 +24,11 @@ class FDBaseQCmysql
             : $charset;
 
         $this->pdo = $pdo;
-        try
-        {
+        $this->db  = $db;
+        try {
             $pdo->exec('set names '.$charset);
             $pdo->exec('set time_zone = \'+0:00\'');
-        }
-        catch (PDOException $e) {};
+        } catch (PDOException $e) {};
     }
 
     public function calcRowsQuery()
@@ -89,6 +89,10 @@ class FDBaseQCmysql
         $tables = '';
         foreach ($selectInfo['tables'] as $tableAlias => $tableName)
         {
+            if (!($flags & FDataBase::SQL_NOPREFIX)) {
+                $tableName = $this->db->tbPrefix.$tableName;
+            }
+
             if ($tableAlias != $tableName) {
                 $table = (FStr::isWord($tableName))
                     ? '`'.$tableName.'` as `'.$tableAlias.'`'
@@ -102,12 +106,12 @@ class FDBaseQCmysql
             elseif (isset($selectInfo['joins']) && isset($selectInfo['joins'][$tableAlias]))
             {
                 $joinOn = array();
-                foreach($selectInfo['joins'][$tableAlias] as $field => $toField)
+                foreach((array) $selectInfo['joins'][$tableAlias] as $field => $toField)
                 {
                     if (is_string($field)) 
                     {
                         $joinOn[] = is_array($toField)
-                            ? '`'.$tableAlias.'`.`'.$field.'` = '.$toField[0].'.`'.$toField[1].'`'
+                            ? '`'.$tableAlias.'`.`'.$field.'` = `'.$toField[0].'`.`'.$toField[1].'`'
                             : '`'.$tableAlias.'`.`'.$field.'` = '.$toField;
                     }
                     else
@@ -197,6 +201,10 @@ class FDBaseQCmysql
 
         $query.= $fields.' ';
 
+        if (!($flags & FDataBase::SQL_NOPREFIX)) {
+            $table = $this->db->tbPrefix.$table;
+        }
+
         $query.= 'FROM `'.$table.'` '.$where.' '.strval($other);
 
         return $query;
@@ -221,6 +229,10 @@ class FDBaseQCmysql
         
         foreach ($tqueries as $table => $params)
         {
+            if (!($flags & FDataBase::SQL_NOPREFIX)) {
+                $table = $this->db->tbPrefix.$table;
+            }
+
             $tl = 't'.$ti;
 
             if ($ti > 0)
@@ -336,6 +348,10 @@ class FDBaseQCmysql
     {
         $query = ($replace) ? 'REPLACE INTO ' : 'INSERT INTO ';
 
+        if (!($flags & FDataBase::SQL_NOPREFIX)) {
+            $table = $this->db->tbPrefix.$table;
+        }
+
         $query.= '`'.$table.'` ';
 
         if (count($data)) 
@@ -438,6 +454,10 @@ class FDBaseQCmysql
     {
         if ($where = $this->_parseWhere($where, $flags))
             $where = 'WHERE '.$where;
+
+        if (!($flags & FDataBase::SQL_NOPREFIX)) {
+            $table = $this->db->tbPrefix.$table;
+        }
 
         $query = 'DELETE FROM `'.$table.'` '.$where;
 
