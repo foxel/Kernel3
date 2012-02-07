@@ -87,7 +87,6 @@ $base_modules_files = Array(
     F_KERNEL_DIR.DIRECTORY_SEPARATOR.'k3_strings.php',       // kernel 3 strings parsing
     F_KERNEL_DIR.DIRECTORY_SEPARATOR.'k3_lang.php',          // kernel 3 LNG interface
     F_KERNEL_DIR.DIRECTORY_SEPARATOR.'k3_dbase.php',         // kernel 3 database interface
-    F_KERNEL_DIR.DIRECTORY_SEPARATOR.'k3_session.php',       // kernel 3 session extension
     F_KERNEL_DIR.DIRECTORY_SEPARATOR.'k3_registry.php',      // kernel 3 registry extension
 );
 // we'll do some trick with caching base modules in one file
@@ -176,11 +175,11 @@ class F extends FEventDispatcher
         $this->pool['appEnv']     = $e = $this->prepareDefaultEnvironment();
         $this->pool['Request']    = $e->getRequest();
         $this->pool['Response']   = $e->getResponse();
+        $this->pool['Sess']       =
+        $this->pool['Session']    = $e->getSession();
         $this->pool['LNG']        = FLNGData::getInstance();
         //$this->pool['DBase'] = new FDataBase();
         $this->classes['DBase']    = 'FDataBase';
-        $this->classes['Session']  = 
-        $this->classes['Sess']     = 'FSession';
         $this->classes['Registry'] = 'FRegistry';
         $this->classes['Config']   = 'FConfig';
         //$this->pool['DBObject'] = new StaticInstance('FDBObject');
@@ -228,6 +227,7 @@ class F extends FEventDispatcher
         $env = new K3_Environment_HTTP();
         $env->setRequest(new K3_Request_HTTP($env));
         $env->setResponse(new K3_Response_HTTP($env));
+        $env->setSession(new K3_Session($env));
         return $env;
     }
 

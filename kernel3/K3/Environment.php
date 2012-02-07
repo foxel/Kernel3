@@ -15,6 +15,11 @@ abstract class K3_Environment extends FEventDispatcher
     protected $response = null;
 
     /**
+     * @var K3_Session
+     */
+    protected $session = null;
+
+    /**
      * @var array
      */
     protected $cookies = array();
@@ -134,6 +139,23 @@ abstract class K3_Environment extends FEventDispatcher
     public function getResponse()
     {
         return $this->response;
+    }
+
+    /**
+     * @param K3_Session $session
+     */
+    public function setSession(K3_Session $session = null)
+    {
+        $this->session = $session;
+        $this->session->setEnvironment($this);
+    }
+
+    /**
+     * @return K3_Session
+     */
+    public function getSession()
+    {
+        return $this->session;
     }
 
     /**
