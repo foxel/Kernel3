@@ -412,6 +412,9 @@ class FDBaseQCmysql
         if ($where = $this->_parseWhere($where, $flags))
             $where = 'WHERE '.$where;
 
+        if (!($flags & FDataBase::SQL_NOPREFIX)) {
+            $table = $this->db->tbPrefix.$table;
+        }
 
         $query = 'UPDATE `'.$table.'` SET ';
 
