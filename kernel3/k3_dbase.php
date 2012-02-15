@@ -55,6 +55,9 @@ class FDataBase extends FEventDispatcher
         // deprecated 
         $this->pool['dbType']  =& $this->dbType;
         $this->pool['qResult'] =& $this->qResult;
+        $this->pool['UID'] = function_exists('spl_object_hash')
+            ? spl_object_hash($this)
+            : uniqid($this->dbType, true);
     }
 
     public function connect($params, $username = '', $password = '', $tbPrefix = '', $options = Array())
