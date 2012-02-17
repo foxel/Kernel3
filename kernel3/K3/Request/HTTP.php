@@ -13,6 +13,7 @@ class K3_Request_HTTP extends K3_Request
 
         $this->pool['isSecure'] = (isset($_SERVER['HTTPS']) && ($_SERVER['HTTPS'] != 'off'));
         $this->pool['isAjax']   = (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && ($_SERVER['HTTP_X_REQUESTED_WITH'] == 'XMLHttpRequest'));
+        $this->pool['isPost']   = !empty($_POST);
     }
 
     // useful for special inpur parsings

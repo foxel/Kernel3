@@ -25,6 +25,7 @@ abstract class K3_Request extends K3_Environment_Element implements I_K3_Request
     {
         $this->pool = array(
             'isSecure' => false,
+            'isPost'   => false,
         );
 
         parent::__construct($env);

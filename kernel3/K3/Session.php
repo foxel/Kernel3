@@ -200,6 +200,14 @@ class K3_Session extends K3_Environment_Element
         return ($check ? $this->mode & $check : $this->mode);
     }
 
+    public function getSID()
+    {
+        if (!($this->mode & self::MODE_STARTED) && ($this->tried || !$this->open(self::MODE_TRY)))
+            return null;
+
+        return $this->SID;
+    }
+
     // session variables control
     public function get($query)
     {

@@ -86,6 +86,30 @@ class FDataBase extends FEventDispatcher
         return new FDBSelect($tableName, $tableAlias, $fields);
     }
 
+    public function beginTransaction()
+    {
+        if (!$this->c)
+            throw new FException('DB is not connected');
+
+        return $this->c->beginTransaction();
+    }
+
+    public function commit()
+    {
+        if (!$this->c)
+            throw new FException('DB is not connected');
+
+        return $this->c->commit();
+    }
+
+    public function rollBack()
+    {
+        if (!$this->c)
+            throw new FException('DB is not connected');
+
+        return $this->c->rollBack();
+    }
+
     public function parseDBSelect(FDBSelect $select, $flags = 0)
     {
         if (!$this->c)
