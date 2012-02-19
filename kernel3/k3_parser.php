@@ -135,7 +135,7 @@ class FParser extends FEventDispatcher
         return true;
     }
 
-    public function parse($input, $mode = self::BBPARSE_CHECK, $style = 0)
+    public function parse($input, $mode = self::BBPARSE_ALL, $style = 0)
     {
         if (!count($this->tags))
             $this->initStdTags();
@@ -166,7 +166,7 @@ class FParser extends FEventDispatcher
         return $input;
     }
 
-    public function BBParse($input, $mode = self::BBPARSE_CHECK, $style = 0)
+    public function BBParse($input, $mode = self::BBPARSE_ALL, $style = 0)
     {
         $start_time=microtime(true);
 

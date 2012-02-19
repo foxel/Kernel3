@@ -274,6 +274,7 @@ class FVISInterface extends FEventDispatcher
             'FTIME'     => Array(F()->LNG, 'timeFormat'),
             'FBYTES'    => Array(F()->LNG, 'sizeFormat'),
             'STRFORMAT' => 'sprintf',
+            'NL2BR'     => 'nl2br',
             );
 
         $this->clear();
