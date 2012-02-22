@@ -275,7 +275,8 @@ class FVISInterface extends FEventDispatcher
             'FBYTES'    => Array(F()->LNG, 'sizeFormat'),
             'STRFORMAT' => 'sprintf',
             'NL2BR'     => 'nl2br',
-            );
+            'RANDOM'    => 'mt_rand',
+        );
 
         $this->clear();
     }
@@ -1171,7 +1172,7 @@ class FVISInterface extends FEventDispatcher
     private function templVISFuncCB($parsewith, Array $params, &$vars, $consts, $for_js = false, $do_schars = false) // calling function with many params
     {
         $code = '';
-        $static = true;
+        $static = strpos($parsewith, 'RAND') === false;
 
         $st_pars = $dyn_pars_js = $dyn_pars = Array();
         foreach ($params as $id => $val)
@@ -1207,12 +1208,10 @@ class FVISInterface extends FEventDispatcher
 
         if ($static)
         {
-            $val = $this->callParseFunctionArr($parsewith, $st_pars);
+            $val = (string) $this->callParseFunctionArr($parsewith, $st_pars);
             if ($do_schars)
                 $val = FStr::smartHTMLSchars($val);
-            $code = is_string($val)
-                ? ($for_js ? FStr::JSDefine($val) : FStr::heredocDefine($val, 'FTEXT'))
-                : (string) $val;
+            $code = $for_js ? FStr::JSDefine($val) : FStr::heredocDefine($val, 'FTEXT');
         }
         else
         {
@@ -1231,7 +1230,7 @@ class FVISInterface extends FEventDispatcher
     private function templVISParamCB($val, &$vars, $consts, $parsewith = null, $for_js = false, $do_schars = false)
     {
         $code = '';
-        $static = true;
+        $static = strpos($parsewith, 'RAND') === false;
 
         if (FStr::isWord($val))
         {
@@ -1260,9 +1259,7 @@ class FVISInterface extends FEventDispatcher
                 $val = $this->callParseFunction($parsewith, $val);
             if ($do_schars)
                 $val = FStr::smartHTMLSchars($val);
-            $code = is_string($val)
-                ? ($for_js ? FStr::JSDefine($val) : FStr::heredocDefine($val, 'FTEXT'))
-                : (string) $val;
+            $code = $for_js ? FStr::JSDefine($val) : FStr::heredocDefine($val, 'FTEXT');
         }
         elseif ($parsewith)
         {
