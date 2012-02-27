@@ -407,17 +407,22 @@ class FDBSelect
     {
         $this->_determineTableAliasWithColumn($column, $tableAlias);
 
-        if ($column instanceof self)
+        if ($column instanceof self) {
             $expr = $column;
-        elseif ($column == '*' || FStr::isWord($column))
-            $expr = array($tableAlias, $alias = $column);
-        else
+        } elseif ($column == '*' || FStr::isWord($column)) {
+            $expr = array($tableAlias, $column);
+            if (!FStr::isWord($alias)) {
+                $alias = $column;
+            }
+        } else {
             $expr = (string) $column;
+        }
 
-        if (FStr::isWord($alias))
+        if (FStr::isWord($alias)) {
             $this->fields[$alias] = $expr;
-        else
+        } else {
             $this->fields[] = $expr;
+        }
         
         return $this;
     }
