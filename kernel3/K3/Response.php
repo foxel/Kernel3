@@ -120,10 +120,14 @@ abstract class K3_Response extends K3_Environment_Element implements I_K3_Respon
                     $statstring.= sprintf(F()->LNG->lang('FOOT_STATS_SQLSTAT'), F()->DBase->queriesCount, F()->DBase->queriesTime).' ';
 
                 $this->buffer = str_replace('<!--Page-Stats-->', $statstring, $this->buffer);
-                $params['contentType'] = (preg_match('#[\w\-]+/[\w\-]+#', $params['contentType'])) ? $params['contentType'] : 'text/html';
+                $params['contentType'] = (isset($params['contentType']) && preg_match('#[\w\-]+/[\w\-]+#', $params['contentType']))
+                    ? $params['contentType']
+                    : 'text/html';
+            } else {
+                $params['contentType'] = (isset($params['contentType']) && preg_match('#[\w\-]+/[\w\-]+#', $params['contentType']))
+                    ? $params['contentType']
+                    : 'text/plain';
             }
-            else
-                $params['contentType'] = (preg_match('#[\w\-]+/[\w\-]+#', $params['contentType'])) ? $params['contentType'] : 'text/plain';
 
             if ($encoding) {
                 if ($buffer = FStr::strRecode($this->buffer, $encoding))

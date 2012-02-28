@@ -79,6 +79,7 @@ class K3_Response_HTTP extends K3_Response
     }
 
     protected static $statusCodes = Array(
+        200 => 'OK',
         300 => 'Multiple Choices',
         301 => 'Moved Permanently',
         302 => 'Found',
