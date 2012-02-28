@@ -150,30 +150,31 @@ class FCache
 
         $folder = (strpos($folder, self::$cache_folder.'/') === 0) ? $folder : self::$cache_folder;
         $stack = Array();
-        if (is_dir($folder) && $dir = opendir($folder))
-        {
+        if (is_dir($folder) && $dir = opendir($folder)) {
             do {
+                $dirNotEmpty = true;
                 while ($entry = readdir($dir))
                     if ($entry!='.' && $entry!='..') {
                         $entry = $folder.'/'.$entry;
-                        if (is_file($entry))
-                        {
+                        if (is_file($entry)) {
                             $einfo = pathinfo($entry);
-                            if (strtolower($einfo['extension'])=='chd')
+                            if (strtolower($einfo['extension'])=='chd') {
                                 unlink($entry);
-                        }
-                        elseif (is_dir($entry))
-                        {
-                            if ($ndir = opendir($entry))
-                            {
+                            }
+                        } elseif (is_dir($entry)) {
+                            if ($ndir = opendir($entry)) {
                                 array_push($stack, Array($dir, $folder));
                                 $dir = $ndir;
                                 $folder = $entry;
                             }
+                        } else {
+                            $dirNotEmpty = true;
                         }
                     }
                 closedir($dir);
-                rmdir($folder);
+                if (!$dirNotEmpty) {
+                    rmdir($folder);
+                }
             } while (list($dir, $folder) = array_pop($stack));
         }
     }

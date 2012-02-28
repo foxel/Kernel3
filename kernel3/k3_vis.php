@@ -485,7 +485,7 @@ class FVISInterface extends FEventDispatcher
                 }
                 elseif ($indata = FMisc::loadDatafile($filename, FMisc::DF_BLOCK, true))
                 {
-                    $this->throwEventRef('VIS_PreParse', $indata, $style, $part);
+                    $this->throwEventRef('VIS_PreParse', $indata, $filename);
 
                     $Tdata  = Array();
                     $VCSS   = '';
@@ -733,7 +733,7 @@ class FVISInterface extends FEventDispatcher
     {
         static $consts = Array(
             'F_MARK'  => 'Powered by<br />Kernel 3<br />&copy; Foxel aka LION<br /> 2006 - 2009',
-            'F_INDEX' => F_INDEX,
+            'F_INDEX' => F_SITE_INDEX,
             );
 
         $consts = $this->vis_consts;

@@ -530,7 +530,9 @@ class FStr
     // generates full url
     static public function fullUrl($url, $with_amps = false, $force_host = '', K3_Environment $env = null)
     {
-        if ($url[0] == '#')
+        $url = (string) $url;
+
+        if ($url && $url[0] == '#')
             return $url;
 
         if (is_null($env)) {
@@ -539,20 +541,17 @@ class FStr
 
         $url_p = parse_url($url);
 
-        if (isset($url_p['scheme']))
-        {
+        if (isset($url_p['scheme'])) {
             $scheme = strtolower($url_p['scheme']);
             if ($scheme == 'mailto')
                 return $url;
             $url = $scheme.'://';
-        }
-        else
+        } else {
             $url = ($env->request->isSecure) ? 'https://' : 'http://';
+        }
 
-        if (isset($url_p['host']))
-        {
-            if (isset($url_p['username']))
-            {
+        if (isset($url_p['host'])) {
+            if (isset($url_p['username'])) {
                 $url.= $url_p['username'];
                 if (isset($url_p['password']))
                     $url.= $url_p['password'];
@@ -564,27 +563,27 @@ class FStr
 
             if (isset($url_p['path']))
                 $url.= preg_replace('#(\/|\\\)+#', '/', $url_p['path']);
-        }
-        else
-        {
+        } else {
             $url.= ($force_host) ? $force_host : $env->serverName;
-            if (isset($url_p['path']))
-            {
-                if ($url_p['path']{0} != '/')
+            if (isset($url_p['path']) && strlen($url_p['path'])) {
+                if ($url_p['path'][0] != '/') {
                     $url_p['path'] = '/'.$env->rootPath.'/'.$url_p['path'];
-            }
-            else
+                }
+            } else {
                 $url_p['path'] = '/'.$env->rootPath.'/'.F_SITE_INDEX;
+            }
 
             $url_p['path'] = preg_replace('#(\/|\\\)+#', '/', $url_p['path']);
             $url.= $url_p['path'];
         }
 
-        if (isset($url_p['query']))
+        if (isset($url_p['query'])) {
             $url.= '?'.$url_p['query'];
+        }
 
-        if (isset($url_p['fragment']))
+        if (isset($url_p['fragment'])) {
             $url.= '#'.$url_p['fragment'];
+        }
 
         $url = ($with_amps) ? preg_replace('#\&(?![A-z]+;)#', '&amp;', $url) : str_replace('&amp;', '&', $url);
 
