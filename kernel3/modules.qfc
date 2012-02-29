@@ -6,5 +6,7 @@ Mail     => FMail|k3_mailer.php
 FlexyStore => FFlexyStoreFactory|k3_flexystore.php
 MPC      => FMPCFactory|k3_mpc.php
 # compatibility failback
-GPC      => FGPC|k3_request.php
-HTTP     => FHTTPInterface|k3_http.php
+GPC       => FGPC|k3_request.php
+HTTP      => FHTTPInterface|k3_http.php
+_Registry => FRegistry|k3_registry.php
+Config   => FConfig|k3_registry.php

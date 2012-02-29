@@ -4,16 +4,16 @@ define ('STARTED', True);
 
 require_once 'kernel3.php';
 
-FRegistry::setBackFile('reg.reg');
+F()->Registry->setBackFile('reg.reg');
 
 if ($name = F()->GPC->getString('name', FGPC::POST)) {
     $value = F()->GPC->getString('value', FGPC::POST);
-    FRegistry::set('store.'.$name, $value, true);
+    F()->Registry->set('store.'.$name, $value, true);
     F()->Registry->set('local.'.$name, $value, false);
     F()->Config->$name = $value;
 }
 
-$string = print_r(FRegistry::getAll(), true);
+$string = print_r(F()->Registry->getAll(), true);
 
 $page = '<html><head><!--Meta-Content-Type--><title>'.F_SITE_INDEX.'</title></head>
 <body>
