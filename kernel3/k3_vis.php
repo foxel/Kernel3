@@ -876,7 +876,7 @@ class FVISInterface extends FEventDispatcher
                     if (count($params[1]) > 1)
                     {
                         if ($params[1][1] == '_')
-                            $text.= ', $data';
+                            $text.= ', $_in';
                         else
                         {
                             $text.= ', Array(';
