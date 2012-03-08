@@ -97,9 +97,11 @@ abstract class K3_Environment extends FEventDispatcher
         return $this;
     }
 
-    public function getCookie($name)
+    public function getCookie($name, $addPrefix = true)
     {
-        $name = $this->pool['cookiePrefix'].'_'.$name;
+        if ($addPrefix) {
+            $name = $this->pool['cookiePrefix'].'_'.$name;
+        }
 
         return (isset($this->cookies[$name])) ? $this->cookies[$name] : null;
     }
