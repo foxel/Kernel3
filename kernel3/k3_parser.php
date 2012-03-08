@@ -202,7 +202,7 @@ class FParser extends FEventDispatcher
         foreach ($struct as $part)
         {
 
-            if ($tagname = strtolower($part[1]))      // open tag
+            if (isset($part[1]) && $tagname = strtolower($part[1]))      // open tag
             {
                 if ($tagname == $this->noparse_tag)
                 {
@@ -321,7 +321,7 @@ class FParser extends FEventDispatcher
                         $buffer.= $part[0];
                 }
             }
-            elseif ($tagname = strtolower($part[4]))  // close tag
+            elseif (isset($part[4]) && $tagname = strtolower($part[4]))  // close tag
             {
                 if ($tagname == $this->noparse_tag)
                 {

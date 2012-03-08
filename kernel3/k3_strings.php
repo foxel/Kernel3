@@ -384,6 +384,19 @@ class FStr
         return $def;
     }
 
+    static public function implodeRecursive(array $array, $glue = '')
+    {
+        $out = array();
+        foreach ($array as $value) {
+            if (is_array($value)) {
+                $value = self::implodeRecursive($value, $glue);
+            }
+            $out[] = (string) $value;
+        }
+
+        return implode($glue, $out);
+    }
+
     static public function heredocDefine($str, $heredoc_id = 'HSTR', $add_semicolon = false)
     {
         return '<<<'.$heredoc_id.self::ENDL.self::addslashesHeredoc($str, $heredoc_id).self::ENDL.$heredoc_id.($add_semicolon ? ';' : '').self::ENDL;

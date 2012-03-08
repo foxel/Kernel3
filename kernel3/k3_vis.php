@@ -112,7 +112,7 @@ class FVISNode extends FBaseClass // FEventDispatcher
         {
             $varname = strtoupper($varname);
             if (is_array($data))
-                $data = implode(' ', $data);
+                $data = FStr::implodeRecursive($data, ' ');
             if (!isset($this->vars[$varname]) || $replace)
                 $this->vars[$varname] = Array($data);
             else
@@ -142,7 +142,7 @@ class FVISNode extends FBaseClass // FEventDispatcher
                             {
                                 $key = strtoupper($prefix.$key);
                                 if (is_array($var))
-                                    $var = implode(' ', $var);
+                                    $var = FStr::implodeRecursive($var, ' ');
                                 $this->vars[$in][$key] = $var;
                             }
 
@@ -163,7 +163,7 @@ class FVISNode extends FBaseClass // FEventDispatcher
                 {
                     $key = strtoupper($prefix.$key);
                     if (is_array($var))
-                        $var = implode(' ', $var);
+                        $var = FStr::implodeRecursive($var, ' ');
                     if (!isset($this->vars[$key]))
                         $this->vars[$key] = Array($var);
                     else

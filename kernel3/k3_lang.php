@@ -230,8 +230,8 @@ class FLNGData // extends FEventDispatcher
                 4 => 'DATETIME_TR_MONTHS_SHORT',
                 );
 
-            if (!isset($this->lang[$lnames[0]]))
-                $this->tryAutoLoad($lnames[0]);
+            if (!isset($this->lang[$lnames[1]]))
+                $this->tryAutoLoad($lnames[1]);
 
             $translate = Array();
             for ($i = 1; $i<=4; ++$i)
