@@ -875,10 +875,13 @@ class FVISInterface extends FEventDispatcher
                     $text.= FStr::ENDL.'FTEXT;'.FStr::ENDL.'$'.$writes_to.(($got_a) ? '' : '.').'= $_vis->parseVIS(\''.$visname.'\'';
                     if (count($params[1]) > 1)
                     {
-                        if ($params[1][1] == '_')
-                            $text.= ', $_in';
-                        else
-                        {
+                        $passMyParams = false;
+                        if (end($params[1]) == '_') {
+                            $passMyParams = true;
+                            array_pop($params[1]);
+                        }
+
+                        if (count($params[1]) > 1) {
                             $text.= ', Array(';
                             $pars = count($params[1]);
                             for($i = 1; $i < $pars; ++$i)
@@ -891,6 +894,11 @@ class FVISInterface extends FEventDispatcher
                                 $text.= '\''.$var.'\' => '.$this->templVISParamCB($val, $vars, $consts).',';
                             }
                             $text.= ') ';
+                            if ($passMyParams) {
+                                $text.= '+ $_in';
+                            }
+                        } elseif ($passMyParams) {
+                            $text.= ', $_in';
                         }
                     }
                     $text.= ');'.FStr::ENDL.'$'.$writes_to.'.= <<<FTEXT'.FStr::ENDL;
