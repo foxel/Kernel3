@@ -90,7 +90,7 @@ abstract class K3_Response extends K3_Environment_Element implements I_K3_Respon
 
             $stream->close();
 
-            exit();
+            $this->closeAndExit();
         }
 
         return false;
@@ -159,7 +159,7 @@ abstract class K3_Response extends K3_Environment_Element implements I_K3_Respon
 
         $this->sendHeadersData();
         $this->sendResponseData($this->buffer);
-        exit();
+        $this->closeAndExit();
     }
 
     public function sendRedirect($url, $useHTTP1 = false)
@@ -176,7 +176,7 @@ abstract class K3_Response extends K3_Environment_Element implements I_K3_Respon
 
         $this->sendHeadersData();
         $this->sendResponseData('<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"><html><head><meta http-equiv="Content-Type" content="text/html; charset='.F::INTERNAL_ENCODING.'"><meta http-equiv="refresh" content="0; url='.$hurl.'"><title>Redirect</title></head><body><div align="center">If your browser does not support meta redirection please click <a href="'.$hurl.'">HERE</a> to be redirected</div></body></html>');
-        exit();
+        $this->closeAndExit();
     }
 
     protected function setDefaultHeaders(array $params, $flags = 0)
@@ -300,5 +300,11 @@ abstract class K3_Response extends K3_Environment_Element implements I_K3_Respon
         }
 
         return false;
+    }
+
+    protected function closeAndExit()
+    {
+        $this->throwEvent('closeAndExit');
+        exit();
     }
 }
