@@ -31,6 +31,7 @@ class FDataBase extends FEventDispatcher
     private $qc = null;
     private $qResult = null;
     private $qCalcRows = 0;
+    private $inTransaction = false;
     
     private $history = Array();
     private $queriesTime = 0;
@@ -51,6 +52,7 @@ class FDataBase extends FEventDispatcher
         $this->pool['queriesCount']        =& $this->queriesCount;
         $this->pool['lastSelectRowsCount'] =& $this->qCalcRows;
         $this->pool['tbPrefix']            =& $this->tbPrefix;
+        $this->pool['inTransaction']       =& $this->inTransaction;
 
         // deprecated 
         $this->pool['dbType']  =& $this->dbType;
@@ -91,7 +93,9 @@ class FDataBase extends FEventDispatcher
         if (!$this->c)
             throw new FException('DB is not connected');
 
-        return $this->c->beginTransaction();
+        $res = $this->c->beginTransaction();
+        $this->inTransaction = (boolean) $res;
+        return $res;
     }
 
     public function commit()
