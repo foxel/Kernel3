@@ -69,7 +69,7 @@ class FMetaFile extends FDataStream
         $i = count($this->parts);
         $this->parts[$i] = $p = new FMetaFilePart();
         $p->o = $part;
-        $p->l = $p->o->size();
+        $p->l = $part->size();
         if ($this->cluster > 0 && $p->l%$this->cluster)
             $p->l = intval($p->l/$this->cluster+1)*$this->cluster;
         $p->p = $this->fsize;
@@ -323,7 +323,7 @@ class FMetaTar extends FMetaFile
         $header = $this->makeRawHeader($header);
         parent::add(new FStringStream($header));
 
-        $this->conts[] = $pack_to;
+        $this->conts[] = $dirname;
 
         return true;
     }

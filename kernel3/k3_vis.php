@@ -18,6 +18,7 @@ class FVISNode extends FBaseClass // FEventDispatcher
 
     protected $type  = '';
     protected $vars  = Array();
+
     protected $subs  = Array();
     protected $flags = 0;
     protected $parsed = '';
@@ -76,9 +77,12 @@ class FVISNode extends FBaseClass // FEventDispatcher
             $vars = $this->vars; // needed not to store duplicates of subnode data while forced reparsing
             $data = Array();
 
-            foreach ($this->subs as $var => $subnodes)
-                foreach ($subnodes as $subnode)
+            foreach ($this->subs as $var => $subnodes) {
+                foreach ($subnodes as $subnode) {
+                    /* @var FVISNode $subnode */
                     $vars[$var][] = $subnode->parse($force_reparse);
+                }
+            }
 
             foreach ($vars as $var => $vals)
                 $data[$var] = implode(FStr::ENDL, $vals);
@@ -240,6 +244,9 @@ class FVISInterface extends FEventDispatcher
     protected $Consts     = Array();
 
     // nodes arrays
+    /**
+     * @var FVISNode[]
+     */
     protected $nodes      = Array();
     protected $named      = Array();
 
@@ -383,7 +390,7 @@ class FVISInterface extends FEventDispatcher
                 ksort($aldata);
                 FCache::set($cachename, $aldata);
                 $this->auto_loads[$hash] = $aldata;
-                F()->Timer->logEvent($filename.' autoloads installed (from filesystem)');
+                F()->Timer->logEvent($directory.' autoloads installed (from filesystem)');
             }
             else
                 trigger_error('VIS: error installing '.$directory.' auto loading directory', E_USER_WARNING );
@@ -660,8 +667,7 @@ class FVISInterface extends FEventDispatcher
     {
         $node = $this->findNode($node);
 
-        if (!$node || ($node->flags && self::VISNODE_ARRAY))
-        {
+        if (!$node) {
             trigger_error('VIS: trying to append data to fake node', E_USER_WARNING);
             return false;
         }
@@ -673,8 +679,7 @@ class FVISInterface extends FEventDispatcher
     {
         $node = $this->findNode($node);
 
-        if (!$node || ($node->flags && self::VISNODE_ARRAY))
-        {
+        if (!$node) {
             trigger_error('VIS: trying to append data to fake node', E_USER_WARNING);
             return false;
         }
@@ -1312,5 +1317,3 @@ class FVISInterface extends FEventDispatcher
     }
 }
 
-
-?>

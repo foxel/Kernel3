@@ -44,7 +44,6 @@ abstract class FBaseClass
     public function __call($name, $arguments)
     {
          throw new FException(get_class($this).' has no '.$name.' method');
-         return null;
     }
 
     protected function poolLink($names)
@@ -312,7 +311,7 @@ final class FMisc
     static public function initCore()
     {
         if (self::$inited)
-            return false;
+            return;
             
         self::$cbCode = rand();
         register_shutdown_function(Array(__CLASS__, 'phpShutdownCallback'), self::$cbCode);
@@ -322,8 +321,8 @@ final class FMisc
     static public function phpShutdownCallback($code)
     {
         if ($code != self::$cbCode)
-            return false;
-            
+            return;
+
         while (!is_null($cBack = array_pop(self::$sdCBacks)))
         {
             $func = array_shift($cBack);
@@ -406,8 +405,6 @@ final class FMisc
             default:
                 return $indata;
         }
-
-        return null;
     }
 
     // checks if given timestamp is in DST period

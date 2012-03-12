@@ -42,6 +42,7 @@ final class FHTTPInterface implements I_K3_Deprecated
 
             case 'doHTML':   return F()->appEnv->response->doHTMLParse;
             case 'doGZIP':   return F()->appEnv->response->useGZIP;
+            default:         return null;
         }
     }
 
@@ -189,7 +190,7 @@ final class FHTTPInterface implements I_K3_Deprecated
 
         FMisc::obFree();
 
-        return F()->appEnv->response->sendBuffer($recode_to, $params, $flags);
+        return F()->appEnv->response->sendBuffer(false, $params, $flags);
     }
 
     // sets cookies domain (checks if current client request is sent on that domain or it's sub)

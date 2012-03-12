@@ -23,43 +23,52 @@ class FDataBase extends FEventDispatcher
     const SQL_CALCROWS  = 256;
     const SQL_CRREPLACE = 512;
 
-    private $dbDrivers = Array('mysql' => 'mysql');
-    private $dbDSNType = Array('mysql' => 'mysql');
-    private $dbType = null;
-    private $tbPrefix = '';
-    private $c = null;
-    private $qc = null;
-    private $qResult = null;
-    private $qCalcRows = 0;
-    private $inTransaction = false;
+    protected $_dbDrivers = Array('mysql' => 'mysql');
+    protected $_dbDSNType = Array('mysql' => 'mysql');
+    protected $_dbType    = null;
+    protected $_tbPrefix  = '';
+
+    /**
+     * @var PDO
+     */
+    protected $_pdo = null;
+
+    /**
+     * TODO: class abstraction
+     * @var FDBaseQCmysql
+     */
+    protected $_queryConstructor = null;
+    protected $_qResult = null;
+    protected $_qRowsNum = 0;
+    protected $_inTransaction = false;
     
-    private $history = Array();
-    private $queriesTime = 0;
-    private $queriesCount = 0;
+    protected $_history = Array();
+    protected $_queriesTime = 0;
+    protected $_queriesCount = 0;
 
-    public function __construct($dbaseType = 'mysql')
+    public function __construct($dbType = 'mysql')
     {
-        $this->dbType = $dbaseType;
-        if (!isset($this->dbDrivers[$dbaseType]))
-            trigger_error($dbaseType.' driver is not supported by F DataBase manager', E_USER_ERROR);
+        $this->_dbType = $dbType;
+        if (!isset($this->_dbDrivers[$dbType]))
+            trigger_error($dbType.' driver is not supported by F DataBase manager', E_USER_ERROR);
         
-        require_once(F_KERNEL_DIR.DIRECTORY_SEPARATOR.'k3_dbqc_'.$this->dbDrivers[$dbaseType].'.php');
+        require_once(F_KERNEL_DIR.DIRECTORY_SEPARATOR.'k3_dbqc_'.$this->_dbDrivers[$dbType].'.php'); // TODO: refactor to use autoloader
 
-        $this->pool['type']                =& $this->dbType;
-        $this->pool['lastQueryResult']     =& $this->qResult;
-        $this->pool['history']             =& $this->history;
-        $this->pool['queriesTime']         =& $this->queriesTime;
-        $this->pool['queriesCount']        =& $this->queriesCount;
-        $this->pool['lastSelectRowsCount'] =& $this->qCalcRows;
-        $this->pool['tbPrefix']            =& $this->tbPrefix;
-        $this->pool['inTransaction']       =& $this->inTransaction;
+        $this->pool['type']                =& $this->_dbType;
+        $this->pool['lastQueryResult']     =& $this->_qResult;
+        $this->pool['history']             =& $this->_history;
+        $this->pool['queriesTime']         =& $this->_queriesTime;
+        $this->pool['queriesCount']        =& $this->_queriesCount;
+        $this->pool['lastSelectRowsCount'] =& $this->_qRowsNum;
+        $this->pool['tbPrefix']            =& $this->_tbPrefix;
+        $this->pool['inTransaction']       =& $this->_inTransaction;
 
         // deprecated 
-        $this->pool['dbType']  =& $this->dbType;
-        $this->pool['qResult'] =& $this->qResult;
+        $this->pool['dbType']  =& $this->_dbType;
+        $this->pool['qResult'] =& $this->_qResult;
         $this->pool['UID'] = function_exists('spl_object_hash')
             ? spl_object_hash($this)
-            : uniqid($this->dbType, true);
+            : uniqid($this->_dbType, true);
     }
 
     public function connect($params, $username = '', $password = '', $tbPrefix = '', $options = Array())
@@ -69,18 +78,18 @@ class FDataBase extends FEventDispatcher
             return false;
         foreach ($params as $key => $value)
             $conn_pars[] = $key.'='.$value;
-        $conn_pars = $this->dbDSNType[$this->dbType].':'.implode(';', $conn_pars);
-        $this->c = new PDO($conn_pars, $username, $password, $options);
-        $this->tbPrefix = (string) $tbPrefix;
-        $qcDriver = 'FDBaseQC'.$this->dbDrivers[$this->dbType];
-        $this->qc = new $qcDriver($this->c, $this);
+        $conn_pars = $this->_dbDSNType[$this->_dbType].':'.implode(';', $conn_pars);
+        $this->_pdo = new PDO($conn_pars, $username, $password, $options);
+        $this->_tbPrefix = (string) $tbPrefix;
+        $qcDriver = 'FDBaseQC'.$this->_dbDrivers[$this->_dbType];
+        $this->_queryConstructor = new $qcDriver($this->_pdo, $this);
         
         return true;
     }
     
     public function check()
     {
-        return ($this->c ? true : false);
+        return ($this->_pdo ? true : false);
     }
 
     public function select($tableName, $tableAlias = false, array $fields = null)
@@ -90,58 +99,58 @@ class FDataBase extends FEventDispatcher
 
     public function beginTransaction()
     {
-        if (!$this->c)
+        if (!$this->_pdo)
             throw new FException('DB is not connected');
 
-        $res = $this->c->beginTransaction();
-        $this->inTransaction = (boolean) $res;
+        $res = $this->_pdo->beginTransaction();
+        $this->_inTransaction = (boolean) $res;
         return $res;
     }
 
     public function commit()
     {
-        if (!$this->c)
+        if (!$this->_pdo)
             throw new FException('DB is not connected');
 
-        return $this->c->commit();
+        return $this->_pdo->commit();
     }
 
     public function rollBack()
     {
-        if (!$this->c)
+        if (!$this->_pdo)
             throw new FException('DB is not connected');
 
-        return $this->c->rollBack();
+        return $this->_pdo->rollBack();
     }
 
     public function parseDBSelect(FDBSelect $select, $flags = 0)
     {
-        if (!$this->c)
+        if (!$this->_pdo)
             throw new FException('DB is not connected');
 
-        return $this->qc->parseDBSelect($select->toArray(), $flags);
+        return $this->_queryConstructor->parseDBSelect($select->toArray(), $flags);
     }
 
     public function execDBSelect(FDBSelect $select, $flags = 0)
     {
-        if (!$this->c)
+        if (!$this->_pdo)
             throw new FException('DB is not connected');
 
         $ret = Array();
-        $query = $this->qc->parseDBSelect($select->toArray(), $flags);
+        $query = $this->_queryConstructor->parseDBSelect($select->toArray(), $flags);
         if ($result = $this->query($query, true))
         {
             $ret = $this->fetchResult($result, $flags);
 
             $result->closeCursor();
 
-            if (($flags & FDataBase::SQL_CALCROWS) && $result = $this->query($this->qc->calcRowsQuery(), true))
+            if (($flags & FDataBase::SQL_CALCROWS) && $result = $this->query($this->_queryConstructor->calcRowsQuery(), true))
             {
-                $this->qCalcRows = $this->fetchResult($result);
+                $this->_qRowsNum = $this->fetchResult($result);
                 $result->closeCursor();
             }
             else
-                $this->qCalcRows = false;
+                $this->_qRowsNum = false;
 
             return $ret;
         }
@@ -149,42 +158,51 @@ class FDataBase extends FEventDispatcher
             return null;
     }
 
+    /**
+     * @param string $name
+     * @param FDBSelect|string $select
+     * @param int $flags
+     * @return bool
+     * @throws FException
+     */
     public function createView($name, $select, $flags = 0)
     {
-        if (!$this->c)
+        if (!$this->_pdo)
             throw new FException('DB is not connected');
 
-        if ($select instanceof FDBSelect)
+        if ($select instanceof FDBSelect) {
             $select = $select->toString();
+        }
 
-        if (!is_string($select))
+        if (!is_string($select)) {
             return false;
+        }
             
-        $query = $this->qc->createView($name, $select, $flags);
+        $query = $this->_queryConstructor->createView($name, $select, $flags);
         return $this->query($query, true, true);
     }
 
     // simple one table select
     public function doSelect($table, $fields = Array(), $where = '', $other = '', $flags = 0)
     {
-        if (!$this->c)
+        if (!$this->_pdo)
             throw new FException('DB is not connected');
 
         $ret = Array();
-        $query = $this->qc->simpleSelect($table, $fields, $where, $other, $flags);
+        $query = $this->_queryConstructor->simpleSelect($table, $fields, $where, $other, $flags);
         if ($result = $this->query($query, true))
         {
             $ret = $this->fetchResult($result, $flags);
 
             $result->closeCursor();
 
-            if (($flags & FDataBase::SQL_CALCROWS) && $result = $this->query($this->qc->calcRowsQuery(), true))
+            if (($flags & FDataBase::SQL_CALCROWS) && $result = $this->query($this->_queryConstructor->calcRowsQuery(), true))
             {
-                $this->qCalcRows = $this->fetchResult($result);
+                $this->_qRowsNum = $this->fetchResult($result);
                 $result->closeCursor();
             }
             else
-                $this->qCalcRows = false;
+                $this->_qRowsNum = false;
 
             return $ret;
         }
@@ -201,24 +219,24 @@ class FDataBase extends FEventDispatcher
     // multitable select
     public function doMultitableSelect($tqueries, $other = '', $flags = 0)
     {
-        if (!$this->c)
+        if (!$this->_pdo)
             throw new FException('DB is not connected');
 
         $ret = Array();
-        $query = $this->qc->multitableSelect($tqueries, $other, $flags);
+        $query = $this->_queryConstructor->multitableSelect($tqueries, $other, $flags);
         if ($result = $this->query($query, true))
         {
             $ret = $this->fetchResult($result, $flags);
 
             $result->closeCursor();
 
-            if (($flags & FDataBase::SQL_CALCROWS) && $result = $this->query($this->qc->calcRowsQuery(), true))
+            if (($flags & FDataBase::SQL_CALCROWS) && $result = $this->query($this->_queryConstructor->calcRowsQuery(), true))
             {
-                $this->qCalcRows = $this->fetchResult($result);
+                $this->_qRowsNum = $this->fetchResult($result);
                 $result->closeCursor();
             }
             else
-                $this->qCalcRows = false;
+                $this->_qRowsNum = false;
 
             return $ret;
         }
@@ -228,14 +246,14 @@ class FDataBase extends FEventDispatcher
     
     public function doInsert($table, Array $data, $replace = false, $flags = 0)
     {
-        if (!$this->c)
+        if (!$this->_pdo)
             throw new FException('DB is not connected');
 
         $ret = null;
-        $query = $this->qc->insert($table, $data, $replace, $flags);
+        $query = $this->_queryConstructor->insert($table, $data, $replace, $flags);
         if ($result = $this->exec($query, true))
         {
-            $ret = $this->c->lastInsertId();
+            $ret = $this->_pdo->lastInsertId();
 
             //$result->closeCursor();
 
@@ -247,59 +265,66 @@ class FDataBase extends FEventDispatcher
 
     public function doUpdate($table, Array $data, $where = '', $flags = 0)
     {
-        if (!$this->c)
+        if (!$this->_pdo)
             throw new FException('DB is not connected');
 
         $ret = null;
-        $query = $this->qc->update($table, $data, $where, $flags);
+        $query = $this->_queryConstructor->update($table, $data, $where, $flags);
         return $this->exec($query, true);
     }
 
     public function doDelete($table, $where = '', $flags = 0)
     {
-        if (!$this->c)
+        if (!$this->_pdo)
             throw new FException('DB is not connected');
 
         $ret = null;
-        $query = $this->qc->delete($table, $where, $flags);
+        $query = $this->_queryConstructor->delete($table, $where, $flags);
         return $this->exec($query, true);
     }
 
-    // Base direct query method
-    public function query($query, $noprefixrepl = false, $exec = false)
+    //
+    /**
+     * Base direct query method
+     * @param string $query
+     * @param bool $noPrefixReplace
+     * @param bool $exec
+     * @return int|PDOStatement|null
+     * @throws FException
+     */
+    public function query($query, $noPrefixReplace = false, $exec = false)
     {
-        if (!$this->c)
+        if (!$this->_pdo)
             throw new FException('DB is not connected');
 
         if (!$query)
-            return false;
+            return null;
 
         $start_time = F()->Timer->MicroTime();
 
-        $this->qResult = null;
+        $this->_qResult = null;
 
-        if (!$noprefixrepl)
-            $query = preg_replace('#(?<=\W|^)(`?)\{DBKEY\}(\w+)(\\1)(?=\s|$|\n|\r)#s', '`'.$this->tbPrefix.'$2`', $query);
+        if (!$noPrefixReplace)
+            $query = preg_replace('#(?<=\W|^)(`?)\{DBKEY\}(\w+)(\\1)(?=\s|$|\n|\r)#s', '`'.$this->_tbPrefix.'$2`', $query);
 
-        $this->qResult = ($exec)
-            ? $this->c->exec($query)
-            : $this->c->query($query);
+        $this->_qResult = ($exec)
+            ? $this->_pdo->exec($query)
+            : $this->_pdo->query($query);
 
-        $err = $this->c->errorInfo();
+        $err = $this->_pdo->errorInfo();
 
-        if ($err[1])
-        {
-            $this->qResult = null;
-            throw new FException('SQL Error '.$err[0].' ('.$this->dbType.' '.$err[1].'): '.$err[2]);
+        if ($err[1]) {
+            $this->_qResult = null;
+            throw new FException('SQL Error '.$err[0].' ('.$this->_dbType.' '.$err[1].'): '.$err[2]);
         }
 
         $query_time = F()->Timer->MicroTime() - $start_time;
 
-        $this->queriesCount++;
-        $this->queriesTime += $query_time;
-        $this->history[] = Array('query' => $query, 'time' => $query_time);
+        $this->_queriesCount++;
+        $this->_queriesTime += $query_time;
+        $this->_history[] = Array('query' => $query, 'time' => $query_time);
 
-        return $this->qResult;
+        return $this->_qResult;
     }
 
     public function exec($query, $noprefixrepl = false)
@@ -309,26 +334,32 @@ class FDataBase extends FEventDispatcher
 
     public function quote($string)
     {
-        if (!$this->c)
+        if (!$this->_pdo)
             throw new FException('DB is not connected');
 
-        return $this->c->quote($string);
+        return $this->_pdo->quote($string);
     }
 
+    /**
+     * @param PDOStatement $result
+     * @param int $flags
+     * @return array|mixed
+     */
     public function fetchResult (PDOStatement $result, $flags = 0)
     {
         $ret = Array();
-        if ($flags & self::SQL_SELECTALL)
-        {
-            if ($result->columnCount() == 1)
+        if ($flags & self::SQL_SELECTALL) {
+            if ($result->columnCount() == 1) {
                 $ret = $result->fetchAll(PDO::FETCH_COLUMN);
-            else
+            } else {
                 $ret = $result->fetchAll(PDO::FETCH_ASSOC);
-        }
-        elseif ($result->columnCount() == 1)
+            }
+        } elseif ($result->columnCount() == 1) {
             $ret = $result->fetchColumn(0);
-        else
+
+        } else {
             $ret = $result->fetch(PDO::FETCH_ASSOC);
+        }
 
         return $ret;
     }

@@ -7,27 +7,27 @@ abstract class K3_Environment extends FEventDispatcher
     /**
      * @var K3_Request
      */
-    protected $request = null;
+    protected $_request = null;
 
     /**
      * @var K3_Response
      */
-    protected $response = null;
+    protected $_response = null;
 
     /**
      * @var K3_Session
      */
-    protected $session = null;
+    protected $_session = null;
 
     /**
      * @var array
      */
-    protected $cookies = array();
+    protected $_cookies = array();
 
     /**
      * @var array
      */
-    protected $elements = array();
+    protected $_elements = array();
 
     public function __construct()
     {
@@ -81,7 +81,7 @@ abstract class K3_Environment extends FEventDispatcher
         if ($renameOldCookies && $this->pool['cookiePrefix'] != $newPrefix)
         {
             $oldPrefix_ = $this->pool['cookiePrefix'].'_';
-            foreach ($this->cookies as $name => $value)
+            foreach ($this->_cookies as $name => $value)
             {
                 if (strpos($name, $oldPrefix_) === 0)
                 {
@@ -89,7 +89,7 @@ abstract class K3_Environment extends FEventDispatcher
                     $name = $newPrefix.'_'.substr($name, strlen($oldPrefix_));
                     $this->setCookie($name, $value, false, false, false, true);
                 }
-                $this->cookies[$name] = $value;
+                $this->_cookies[$name] = $value;
             }
         }
         $this->pool['cookiePrefix'] = (string) $newPrefix;
@@ -103,7 +103,7 @@ abstract class K3_Environment extends FEventDispatcher
             $name = $this->pool['cookiePrefix'].'_'.$name;
         }
 
-        return (isset($this->cookies[$name])) ? $this->cookies[$name] : null;
+        return (isset($this->_cookies[$name])) ? $this->_cookies[$name] : null;
     }
 
     abstract public function setCookie($name, $value = false, $expire = false, 
@@ -114,8 +114,8 @@ abstract class K3_Environment extends FEventDispatcher
      */
     public function setRequest(K3_Request $request = null)
     {
-        $this->request = $request;
-        $this->request->setEnvironment($this);
+        $this->_request = $request;
+        $this->_request->setEnvironment($this);
     }
 
     /**
@@ -123,7 +123,7 @@ abstract class K3_Environment extends FEventDispatcher
      */
     public function getRequest()
     {
-        return $this->request;
+        return $this->_request;
     }
 
     /**
@@ -131,8 +131,8 @@ abstract class K3_Environment extends FEventDispatcher
      */
     public function setResponse(K3_Response $response = null)
     {
-        $this->response = $response;
-        $this->response->setEnvironment($this);
+        $this->_response = $response;
+        $this->_response->setEnvironment($this);
     }
 
     /**
@@ -140,7 +140,7 @@ abstract class K3_Environment extends FEventDispatcher
      */
     public function getResponse()
     {
-        return $this->response;
+        return $this->_response;
     }
 
     /**
@@ -148,8 +148,8 @@ abstract class K3_Environment extends FEventDispatcher
      */
     public function setSession(K3_Session $session = null)
     {
-        $this->session = $session;
-        $this->session->setEnvironment($this);
+        $this->_session = $session;
+        $this->_session->setEnvironment($this);
     }
 
     /**
@@ -157,7 +157,7 @@ abstract class K3_Environment extends FEventDispatcher
      */
     public function getSession()
     {
-        return $this->session;
+        return $this->_session;
     }
 
     /**
@@ -167,7 +167,7 @@ abstract class K3_Environment extends FEventDispatcher
      */
     public function put($name, $element)
     {
-        $this->elements[$name] = $element;
+        $this->_elements[$name] = $element;
 
         return $this;
     }
@@ -178,8 +178,8 @@ abstract class K3_Environment extends FEventDispatcher
      */
     public function get($name)
     {
-        return isset($this->elements[$name])
-            ? $this->elements[$name]
+        return isset($this->_elements[$name])
+            ? $this->_elements[$name]
             : null;
     }
 }

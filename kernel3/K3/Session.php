@@ -11,6 +11,9 @@ class K3_Session extends K3_Environment_Element
 
     protected $securityLevel  = 3;            // security level for client signature used
 
+    /**
+     * @var FDataBase
+     */
     protected $dbObject = null;
     protected $dbTableName = 'sessions';
 
@@ -288,11 +291,14 @@ class K3_Session extends K3_Environment_Element
 
     public function HTMLURLsAddSID(&$buffer)
     {
-        if (!($this->mode & self::MODE_STARTED) || !($this->mode & self::MODE_URLS))
+        if (!($this->mode & self::MODE_STARTED) || !($this->mode & self::MODE_URLS)) {
             return $buffer;
+        }
 
         $buffer = preg_replace_callback('#(<(a|form)\s+[^>]*)(href|action)\s*=\s*(\"([^\"<>\(\)]*)\"|\'([^\'<>\(\)]*)\'|[^\s<>\(\)]+)#i', Array(&$this, 'SIDParseCallback'), $buffer);
         //$buffer = preg_replace('#(<form [^>]*>)#i', "\\1\n".'<input type="hidden" name="'.self::SID_NAME.'" value="'.$this->SID.'" />', $buffer);
+
+        return $buffer;
     }
 
     public function SIDParseCallback($vars)

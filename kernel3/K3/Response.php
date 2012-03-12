@@ -4,6 +4,7 @@ abstract class K3_Response extends K3_Environment_Element implements I_K3_Respon
 {
     // HTTP send content types
     const DISPOSITION_ATTACHMENT = 1;
+    const STREAM_SETRANGE        = 4;
     const FILENAME_RFC1522       = 8;
     const FILENAME_TRICKY        = 16;
     const FILENAME_RFC2231       = 32;
@@ -77,11 +78,11 @@ abstract class K3_Response extends K3_Environment_Element implements I_K3_Respon
 
             if ($flags & self::STREAM_SETRANGE)
             {
-                $this->setStatus(206);
-                $this->setHeader('Content-Range', 'bytes '.$seekFile.'-'.($streamLength-1).'/'.$streamLength);
+                $this->setStatusCode(206);
+                $this->setHeader('Content-Range', 'bytes '.$seekStream.'-'.($streamLength-1).'/'.$streamLength);
             }
 
-            $stream->seek($seekFile);
+            $stream->seek($seekStream);
 
             $this->sendHeadersData();
             $buff = '';
@@ -226,8 +227,9 @@ abstract class K3_Response extends K3_Environment_Element implements I_K3_Respon
                     $dispositionParts[] = 'filename="'.FStr::strToMime($filename).'"';
                 }
                 elseif ($flags & self::FILENAME_TRICKY) {
-                    if (preg_match('#^text/#i', $filemime))
+                    if (isset($params['contentType']) && preg_match('#^text/#i', $params['contentType'])) {
                         $disposition = 'attachment';
+                    }
                     $dispositionHeader[] = 'filename="'.rawurlencode($filename).'"';
                     if (F::INTERNAL_ENCODING != 'utf-8') {
                         $dispositionHeader[] = 'encoding="'.F::INTERNAL_ENCODING.'"';

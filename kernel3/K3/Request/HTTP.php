@@ -99,7 +99,7 @@ class K3_Request_HTTP extends K3_Request
             return false;
 
         $oldFile = $file['tmp_name'];
-        if (file_exists($oldFile) && is_uploaded_file($oldFile))
+        if (file_exists($oldFile) && is_uploaded_file($oldFile)) // TODO: Throw exceptions on different errors
         {
             if (!file_exists($toFile) || $forceReplace)
             {
@@ -108,12 +108,10 @@ class K3_Request_HTTP extends K3_Request
                     $file['error'] = self::UPLOAD_MOVED;
                     return true;
                 }
-                else
-                    return false;
             }
-            else
-                return false;
         }
+
+        return false;
     }
 
     // inner funtions

@@ -31,16 +31,16 @@ class FParser extends FEventDispatcher
     const XMLTAG_ACLOSE   = 1;    // self closing tag (e.g. <br />)
     const XMLTAG_XHEADER  = 2;
 
-    private $mode = 0;
-    private $tags = Array();
-    private $pregs = Array();
-    private $noparse_tag = 'no_bb';    // contetns of this tag will not be parsed (lower case)
-    private $tagbreaker  = '*';
-    private $parabreaker = '%';
-    private $tag_stack = Array();
+    protected $mode = 0;
+    protected $tags = Array();
+    protected $pregs = Array();
+    protected $noparse_tag = 'no_bb';    // contetns of this tag will not be parsed (lower case)
+    protected $tagbreaker  = '*';
+    protected $parabreaker = '%';
+    protected $tag_stack = Array();
 
-    private $last_time = 0;
-    private $cur_mode = 0;
+    protected $last_time = 0;
+    protected $cur_mode = 0;
 
     public function __construct()
     {
@@ -227,7 +227,7 @@ class FParser extends FEventDispatcher
                             if (isset($used_tags[$subtname]))
                                 $used_tags[$subtname]--;
 
-                            $tdata = $this->parseBBTag($tdata['name'], $tdata['param'], $tdata['buffer']);
+                            $tdata = $this->parseBBTag($tdata['name'], $tdata['param'], $tdata['buffer'], $popen, $pclose);
                             if (!$this->TStackWrite($tdata))
                                 $buffer.= $tdata;
                         }
@@ -251,7 +251,7 @@ class FParser extends FEventDispatcher
                                 if (isset($used_tags[$subtname]))
                                     $used_tags[$subtname]--;
 
-                                $tdata = $this->parseBBTag($tdata['name'], $tdata['param'], $tdata['buffer']);
+                                $tdata = $this->parseBBTag($tdata['name'], $tdata['param'], $tdata['buffer'], $popen, $pclose);
                                 if (($this->cur_mode != self::BBPARSE_CHECK) && ($subtmode & self::BBTAG_BLLEV))
                                     $tdata = $pclose.FStr::ENDL.$tdata.FStr::ENDL.$popen;
                                 if (!$this->TStackWrite($tdata))
@@ -290,7 +290,7 @@ class FParser extends FEventDispatcher
                                 if ($subtmode & self::BBTAG_USEBRK && $state_breakers)
                                     $state_breakers--;
 
-                                $tdata = $this->parseBBTag($tdata['name'], $tdata['param'], $tdata['buffer']);
+                                $tdata = $this->parseBBTag($tdata['name'], $tdata['param'], $tdata['buffer'], $popen, $pclose);
                                 if (!$this->TStackWrite($tdata))
                                     $buffer.= $tdata;
                             }
@@ -349,7 +349,7 @@ class FParser extends FEventDispatcher
                     {
                         $tused = (isset($used_tags[$tagname])) ? $used_tags[$tagname] : 0;
 
-                        if ($tused)
+                        if ($tused) {
                             while ($tdata = $this->TStackGet())
                             {
                                 $subtname = $tdata['name'];
@@ -360,7 +360,7 @@ class FParser extends FEventDispatcher
                                 if ($subtmode & self::BBTAG_USEBRK && $state_breakers)
                                     $state_breakers--;
 
-                                $tdata = $this->parseBBTag($tdata['name'], $tdata['param'], $tdata['buffer']);
+                                $tdata = $this->parseBBTag($tdata['name'], $tdata['param'], $tdata['buffer'], $popen, $pclose);
                                 if (($this->cur_mode != self::BBPARSE_CHECK) && ($subtmode & self::BBTAG_BLLEV))
                                     $tdata = $pclose.FStr::ENDL.$tdata.FStr::ENDL.$popen;
                                 if (!$this->TStackWrite($tdata))
@@ -369,6 +369,7 @@ class FParser extends FEventDispatcher
                                 if ($subtname == $tagname)
                                     break;
                             }
+                        }
                     }
 
                 }
@@ -402,7 +403,7 @@ class FParser extends FEventDispatcher
             if (isset($used_tags[$subtname]))
                 $used_tags[$subtname]--;
 
-            $tdata = $this->parseBBTag($tdata['name'], $tdata['param'], $tdata['buffer']);
+            $tdata = $this->parseBBTag($tdata['name'], $tdata['param'], $tdata['buffer'], $popen, $pclose);
             if (($this->cur_mode != self::BBPARSE_CHECK) && ($subtmode & self::BBTAG_BLLEV))
                 $tdata = $pclose.FStr::ENDL.$tdata.FStr::ENDL.$popen;
             if (!$this->TStackWrite($tdata))
@@ -417,59 +418,55 @@ class FParser extends FEventDispatcher
         return $buffer;
     }
 
-    public function parseBBTag($name, $param, $buffer='')
+    public function parseBBTag($name, $param, $buffer = '', $popen = '', $pclose = '')
     {
-        if (!$buffer)
+        if (!$buffer) {
             return '';
+        }
 
         $param = preg_replace('#\[(\/?\w+)#', '[ $1', $param);
-        if ($this->cur_mode == self::BBPARSE_CHECK)
+        if ($this->cur_mode == self::BBPARSE_CHECK) {
             return ('['.$name.($param ? '="'.$param.'"' : '').']'.$buffer.'[/'.$name.']');
-
-        elseif ($tag = $this->tags[$name])
-        {
+        } elseif ($tag = $this->tags[$name]) {
             $tmode = $tag['mode'];
 
-            if ($tag['func'])
-            {
+            if ($tag['func']) {
                 if (($tmode & self::BBTAG_NOCH) && $this->cur_mode == self::BBPARSE_PREP)
                     return ('['.$name.($param ? '="'.$param.'"' : '').']'.$buffer.'[/'.$name.']');
                 else
                     return call_user_func($tag['func'], $name, $buffer, $param);
             }
 
-            if ($p_mask = $tag['param_mask'])
-            {
+            if ($p_mask = $tag['param_mask']) {
                 if (preg_match('#('.$p_mask.')#', $param, $parr))
                     $param = $parr[0];
                 else
                     return $buffer;
             }
-            if ($d_mask = $tag['data_mask'])
-            {
+
+            if ($d_mask = $tag['data_mask']) {
                 if (preg_match('#('.$d_mask.')#', $buffer, $darr))
                     $buffer = $darr[0];
                 else
                     return $buffer;
             }
 
-            if (($tmode & self::BBTAG_NOCH) && $this->cur_mode == self::BBPARSE_PREP)
+            if (($tmode & self::BBTAG_NOCH) && $this->cur_mode == self::BBPARSE_PREP) {
                 return ('['.$name.($param ? '="'.$param.'"' : '').']'.$buffer.'[/'.$name.']');
-            elseif ($tmode & self::BBTAG_FHTML)
-            {
+            } elseif ($tmode & self::BBTAG_FHTML) {
                 if ($tmode & self::BBTAG_BLLEV)
                     $buffer = $popen.$buffer.$pclose;
                 $out = strtr($tag['html'], Array('{param}' => $param, '{data}' => $buffer));
                 return $out;
-            }
-            else
-            {
+            } else {
                 if ($tmode & self::BBTAG_BLLEV)
                     $buffer = $popen.$buffer.$pclose;
                 $out = '<'.$tag['html'].(($param && $tag['param']) ? ' '.$tag['param'].'="'.$param.'"' : '').'>'.$buffer.'</'.$tag['html'].'>';
                 return $out;
             }
         }
+
+        return '';
     }
 
     public function XMLCheck($input, $use_html_specs = false)
@@ -802,5 +799,3 @@ class FParser extends FEventDispatcher
     }
 
 }
-
-?>

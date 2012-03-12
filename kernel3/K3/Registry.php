@@ -14,6 +14,10 @@ class K3_Registry
     protected $backUpd   = array();
 
     protected $backFileName = null;
+
+    /**
+     * @var FDataBase
+     */
     protected $backDbObject = null;
     protected $backDbTable  = 'registry';
 
@@ -77,7 +81,7 @@ class K3_Registry
             unset($this->frontData[$name]);
         }
 
-        if ($storeToBack) {
+        if ($dropInBack) {
             if (is_null($this->backData)) {
                 $this->loadBackData();
             }

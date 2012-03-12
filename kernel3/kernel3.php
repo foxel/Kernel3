@@ -157,8 +157,10 @@ class F extends FEventDispatcher
         E_RECOVERABLE_ERROR => 'PHP RECOVERABLE',
         );
 
+    /**
+     * @var F
+     */
     static private $self = null;
-    private $clfiles = Array();
     private $classes = Array();
     private $clclose = Array();
 
@@ -183,7 +185,7 @@ class F extends FEventDispatcher
         $this->classes['Config']   = 'FConfig';
         //$this->pool['DBObject'] = new StaticInstance('FDBObject');
 
-        $this->pool['LNG']->_Start();
+        $this->pool['LNG']->_Start(); // TODO: introduce F_Kernel_Module abstract class / interface
 
         if ($CL_Config = FMisc::loadDatafile(self::KERNEL_DIR.DIRECTORY_SEPARATOR.'modules.qfc', FMisc::DF_SLINE, false, '|'))
         {
@@ -198,7 +200,7 @@ class F extends FEventDispatcher
     }
 
     /** This method is used to access the kernel from any context (as it is a static method).
-     * @return object Returns module object (if $name is defined) or kernel root object.
+     * @return F|object Returns module object (if $name is defined) or kernel root object.
      * @param string $name Name of the kernel module to access. If empty - kernel object returned
      */
     public static function kernel($name = null)
@@ -284,7 +286,12 @@ class F extends FEventDispatcher
     public function handleException(Exception $e)
     {
         $logfile = F_LOGS_ROOT.DIRECTORY_SEPARATOR.'fatal.log';
-        $eName = get_class($e).(($e instanceof ErrorException) ? '['.self::$ERR_TYPES[$e->getSeverity()].']' : '');
+        $eName = get_class($e);
+        if ($e instanceof ErrorException) {
+            /* @var ErrorException $e */
+            $eName.= '['.self::$ERR_TYPES[$e->getSeverity()].']';
+        }
+
         if ($logfile = fopen($logfile, 'ab'))
         {
             fwrite($logfile, date('[d M Y H:i]').' '.$eName.': '.$e->getMessage().'. File: '.$e->getFile().'. Line: '.$e->getLine().'.'.PHP_EOL.$e->getTraceAsString().'.'.PHP_EOL);
@@ -354,7 +361,7 @@ class F extends FEventDispatcher
 }
 
 /** This function is used to access the kernel from any context with 'F()'.
- * @return object Returns module object (if $name is defined) or kernel root object.
+ * @return F|object Returns module object (if $name is defined) or kernel root object.
  * @param string $name Name of the kernel module to access
  * @see F::kernel
  */

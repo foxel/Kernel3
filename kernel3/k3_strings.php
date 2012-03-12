@@ -634,24 +634,23 @@ class FStr
         $unk = (isset($table[0x3F])) // Try set unknown to '?'
              ? $table[0x3F]
              : '';
-        if ($letters = self::_utfExplode($string))
-        {
-            $out = '';
+        $out = '';
+
+        if ($letters = self::_utfExplode($string)) {
             reset($letters);
             while (list($i, $lett) = each($letters))
             {
                 $uni = ord($lett[0]);
 
-                if ($uni < 0x80)
-                    $uni = $uni;
-                elseif (($uni >> 5) == 0x06)
+                if ($uni < 0x80) {
+                    // do nothing
+                } elseif (($uni >> 5) == 0x06) {
                     $uni = (($uni & 0x1F) <<  6) | (ord($lett[1]) & 0x3F);
-                elseif (($uni >> 4) == 0x0E)
+                } elseif (($uni >> 4) == 0x0E) {
                     $uni = (($uni & 0x0F) << 12) | ((ord($lett[1]) & 0x3F) <<  6) | (ord($lett[2]) & 0x3F);
-                elseif (($uni >> 3) == 0x1E)
+                } elseif (($uni >> 3) == 0x1E) {
                     $uni = (($uni & 0x07) << 18) | ((ord($lett[1]) & 0x3F) << 12) | ((ord($lett[2]) & 0x3F) << 6) | (ord($lett[3]) & 0x3F);
-                else
-                {
+                } else {
                     $out.= $unk;
                     continue;
                 }
@@ -661,6 +660,7 @@ class FStr
                      : $unk;
             }
         }
+
         return $out;
     }
 
@@ -688,11 +688,11 @@ class FStr
                 $uni = $table[$ch];
                 if ($uni < 0x80)
                     $out.= chr($uni);
-                elseif ($UtfCharInDec < 0x800)
+                elseif ($uni < 0x800)
                     $out.= chr(($uni >>  6) + 0xC0).chr(($uni & 0x3F) + 0x80);
-                elseif ($UtfCharInDec < 0x10000)
+                elseif ($uni < 0x10000)
                     $out.= chr(($uni >> 12) + 0xE0).chr((($uni >>  6) & 0x3F) + 0x80).chr(($uni & 0x3F) + 0x80);
-                elseif ($UtfCharInDec < 0x200000)
+                elseif ($uni < 0x200000)
                     $out.= chr(($uni >> 18) + 0xF0).chr((($uni >> 12) & 0x3F) + 0x80).chr((($uni >> 6)) & 0x3F + 0x80). chr(($uni & 0x3F) + 0x80);
                 else
                     $out.= '?';
@@ -808,5 +808,3 @@ class FStr
 }
 
 FStr::initEncoders();
-
-?>

@@ -389,7 +389,7 @@ class FMPC extends FBaseClass
     public function sendCommand($cmd)
     {
         if (!$this->mpd_sock)
-            throw new FEsception('MPD not connected');
+            throw new FException('MPD not connected');
 
         $args = array_slice(func_get_args(), 1);
         foreach ($args as $arg)

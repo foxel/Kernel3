@@ -9,7 +9,14 @@
  
 class FDBaseQCmysql
 {
+    /**
+     * @var PDO
+     */
     private $pdo  = null;
+
+    /**
+     * @var FDataBase
+     */
     protected $db = null;
 
     public function __construct(PDO $pdo, FDataBase $db)
@@ -60,8 +67,10 @@ class FDBaseQCmysql
             $fields = array();
             foreach ($selectInfo['fields'] as $key => $val)
             {
-                if ($val instanceof FDBSelect)
+                if ($val instanceof FDBSelect) {
+                    /* @var FDBSelect $val */
                     $field = '('.$val->toString().')';
+                }
                 elseif (is_array($val))
                 {
                     $field = (string) $val[1];
@@ -419,7 +428,7 @@ class FDBaseQCmysql
         $query = 'UPDATE `'.$table.'` SET ';
 
         if (count($data)) {
-            $names = $vals = Array();
+            $names = $fields = Array();
             foreach ($data AS $field=>$val)
             {
                 if (($flags & FDataBase::SQL_USEFUNCS) && $part = $this->_parseFieldFunc($field, $val, false))
@@ -507,9 +516,8 @@ class FDBaseQCmysql
                         $val = (string) $val;
 
                     $parts[] = $field.' = '.$val;
-                }
-                elseif (is_array($val) && count($val))
-                {
+                } elseif (is_array($val) && count($val)) {
+                    /* @var array $val */
                     /*$val = array_unique($val);
                     sort($val);*/
                     $nvals = Array();
@@ -755,5 +763,3 @@ class FDBaseQCmysql
     }
 
 }
-
-?>
