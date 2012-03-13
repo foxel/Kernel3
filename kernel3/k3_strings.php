@@ -137,7 +137,7 @@ class FStr
 
                 $out.= (isset($table[$ch]))
                      ? $table[$ch]
-                     : $out.= '?';
+                     : $out.= $unk;
             }
             return $out;
         }
@@ -370,9 +370,7 @@ class FStr
         {
             $def = 'Array ('.PHP_EOL;
             $fields = Array();
-            $maxlen = 0;
-            foreach( $data as $key => $val )
-            {
+            foreach( $data as $key => $val ) {
                 $field = (is_numeric($key)) ? $key." => " : '\''.addslashes($key).'\' => ';
                 $field.= self::PHPDefine($val, $tabs+1);
                 $fields[]= $pref.$field;
@@ -407,7 +405,9 @@ class FStr
         return preg_replace('#\&(?!([A-z]+|\#\d{1,5}|\#x[0-9a-fA-F]{2,4});)#', '&amp;', $string);
     }
 
+    /** @var array */
     static private $SCHARS = null;
+    /** @var array */
     static private $NQSCHARS = null;
 
     static public function smartHTMLSchars($string, $no_quotes = false)
@@ -448,7 +448,7 @@ class FStr
         $res = !!preg_match('#^'.self::EMAIL_MASK.'$#D', $string);
         if ($res && $checkDNS)
         {
-            list($user, $domain) = split('@',$string);
+            list($user, $domain) = explode('@', $string);
             $res = checkdnsrr($domain, 'MX');
         }
 
@@ -782,7 +782,6 @@ class FStr
 
     static private function _hexToUtf($UtfCharInHex)
     {
-        $OutputChar = '';
         $UtfCharInDec = hexdec($UtfCharInHex);
 
         if ($UtfCharInDec & 0x1F0000)

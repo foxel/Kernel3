@@ -5,8 +5,8 @@
  * globally stores data (in memory and DB/File)
  * @package kernel3
  * @subpackage core
+ * @deprecated
  */
-
 class FRegistry implements I_K3_Deprecated
 {
     static protected $frontData = array();
@@ -68,6 +68,9 @@ class FRegistry implements I_K3_Deprecated
     }
 }
 
+/**
+ * @deprecated
+ */
 class FRegistryInstance extends StaticInstance implements I_K3_Deprecated
 {
 
@@ -92,6 +95,9 @@ class FRegistryInstance extends StaticInstance implements I_K3_Deprecated
     }
 }
 
+/**
+ * @deprecated
+ */
 class FConfig extends FRegistryInstance implements I_K3_Deprecated
 {
     const NAME_SEPARATOR  = '.';

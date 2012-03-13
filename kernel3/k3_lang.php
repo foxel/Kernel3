@@ -67,7 +67,7 @@ class FLNGData // extends FEventDispatcher
 
     public function select($lang)
     {
-        trigger_error('LANG: tried to use "select"', E_USER_WARNING );
+        trigger_error('LANG: tried to use "select('.$lang.')"', E_USER_WARNING );
         return false;
     }
 
@@ -164,7 +164,13 @@ class FLNGData // extends FEventDispatcher
 
     }
 
-    public function lang($key, $params = false, $load = false)
+    /**
+     * @param $key
+     * @param mixed $params
+     * @param bool $load
+     * @return string
+     */
+    public function lang($key, $params = null, $load = false)
     {
         $key = strtoupper($key);
         if (!$key)
@@ -182,8 +188,7 @@ class FLNGData // extends FEventDispatcher
         else
             return '['.$key.']';
 
-        if ($params)
-        {
+        if ($params) {
             $params = is_array($params) ? array_values($params) : Array($params);
             $out = FStr::smartSprintf($out, $params);
         }
@@ -479,4 +484,3 @@ class FLNGData // extends FEventDispatcher
     }
     
 }
-?>

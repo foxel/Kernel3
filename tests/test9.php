@@ -1,10 +1,9 @@
 <?php
 
-define ('STARTED', True);
-
+require_once 'init.php';
 require_once 'kernel3.php';
 
-F('DBase')->connect(Array('dbname' => 'dev.quickfox'), 'k3tester', false);
+F()->DBase->connect(Array('dbname' => 'dev.quickfox'), 'k3tester', false);
 $s = F()->DBase->select('qf2_users', 'u')
     ->calculateRows()
     ->joinLeft('qf2_users_auth', array('uid' => 'uid'), 'ua', array('*', 'passs' => 'pass_dropcode'))
@@ -17,8 +16,7 @@ $s = F()->DBase->select('qf2_users', 'u')
     ;
 
 $string = $s->toString();
-if (FGPC::getBin('execute'))
-{
+if (F()->Request->getBinary('execute')) {
     $string.= '<pre>'.FStr::phpDefine($s->fetchAll()).'</pre>';
     $string.= ' ('.print_r(F()->DBase->lastSelectRowsCount, true).' rows total)';
 }
@@ -28,6 +26,5 @@ $page = '<html><head><!--Meta-Content-Type--><title>'.F_SITE_INDEX.'</title></he
 '.$string.'
 <hr>'.highlight_file(__FILE__, true).'
 <hr><!--Page-Stats--></body></html>';
-F('HTTP')->write($page);
-F('HTTP')->sendBuffer();
-?>
+F()->Response->write($page);
+F()->Response->sendBuffer();

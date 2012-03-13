@@ -98,11 +98,11 @@ class FMail
             $FileSize = filesize($file);
             $FileTime = gmdate('D, d M Y H:i:s ', filemtime($file)).'GMT';
             // making part headers
-            $data = Array(
+            $data = array(
                 'Content-Type: '.$filemime.'; name="'.$filebname.'"',
                 'Content-Location: '.$filename,
                 'Content-Transfer-Encoding: base64',
-                );
+            );
 
             $data = implode(self::BR, $data).self::BR;
             $data.= self::BR; // closing headers
@@ -226,4 +226,7 @@ class FMail
         return new StaticInstance('FMail');
     }
 }
-?>
+
+/*
+ * @TODO: add Mail factory
+ */

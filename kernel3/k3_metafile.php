@@ -185,7 +185,15 @@ class FMetaTar extends FMetaFile
         $this->root_link = preg_replace('#^(\\\\|/)#', '', FStr::cast($root_link ? $root_link : F_SITE_ROOT, FStr::UNIXPATH)).DIRECTORY_SEPARATOR;
     }
 
-    // Packs a real file to archive
+    /**
+     * Packs a real file to archive
+     * @param string $filename
+     * @param string $pack_to
+     * @param string|int $force_mode
+     * @param string|int $force_fmode
+     * @param callback|null $ch_callback
+     * @return bool
+     */
     public function add($filename, $pack_to = '', $force_mode = '', $force_fmode = '', $ch_callback = null)
     {
         if (!is_file($filename) && !is_dir($filename))
@@ -370,4 +378,3 @@ class FMetaTar extends FMetaFile
 
 }
 
-?>

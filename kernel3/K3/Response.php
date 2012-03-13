@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * @property bool $doHTMLParse
+ * @property bool $useGZIP
+ * @property int  $statusCode
+ */
 abstract class K3_Response extends K3_Environment_Element implements I_K3_Response
 {
     // HTTP send content types
@@ -205,7 +210,7 @@ abstract class K3_Response extends K3_Environment_Element implements I_K3_Respon
         $disposition = ($flags & self::DISPOSITION_ATTACHMENT)
             ? 'attachment'
             : 'inline';
-        $dispositionHeader = array(&$disposition);
+        $dispositionHeader = array();
 
         if (isset($params['filename'])) {
             $filename = preg_replace('#[\x00-\x1F]+#', '', $params['filename']);
@@ -248,6 +253,7 @@ abstract class K3_Response extends K3_Environment_Element implements I_K3_Respon
             }
         }
 
+        array_unshift($dispositionHeader, $disposition);
         $this->setHeader('Content-Disposition', implode('; ', $dispositionHeader));
         $this->setHeader('X-Powered-By', 'QuickFox kernel 3 (PHP/'.PHP_VERSION.')');
         return $this;

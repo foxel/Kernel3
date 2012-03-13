@@ -9,6 +9,31 @@
 if (!defined('F_STARTED'))
     die('Hacking attempt');
 
+/**
+ * @property string $host
+ * @property bool   $connected
+ * @property string $version
+ * @property array  $status
+ * @property string $state
+ * @property int    $curTrackPos
+ * @property int    $curTrackLen
+ * @property int    $curTrack
+ * @property int    $nextTrack
+ * @property int    $volume
+ * @property bool   $repeat
+ * @property bool   $random
+ * @property int    $uptime
+ * @property int    $playtime
+ * @property string $dbLastRefresh
+ * @property int    $playlistCount
+ * @property int    $numArtists
+ * @property int    $numAlbums
+ * @property int    $numSongs
+ * @property array  $playlist
+ * @property string $errStr
+ * @property float  $lastQueryTime
+ * @property float  $totalQueryTime
+ */
 class FMPC extends FBaseClass
 {
     // TCP/Connection variables
@@ -90,7 +115,7 @@ class FMPC extends FBaseClass
             'errStr'        => &$this->errStr,
             'lastQueryTime'  => &$this->lastQueryTime,
             'totalQueryTime' => &$this->totalQueryTime,
-            ); 
+        );
     }
 
     public function refreshInfo($plRefresh = false)
@@ -559,9 +584,8 @@ class FMPCFactory
 
     public function _Call($host, $port = 6600, $password = null)
     {
-        return new FMPC($host, $port, $password);
+        return $this->create($host, $port, $password);
     }
 
 }
 
-?>

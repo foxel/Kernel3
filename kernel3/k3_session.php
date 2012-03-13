@@ -4,8 +4,8 @@
  * Requires PHP >= 5.1.0
  * @package kernel3
  * @subpackage core
+ * @deprecated
  */
-
 class FSession extends K3_Session implements I_K3_Deprecated
 {
     private static $self = null;
@@ -21,14 +21,21 @@ class FSession extends K3_Session implements I_K3_Deprecated
 
 }
 
+/**
+ * @return FSession
+ * @deprecated
+ */
 function FSession()
 {
     return FSession::getInstance();
 }
 
+/**
+ * @return FSession
+ * @deprecated
+ */
 function Session()
 {
     return FSession::getInstance();
 }
 
-?>

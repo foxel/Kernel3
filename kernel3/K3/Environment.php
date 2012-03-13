@@ -1,5 +1,24 @@
 <?php
 
+/**
+ * @property K3_Request  $request
+ * @property K3_Response $response
+ * @property K3_Session  $session
+ * 
+ * @property string $clientIP
+ * @property int    $clientIPInteger
+ * @property string $rootUrl
+ * @property string $requestUrl
+ * @property string $rootPath
+ * @property string $rootRealPath
+ * @property string $serverName
+ * @property int    $serverPort
+ * @property string $referer
+ * @property bool   $refererIsExternal
+
+ * @property string $cookieDomain
+ * @property string $cookiePrefix
+ */
 abstract class K3_Environment extends FEventDispatcher
 {
     const DEFAULT_COOKIE_PREFIX = 'K3';
@@ -104,6 +123,25 @@ abstract class K3_Environment extends FEventDispatcher
         }
 
         return (isset($this->_cookies[$name])) ? $this->_cookies[$name] : null;
+    }
+
+    // sets cookies domain (checks if current client request is sent on that domain or it's sub)
+    public function setCookieDomain($domain)
+    {
+        if (!preg_match('#[\w\.]+\w\.\w{2,4}#', $domain)) {
+            trigger_error('Tried to set incorrect cookies domain.', E_USER_WARNING);
+        } else {
+            $my_domain = '.'.ltrim(strtolower($this->serverName), '.');
+            $domain    = '.'.ltrim(strtolower($domain), '.');
+            $len = strlen($domain);
+            if (substr($my_domain, -$len) == $domain) {
+                $this->pool['cookieDomain'] = $domain;
+            } else {
+                trigger_error('Tried to set incorrect cookies domain.', E_USER_WARNING);
+            }
+        }
+
+        return $this;
     }
 
     abstract public function setCookie($name, $value = false, $expire = false, 

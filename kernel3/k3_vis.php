@@ -55,7 +55,7 @@ class FVISNode extends FBaseClass // FEventDispatcher
 
     public function parse($force_reparse = false, Array $add_vars = Array())
     {
-        $text = '';
+        $text = null;
 
         if ($this->isParsed && !$force_reparse)
             return $this->parsed;
@@ -178,10 +178,17 @@ class FVISNode extends FBaseClass // FEventDispatcher
         return $this;
     }
 
-    public function addNode($template, $varname, $data_arr = false, $globname = null)
+    /**
+     * @param string $template
+     * @param string $varname
+     * @param array|null $data_arr
+     * @param string|null $globname
+     * @return FVISNode|null
+     */
+    public function addNode($template, $varname, array $data_arr = null, $globname = null)
     {
         if (!$varname)
-            return false;
+            return null;
 
         if ($node = $this->VIS->createNode($template, $data_arr, $globname))
             if ($this->appendChild($varname, $node))
@@ -517,7 +524,7 @@ class FVISInterface extends FEventDispatcher
                     F()->Timer->logEvent('"'.$filename.'" visuals loaded (from VIS file)');
                 }
                 else
-                    trigger_error('VIS: error loading or parsing "'.$filename.'" VIS file for style "'.$this->style_name.'"', E_USER_WARNING );
+                    trigger_error('VIS: error loading or parsing "'.$filename.'" VIS file', E_USER_WARNING );
             }
 
             $this->VIS_loaded[] = $hash;
@@ -565,7 +572,7 @@ class FVISInterface extends FEventDispatcher
     }
 
     // node tree construction functions
-    public function createNode($template, $data_arr = false, $globname = null)
+    public function createNode($template, array $data_arr = null, $globname = null)
     {
         $template = (string) $template;
         if (!$template)
@@ -610,17 +617,25 @@ class FVISInterface extends FEventDispatcher
         return $parent->appendChild($varname, $node);
     }
 
-    public function addNode($template, $varname, $parent = 0, $data_arr = false, $globname = null)
+    /**
+     * @param string $template
+     * @param string $varname
+     * @param FVISNode|int|string $parent
+     * @param array|null $data_arr
+     * @param string|null $globname
+     * @return FVISNode|null
+     */
+    public function addNode($template, $varname, $parent = 0, array $data_arr = null, $globname = null)
     {
         if (!$varname)
-            return false;
+            return null;
 
         $parent = $this->findNode($parent);
 
         if (!$parent)
         {
             trigger_error('VIS: trying to append data to fake node', E_USER_WARNING);
-            return false;
+            return null;
         }
 
         if ($node = $this->createNode($template, $data_arr, $globname))
@@ -630,23 +645,31 @@ class FVISInterface extends FEventDispatcher
         return null;
     }
 
-    // Adds arrayed node
-    public function addNodeArray($template, $varname, $parent = 0, $data_arr = false, $delimiter = false)
+    /**
+     * Adds arrayed node
+     * @param string $template
+     * @param string $varname
+     * @param FVISNode|int|string $parent
+     * @param array|null $data_arr
+     * @param string $delimiter
+     * @return FVISNode|null
+     */
+    public function addNodeArray($template, $varname, $parent = 0, array $data_arr = null, $delimiter = '')
     {
         $parent = $this->findNode($parent);
 
         if (!$varname)
-            return false;
+            return null;
 
         if (!$parent)
         {
             trigger_error('VIS: trying to append node to fake node', E_USER_WARNING);
-            return false;
+            return null;
         }
 
         $template = (string) $template;
         if (!$template)
-            return false;
+            return null;
 
         end($this->nodes);
         $id = key($this->nodes) + 1;
@@ -655,12 +678,12 @@ class FVISInterface extends FEventDispatcher
         {
             $parent->appendChild($varname, $this->nodes[$id]);
 
-            $this->nodes[$id]->addDataArray($data_arr);
+            $this->nodes[$id]->addDataArray($data_arr, '', $delimiter);
 
             return $this->nodes[$id];
         }
 
-        return false;
+        return null;
     }
 
     public function addData($node, $varname, $data)
@@ -684,7 +707,7 @@ class FVISInterface extends FEventDispatcher
             return false;
         }
 
-        return $node->addDataArray($arr, $prefix = '');
+        return $node->addDataArray($arr, $prefix);
     }
 
     public function findNodeId($to_find)
@@ -736,10 +759,10 @@ class FVISInterface extends FEventDispatcher
 
     public function prepareVIS($text, $store_to = false)
     {
-        static $consts = Array(
+        /*static $consts = Array(
             'F_MARK'  => 'Powered by<br />Kernel 3<br />&copy; Foxel aka LION<br /> 2006 - 2009',
             'F_INDEX' => F_SITE_INDEX,
-            );
+            );*/
 
         $consts = $this->vis_consts;
 
@@ -775,8 +798,9 @@ class FVISInterface extends FEventDispatcher
                     $tag = '/'.$tag;
 
                 $params = Array();
-                if (isset($part[3]))
-                    $got = preg_match_all('#((?>-?[0-9]+|\w+|\"[^\"]*\"))(?:([\!=\>\<]{1,2})(-?[0-9]+|\w+|\"[^\"]*\"))?#', $part[3], $params, PREG_PATTERN_ORDER);
+                if (isset($part[3])) {
+                    preg_match_all('#((?>-?[0-9]+|\w+|\"[^\"]*\"))(?:([\!=\>\<]{1,2})(-?[0-9]+|\w+|\"[^\"]*\"))?#', $part[3], $params, PREG_PATTERN_ORDER);
+                }
 
                 if ($tag == 'WRITE')
                 {
@@ -793,11 +817,8 @@ class FVISInterface extends FEventDispatcher
                 }
                 elseif (isset($this->func_parsers[$tag])) //parsing the variable with func
                 {
-                    $func_parser = $this->func_parsers[$tag];
-
                     if (!isset($params[1]) || !count($params[1]))
                         continue;
-                    $pars = count($params[1]);
 
                     $text.= FStr::ENDL.'FTEXT'.FStr::ENDL.'.';
                     $jstext.= '"'.FStr::ENDL.'+';
@@ -1026,13 +1047,13 @@ class FVISInterface extends FEventDispatcher
 
     public function parseVIS($vis, Array $data = Array())
     {
-        Static $__COUNTER=1;
+        //Static $__COUNTER=1;
         /* Static $F_SID;
         if (!$F_SID)
             $F_SID = F()->Session->SID; */
 
-        $COUNTER = $__COUNTER++;
-        $RANDOM = dechex(rand(0x1FFF, getrandmax()));
+        /* $COUNTER = $__COUNTER++;
+        $RANDOM = dechex(rand(0x1FFF, getrandmax())); */
 
         $vis = strtoupper($vis);
         if (!isset($this->templates[$vis]) && !$this->tryAutoLoad($vis))
@@ -1184,7 +1205,7 @@ class FVISInterface extends FEventDispatcher
 
     private function templVISFuncCB($parsewith, Array $params, &$vars, $consts, $for_js = false, $do_schars = false) // calling function with many params
     {
-        $code = '';
+        $code = null;
         $static = strpos($parsewith, 'RAND') === false;
 
         $st_pars = $dyn_pars_js = $dyn_pars = Array();

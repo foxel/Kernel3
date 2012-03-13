@@ -1,9 +1,9 @@
 <?php
 
-define ('STARTED', True);
-
+require_once 'init.php';
 require_once 'kernel3.php';
 
+/** @var $mpc FMPC */
 $mpc = F()->MPC('localhost');
 $string = '';
 //$string.= print_r($mpc, true);
@@ -20,6 +20,5 @@ $page = '<html><head><!--Meta-Content-Type--><title>'.F_SITE_INDEX.'</title></he
 <pre>'.$string.'</pre>
 <hr>'.highlight_file(__FILE__, true).'
 <hr><!--Page-Stats--></body>';
-F('HTTP')->write($page)
+F()->Response->write($page)
     ->sendBuffer();
-?>

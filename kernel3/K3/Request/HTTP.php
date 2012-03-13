@@ -17,9 +17,9 @@ class K3_Request_HTTP extends K3_Request
     }
 
     // useful for special inpur parsings
-    public static function setRaws(array $datas, $set = self::GET)
+    public function setRaws(array $datas, $set = self::GET)
     {
-        $raw =& self::$raw;
+        $raw =& $this->raw;
         foreach ($datas as $key => $data)
             $raw[$set][$key] = $data;
 
@@ -160,8 +160,8 @@ class K3_Request_HTTP extends K3_Request
             $tmpFile = $upload['tmp_name'];
             if ($upload['name'])
             {
-                if (is_callable($this->str_recode_func))
-                    $upload['name'] = call_user_func($this->str_recode_func, $upload['name']);
+                if (is_callable($this->stringRecodeFunc))
+                    $upload['name'] = call_user_func($this->stringRecodeFunc, $upload['name']);
 
                 $upload['name'] = FStr::basename($upload['name']);
             }

@@ -114,6 +114,12 @@ class FParser extends FEventDispatcher
         $this->addBBTag($bbtag, $html, $tag_mode, $extra);
     }
 
+    /**
+     * @param string $mask
+     * @param string $data
+     * @param callback|null $func
+     * @return bool
+     */
     public function addPreg($mask, $data, $func = null)
     {
         $id = count($this->pregs);

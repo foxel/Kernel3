@@ -74,7 +74,16 @@ class K3_Environment_HTTP extends K3_Environment
         return $sign;
     }
 
-    public function setCookie($name, $value = false, $expire = false, 
+    /**
+     * @param $name
+     * @param string|bool $value
+     * @param int|bool $expire
+     * @param string|bool $rootPath
+     * @param bool $addPrefix
+     * @param bool $setDomain
+     * @return bool
+     */
+    public function setCookie($name, $value = false, $expire = false,
         $rootPath = false, $addPrefix = true, $setDomain = true)
     {
         if (!$rootPath) {
@@ -85,7 +94,7 @@ class K3_Environment_HTTP extends K3_Environment
             $name = $this->pool['cookiePrefix'].'_'.$name;
         }
 
-        if ($value === false && !isset($this->cookies[$name])) {
+        if ($value === false && !isset($this->_cookies[$name])) {
             return true;
         }
 

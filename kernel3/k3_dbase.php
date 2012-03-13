@@ -10,6 +10,18 @@
 if (!defined('F_STARTED'))
     die('Hacking attempt');
 
+/**
+ * @property string $type
+ * @property mixed  $lastQueryResult
+ * @property array  $history
+ * @property float  $queriesTime
+ * @property int    $queriesCount
+ * @property int    $lastSelectRowsCount
+ * @property string $tbPrefix
+ * @property bool   $inTransaction
+ *
+ * @property string $UID
+ */
 class FDataBase extends FEventDispatcher
 {
     const SQL_NOESCAPE  = 1;
@@ -63,12 +75,13 @@ class FDataBase extends FEventDispatcher
         $this->pool['tbPrefix']            =& $this->_tbPrefix;
         $this->pool['inTransaction']       =& $this->_inTransaction;
 
-        // deprecated 
-        $this->pool['dbType']  =& $this->_dbType;
-        $this->pool['qResult'] =& $this->_qResult;
         $this->pool['UID'] = function_exists('spl_object_hash')
             ? spl_object_hash($this)
             : uniqid($this->_dbType, true);
+
+        // deprecated
+        $this->pool['dbType']  =& $this->_dbType;
+        $this->pool['qResult'] =& $this->_qResult;
     }
 
     public function connect($params, $username = '', $password = '', $tbPrefix = '', $options = Array())
@@ -136,10 +149,8 @@ class FDataBase extends FEventDispatcher
         if (!$this->_pdo)
             throw new FException('DB is not connected');
 
-        $ret = Array();
         $query = $this->_queryConstructor->parseDBSelect($select->toArray(), $flags);
-        if ($result = $this->query($query, true))
-        {
+        if ($result = $this->query($query, true)) {
             $ret = $this->fetchResult($result, $flags);
 
             $result->closeCursor();
@@ -188,10 +199,8 @@ class FDataBase extends FEventDispatcher
         if (!$this->_pdo)
             throw new FException('DB is not connected');
 
-        $ret = Array();
         $query = $this->_queryConstructor->simpleSelect($table, $fields, $where, $other, $flags);
-        if ($result = $this->query($query, true))
-        {
+        if ($result = $this->query($query, true)) {
             $ret = $this->fetchResult($result, $flags);
 
             $result->closeCursor();
@@ -222,10 +231,8 @@ class FDataBase extends FEventDispatcher
         if (!$this->_pdo)
             throw new FException('DB is not connected');
 
-        $ret = Array();
         $query = $this->_queryConstructor->multitableSelect($tqueries, $other, $flags);
-        if ($result = $this->query($query, true))
-        {
+        if ($result = $this->query($query, true)) {
             $ret = $this->fetchResult($result, $flags);
 
             $result->closeCursor();
@@ -249,10 +256,8 @@ class FDataBase extends FEventDispatcher
         if (!$this->_pdo)
             throw new FException('DB is not connected');
 
-        $ret = null;
         $query = $this->_queryConstructor->insert($table, $data, $replace, $flags);
-        if ($result = $this->exec($query, true))
-        {
+        if ($result = $this->exec($query, true)) {
             $ret = $this->_pdo->lastInsertId();
 
             //$result->closeCursor();
@@ -347,7 +352,8 @@ class FDataBase extends FEventDispatcher
      */
     public function fetchResult (PDOStatement $result, $flags = 0)
     {
-        $ret = Array();
+        $ret = null;
+
         if ($flags & self::SQL_SELECTALL) {
             if ($result->columnCount() == 1) {
                 $ret = $result->fetchAll(PDO::FETCH_COLUMN);
@@ -533,6 +539,12 @@ class FDBSelect
         return $this->where($where, $value, $tableAlias, true);
     }
 
+    /**
+     * @param string $order
+     * @param bool $desc
+     * @param string|bool|null $tableAlias
+     * @return FDBSelect
+     */
     public function order($order, $desc = false, $tableAlias = false)
     {
         $this->_determineTableAliasWithColumn($order, $tableAlias);
@@ -644,4 +656,3 @@ class FDBSelect
     }
 }
 
-?>

@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * @property bool $isSecure
+ * @property bool $isPost
+ * @property bool $isAjax
+ */
 abstract class K3_Request extends K3_Environment_Element implements I_K3_Request
 {
     // GPC source types
@@ -26,6 +31,7 @@ abstract class K3_Request extends K3_Environment_Element implements I_K3_Request
         $this->pool = array(
             'isSecure' => false,
             'isPost'   => false,
+            'isAjax'   => false,
         );
 
         parent::__construct($env);
@@ -35,9 +41,10 @@ abstract class K3_Request extends K3_Environment_Element implements I_K3_Request
      * must be implemented in extending class
      * @param  string $varName
      * @param  integer $source
+     * @param  mixed $default
      * @return mixed
      */
-    public function get($varName, $source = self::ALL, $defailt = null) {}
+    public function get($varName, $source = self::ALL, $default = null) {}
 
     /**
      * @param  string $varName
@@ -85,8 +92,9 @@ abstract class K3_Request extends K3_Environment_Element implements I_K3_Request
         if (is_callable($this->stringRecodeFunc))
             $val = call_user_func($this->stringRecodeFunc, $val);
 
-        if ($stringCastType)
-            $var = FStr::cast($val, $stringCastType);
+        if ($stringCastType) {
+            $val = FStr::cast($val, $stringCastType);
+        }
 
         return $val;
     }

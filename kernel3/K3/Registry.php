@@ -9,16 +9,34 @@
 
 class K3_Registry
 {
+    /**
+     * @var array
+     */
     protected $frontData = array();
+
+    /**
+     * @var array|null
+     */
     protected $backData  = null;
+
+    /**
+     * @var array
+     */
     protected $backUpd   = array();
 
+    /**
+     * @var string|null
+     */
     protected $backFileName = null;
 
     /**
-     * @var FDataBase
+     * @var FDataBase|null
      */
     protected $backDbObject = null;
+
+    /**
+     * @var string
+     */
     protected $backDbTable  = 'registry';
 
     // real working functgions
@@ -186,7 +204,7 @@ class K3_Registry
 
     public function loadBackData()
     {
-        self:$backData = array();
+        $this->backData = array();
 
         if (!is_null($this->backDbObject)) {
             return $this->loadBackDataDB();

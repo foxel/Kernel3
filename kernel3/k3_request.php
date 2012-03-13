@@ -5,11 +5,8 @@
  * !deprecated
  * @package kernel3
  * @subpackage core
+ * @deprecated
  */
-
-if (!defined('F_STARTED'))
-    die('Hacking attempt');
-
 class FGPC implements I_K3_Deprecated
 {
     // GPC source types
@@ -51,7 +48,7 @@ class FGPC implements I_K3_Deprecated
     }
 
     // useful for special inpur parsings
-    public static function setRaws($datas, $set = self::GET)
+    public function setRaws($datas, $set = self::GET)
     {
         if (!is_array($datas))
             return false;
@@ -96,4 +93,3 @@ class FGPC implements I_K3_Deprecated
 }
 FGPC::init();
 
-?>

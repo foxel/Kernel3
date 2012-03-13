@@ -172,6 +172,7 @@ abstract class FDataStream extends FBaseClass
     abstract public function seek($pos);
     abstract public function write($data);
 
+    /** @var int */
     protected $mode = 0;
     public function mode() { return $this->mode; }
     public function mtime() { return time(); }
@@ -193,8 +194,10 @@ abstract class FDataStream extends FBaseClass
 /** file data streaming */
 class FFileStream extends FDataStream
 {
-    private $stream = null;
-    private $filename = '';
+    /** @var resource|null */
+    protected $stream = null;
+    /** @var string */
+    protected $filename = '';
     public function __construct($fname) { $this->filename = $fname; }
     public function open($mode = 'rb') { return (($this->stream = fopen($this->filename, $this->mode = $mode)) !== false); }
     public function close() { return fclose($this->stream); }
@@ -688,4 +691,3 @@ class F2DArray
     }
 }
 
-?>

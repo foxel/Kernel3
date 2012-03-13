@@ -1,17 +1,12 @@
 <?php
 /**
  * QuickFox kernel 3 'SlyFox' HTTP interface
+ * Outputs data to user and manages cookies data
  * Requires PHP >= 5.1.0
  * @package kernel3
  * @subpackage core
+ * @deprecated
  */
-
-
-if (!defined('F_STARTED'))
-    die('Hacking attempt');
-
-// HTTP interface
-// Outputs data to user and manages cookies data
 final class FHTTPInterface implements I_K3_Deprecated
 {
     const DEF_COOKIE_PREFIX = K3_Environment::DEFAULT_COOKIE_PREFIX;
@@ -49,8 +44,8 @@ final class FHTTPInterface implements I_K3_Deprecated
     public function __set($varName, $value)
     {
         switch ($varName) {
-            case 'doHTML': F()->appEnv->Response->doHTMLParse = $value; break;
-            case 'doGZIP': F()->appEnv->Response->useGZIP = $value; break;
+            case 'doHTML': F()->appEnv->response->doHTMLParse = $value; break;
+            case 'doGZIP': F()->appEnv->response->useGZIP = $value; break;
         }
     }
 
@@ -81,11 +76,7 @@ final class FHTTPInterface implements I_K3_Deprecated
 
     public function write($text, $no_nl = false)
     {
-        if (is_scalar($text))
-            $this->buffer.= (string) $text;
-
-        if (!$no_nl)
-            $this->buffer.= PHP_EOL;
+        F()->appEnv->response->write($text, $no_nl);
 
         return $this;
     }
@@ -196,18 +187,7 @@ final class FHTTPInterface implements I_K3_Deprecated
     // sets cookies domain (checks if current client request is sent on that domain or it's sub)
     public function setCookiesDomain($domain)
     {
-        if (!preg_match('#[\w\.]+\w\.\w{2,4}#', $domain))
-            trigger_error('Tried to set incorrect cookies domain.', E_USER_WARNING);
-        else
-        {
-            $my_domain = '.'.ltrim(strtolower($this->SrvName), '.');
-            $domain    = '.'.ltrim(strtolower($domain), '.');
-            $len = strlen($domain);
-            if (substr($my_domain, -$len) == $domain)
-                $this->pool['cDomain'] = $domain;
-            else
-                trigger_error('Tried to set incorrect cookies domain.', E_USER_WARNING);
-        }
+        F()->appEnv->setCookieDomain($domain);
 
         return $this;
     }
@@ -260,7 +240,7 @@ final class FHTTPInterface implements I_K3_Deprecated
 
     function _Close()
     {
-        if ( headers_sent($file, $line) )
+        if ( headers_sent($file, $line) ) {
             if ($file)
             {
                 // Critical error - some script module violated QF HTTP otput rules
@@ -268,6 +248,7 @@ final class FHTTPInterface implements I_K3_Deprecated
                     trigger_error('Script module "'.$file.'" violated QF HTTP otput rules at line '.$line, E_USER_ERROR);
 
             }
+        }
     }
 
     public function addEventHandler($ev_name, $func_link)
@@ -275,5 +256,3 @@ final class FHTTPInterface implements I_K3_Deprecated
         F()->appEnv->response->addEventHandler($ev_name, $func_link);
     }
 }
-
-?>
