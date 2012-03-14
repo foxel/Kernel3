@@ -1,9 +1,12 @@
 <?php
 
 /**
- * @property bool $isSecure
- * @property bool $isPost
- * @property bool $isAjax
+ * @property string $url
+ * @property string $referer
+ * @property bool   $refererIsExternal
+ * @property bool   $isSecure
+ * @property bool   $isPost
+ * @property bool   $isAjax
  */
 abstract class K3_Request extends K3_Environment_Element implements I_K3_Request
 {
@@ -26,12 +29,18 @@ abstract class K3_Request extends K3_Environment_Element implements I_K3_Request
      */
     protected $stringRecodeFunc = null;
 
+    /**
+     * @param K3_Environment|null $env
+     */
     public function __construct(K3_Environment $env = null)
     {
         $this->pool = array(
-            'isSecure' => false,
-            'isPost'   => false,
-            'isAjax'   => false,
+            'url'               => '',
+            'referer'           => '',
+            'refererIsExternal' => false,
+            'isSecure'          => false,
+            'isPost'            => false,
+            'isAjax'            => false,
         );
 
         parent::__construct($env);
@@ -50,7 +59,7 @@ abstract class K3_Request extends K3_Environment_Element implements I_K3_Request
      * @param  string $varName
      * @param  integer $source
      * @param  boolean $getFlags
-     * @return mixed
+     * @return bool|null
      */
     public function getBinary($varName, $source = self::ALL, $getFlags = true)
     {
@@ -66,7 +75,7 @@ abstract class K3_Request extends K3_Environment_Element implements I_K3_Request
      * @param  string $varName
      * @param  integer $source
      * @param  boolean $getFloat
-     * @return mixed
+     * @return int|float|null
      */
     public function getNumber($varName, $source = self::ALL, $getFloat = false )
     {
@@ -80,7 +89,7 @@ abstract class K3_Request extends K3_Environment_Element implements I_K3_Request
      * @param  string $varName
      * @param  integer $source
      * @param  integer $stringCastType
-     * @return mixed
+     * @return string|null
      */
     public function getString($varName, $source = self::ALL, $stringCastType = null )
     {
@@ -105,21 +114,21 @@ abstract class K3_Request extends K3_Environment_Element implements I_K3_Request
     public function getURLParams()
     {
         $res = Array();
-        parse_str(parse_url($this->env->requestUrl, PHP_URL_QUERY), $res);
+        parse_str(parse_url($this->url, PHP_URL_QUERY), $res);
         return $res;
     }
 
     /**
      * @param  string $varName
-     * @return mixed
+     * @return array|null
      */
     abstract public function getFile($varName);
 
     /**
      * @param  string $varName
      * @param  string $toFile
-     * @param  boolean $forceReplace
-     * @return mixed
+     * @param  bool $forceReplace
+     * @return bool
      */
     abstract public function moveFile($varName, $toFile, $forceReplace = false);
 }

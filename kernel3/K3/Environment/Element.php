@@ -24,4 +24,19 @@ abstract class K3_Environment_Element extends FEventDispatcher
         $this->env = $env;
         return $this;
     }
+
+    /**
+     * getter
+     * @param  string $name
+     * @return mixed
+     */
+    public function __get($name)
+    {
+        $getterMethod = 'get'.ucfirst($name);
+        if (method_exists($this, $getterMethod)) {
+            return $this->$getterMethod();
+        } else {
+            return parent::__get($name);
+        }
+    }
 }

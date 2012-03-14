@@ -53,7 +53,9 @@ class FGPC implements I_K3_Deprecated
         if (!is_array($datas))
             return false;
 
-        return F()->Request->setRaws($datas, $set);
+        F()->Request->setRaws($datas, $set);
+
+        return true;
     }
 
     public static function getURLParams()

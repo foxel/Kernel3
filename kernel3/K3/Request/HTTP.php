@@ -2,10 +2,24 @@
 
 class K3_Request_HTTP extends K3_Request
 {
+    /**
+     * @var array
+     */
     protected $raw = array();
+
+    /**
+     * @var array|null
+     */
     protected $UPLOADS = null;
+
+    /**
+     * @var bool
+     */
     protected $doGPCStrip = false;
 
+    /**
+     * @param K3_Environment|null $env
+     */
     public function __construct(K3_Environment $env = null)
     {
         parent::__construct($env);
@@ -16,16 +30,51 @@ class K3_Request_HTTP extends K3_Request
         $this->pool['isPost']   = !empty($_POST);
     }
 
-    // useful for special inpur parsings
+    /**
+     * @param K3_Environment $env
+     * @return K3_Request_HTTP
+     */
+    public function setEnvironment(K3_Environment $env)
+    {
+        parent::setEnvironment($env);
+        
+        $this->pool['url'] = preg_replace('#\/|\\\\+#', '/', trim($_SERVER['REQUEST_URI']));
+        $this->pool['url'] = preg_replace('#^/+#s', '', $this->pool['url']);
+        if ($this->env->rootPath) {
+            $this->pool['url'] = preg_replace('#^'.$this->pool['rootPath'].'\/+#', '', $this->pool['url']);
+        }
+        if (isset($_SERVER['HTTP_REFERER']) && ($this->pool['referer'] = trim($_SERVER['HTTP_REFERER']))) {
+            if (strpos($this->pool['referer'], $this->env->rootUrl) === 0) {
+                $this->pool['referer'] = substr($this->pool['referer'], $this->env->rootUrl);
+            } else {
+                $this->pool['refererIsExternal'] = true;
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * useful for special inpur parsings
+     * @param array $datas
+     * @param int $set
+     * @return bool
+     */
     public function setRaws(array $datas, $set = self::GET)
     {
         $raw =& $this->raw;
         foreach ($datas as $key => $data)
             $raw[$set][$key] = $data;
 
-        return true;
+        return $this;
     }
 
+    /**
+     * @param string $varName
+     * @param int $source
+     * @param mixed $default
+     * @return mixed|null
+     */
     public function get($varName, $source = self::ALL, $default = null)
     {
         $raw = $this->raw;
@@ -73,6 +122,10 @@ class K3_Request_HTTP extends K3_Request
         return $val;
     }
 
+    /**
+     * @param string $varName
+     * @return array|null
+     */
     public function getFile($varName)
     {
         if (is_null($this->UPLOADS))
@@ -84,6 +137,12 @@ class K3_Request_HTTP extends K3_Request
             return null;
     }
 
+    /**
+     * @param string $varName
+     * @param string $toFile
+     * @param bool $forceReplace
+     * @return bool
+     */
     public function moveFile($varName, $toFile, $forceReplace = false)
     {
         if (is_null($this->UPLOADS))

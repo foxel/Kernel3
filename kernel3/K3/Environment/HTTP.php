@@ -14,9 +14,6 @@ class K3_Environment_HTTP extends K3_Environment
         $this->pool['serverName'] = isset($_SERVER['HTTP_HOST']) ? array_shift(explode(':', $_SERVER['HTTP_HOST'])) : $_SERVER['SERVER_NAME'];
         $this->pool['serverPort'] = isset($_SERVER['SERVER_PORT']) ? (int) $_SERVER['SERVER_PORT'] : 80;
 
-        $this->pool['requestUrl'] = preg_replace('#\/|\\\\+#', '/', trim($_SERVER['REQUEST_URI']));
-        $this->pool['requestUrl'] = preg_replace('#^/+#s', '', $this->pool['requestUrl']);
-
         $this->pool['rootUrl']    = 'http://'.$this->pool['serverName'].(($this->pool['serverPort'] != 80) ? $this->pool['serverPort'] : '').'/';
         $this->pool['rootPath']   = dirname($_SERVER['SCRIPT_NAME']);
 
@@ -24,19 +21,9 @@ class K3_Environment_HTTP extends K3_Environment
         {
             $this->pool['rootPath']   = preg_replace('#\/|\\\\+#', '/', $this->pool['rootPath']);
             $this->pool['rootUrl']   .= $this->pool['rootPath'].'/';
-            $this->pool['requestUrl'] = preg_replace('#^'.$this->pool['rootPath'].'\/+#', '', $this->pool['requestUrl']);
         }
 
         $this->pool['rootRealPath'] = preg_replace(Array('#\/|\\\\+#', '#(\/|\\\\)*$#'), Array(DIRECTORY_SEPARATOR, ''), $_SERVER['DOCUMENT_ROOT']).'/'.$this->pool['rootPath'];
-
-        if (isset($_SERVER['HTTP_REFERER']) && ($this->pool['referer'] = trim($_SERVER['HTTP_REFERER'])))
-        {
-            if (strpos($this->pool['referer'], $this->pool['rootUrl']) === 0) {
-                $this->pool['referer'] = substr($this->pool['referer'], strlen($this->pool['rootUrl']));
-            } else {
-                $this->pool['refererIsExternal'] = true;
-            }
-        }
     }
 
     /**

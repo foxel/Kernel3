@@ -22,13 +22,13 @@ final class FHTTPInterface implements I_K3_Deprecated
             case 'IP':       return F()->appEnv->clientIP;
             case 'IPInt':    return F()->appEnv->clientIPInteger;
             case 'rootUrl':  return F()->appEnv->rootUrl;
-            case 'request':  return F()->appEnv->requestUrl;
+            case 'request':  return F()->appEnv->request->url;
             case 'rootDir':  return F()->appEnv->rootPath;
             case 'rootFull': return F()->appEnv->rootRealPath;
             case 'srvName':  return F()->appEnv->serverName;
             case 'srvPort':  return F()->appEnv->serverPort;
-            case 'referer':  return F()->appEnv->referer;
-            case 'extRef':   return F()->appEnv->refererIsExternal;
+            case 'referer':  return F()->appEnv->request->referer;
+            case 'extRef':   return F()->appEnv->request->refererIsExternal;
 
             case 'cDomain':  return F()->appEnv->cookieDomain;
             case 'cPrefix':  return F()->appEnv->cookiePrefix;

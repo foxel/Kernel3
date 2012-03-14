@@ -8,13 +8,10 @@
  * @property string $clientIP
  * @property int    $clientIPInteger
  * @property string $rootUrl
- * @property string $requestUrl
  * @property string $rootPath
  * @property string $rootRealPath
  * @property string $serverName
  * @property int    $serverPort
- * @property string $referer
- * @property bool   $refererIsExternal
 
  * @property string $cookieDomain
  * @property string $cookiePrefix
@@ -54,13 +51,10 @@ abstract class K3_Environment extends FEventDispatcher
             'clientIP'          => '',
             'clientIPInteger'   => 0,
             'rootUrl'           => '',
-            'requestUrl'        => '',
             'rootPath'          => '',
             'rootRealPath'      => '',
             'serverName'        => '',
             'serverPort'        => 80,
-            'referer'           => '',
-            'refererIsExternal' => false,
 
             'cookieDomain'      => false,
             'cookiePrefix'      => self::DEFAULT_COOKIE_PREFIX,
