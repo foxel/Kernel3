@@ -46,6 +46,7 @@ class K3_Request_HTTP extends K3_Request
         if (isset($_SERVER['HTTP_REFERER']) && ($this->pool['referer'] = trim($_SERVER['HTTP_REFERER']))) {
             if (strpos($this->pool['referer'], $this->env->rootUrl) === 0) {
                 $this->pool['referer'] = substr($this->pool['referer'], $this->env->rootUrl);
+                $this->pool['refererIsExternal'] = false;
             } else {
                 $this->pool['refererIsExternal'] = true;
             }
