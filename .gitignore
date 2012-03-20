@@ -1,0 +1,12 @@
+kernel3/.k3.compiled.*
+tests/.k3.compiled.*
+tests/data
+tests/*.log
+tests/*.file
+tests/*.reg
+*.php0
+*.diff
+*.swp
+*.sess
+tags
+.idea
