@@ -41,7 +41,7 @@ class K3_Request_HTTP extends K3_Request
         $this->pool['url'] = preg_replace('#\/|\\\\+#', '/', trim($_SERVER['REQUEST_URI']));
         $this->pool['url'] = preg_replace('#^/+#s', '', $this->pool['url']);
         if ($this->env->rootPath) {
-            $this->pool['url'] = preg_replace('#^'.$this->pool['rootPath'].'\/+#', '', $this->pool['url']);
+            $this->pool['url'] = preg_replace('#^'.$this->env->rootUrl.'\/+#', '', $this->pool['url']);
         }
         if (isset($_SERVER['HTTP_REFERER']) && ($this->pool['referer'] = trim($_SERVER['HTTP_REFERER']))) {
             if (strpos($this->pool['referer'], $this->env->rootUrl) === 0) {
