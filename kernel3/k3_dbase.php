@@ -35,8 +35,8 @@ class FDataBase extends FEventDispatcher
     const SQL_CALCROWS  = 256;
     const SQL_CRREPLACE = 512;
 
-    protected $_dbDrivers = Array('mysql' => 'mysql');
-    protected $_dbDSNType = Array('mysql' => 'mysql');
+    protected $_dbDrivers = array('mysql' => 'mysql');
+    protected $_dbDSNType = array('mysql' => 'mysql');
     protected $_dbType    = null;
     protected $_tbPrefix  = '';
 
@@ -54,10 +54,13 @@ class FDataBase extends FEventDispatcher
     protected $_qRowsNum = 0;
     protected $_inTransaction = false;
     
-    protected $_history = Array();
+    protected $_history = array();
     protected $_queriesTime = 0;
     protected $_queriesCount = 0;
 
+    /**
+     * @param string $dbType
+     */
     public function __construct($dbType = 'mysql')
     {
         $this->_dbType = $dbType;
@@ -84,9 +87,17 @@ class FDataBase extends FEventDispatcher
         $this->pool['qResult'] =& $this->_qResult;
     }
 
-    public function connect($params, $username = '', $password = '', $tbPrefix = '', $options = Array())
+    /**
+     * @param array $params
+     * @param string $username
+     * @param string $password
+     * @param string $tbPrefix
+     * @param array $options
+     * @return bool
+     */
+    public function connect(array $params, $username = '', $password = '', $tbPrefix = '', $options = array())
     {
-        $conn_pars = Array();
+        $conn_pars = array();
         if (!is_array($params))
             return false;
         foreach ($params as $key => $value)
@@ -99,17 +110,30 @@ class FDataBase extends FEventDispatcher
         
         return true;
     }
-    
+
+    /**
+     * @return bool
+     */
     public function check()
     {
         return ($this->_pdo ? true : false);
     }
 
+    /**
+     * @param string $tableName
+     * @param string|bool $tableAlias
+     * @param array|null $fields
+     * @return FDBSelect
+     */
     public function select($tableName, $tableAlias = false, array $fields = null)
     {
         return new FDBSelect($tableName, $tableAlias, $fields);
     }
 
+    /**
+     * @return bool
+     * @throws FException
+     */
     public function beginTransaction()
     {
         if (!$this->_pdo)
@@ -120,6 +144,10 @@ class FDataBase extends FEventDispatcher
         return $res;
     }
 
+    /**
+     * @return bool
+     * @throws FException
+     */
     public function commit()
     {
         if (!$this->_pdo)
@@ -128,6 +156,10 @@ class FDataBase extends FEventDispatcher
         return $this->_pdo->commit();
     }
 
+    /**
+     * @return bool
+     * @throws FException
+     */
     public function rollBack()
     {
         if (!$this->_pdo)
@@ -136,6 +168,12 @@ class FDataBase extends FEventDispatcher
         return $this->_pdo->rollBack();
     }
 
+    /**
+     * @param FDBSelect $select
+     * @param int $flags
+     * @return string
+     * @throws FException
+     */
     public function parseDBSelect(FDBSelect $select, $flags = 0)
     {
         if (!$this->_pdo)
@@ -144,6 +182,12 @@ class FDataBase extends FEventDispatcher
         return $this->_queryConstructor->parseDBSelect($select->toArray(), $flags);
     }
 
+    /**
+     * @param FDBSelect $select
+     * @param int $flags
+     * @return array|mixed|null
+     * @throws FException
+     */
     public function execDBSelect(FDBSelect $select, $flags = 0)
     {
         if (!$this->_pdo)
@@ -193,8 +237,17 @@ class FDataBase extends FEventDispatcher
         return $this->query($query, true, true);
     }
 
-    // simple one table select
-    public function doSelect($table, $fields = Array(), $where = '', $other = '', $flags = 0)
+    /**
+     * simple one table select
+     * @param string $table
+     * @param string|array $fields
+     * @param string|array $where
+     * @param string|array $other
+     * @param int $flags
+     * @return array|mixed|null
+     * @throws FException
+     */
+    public function doSelect($table, $fields = array(), $where = '', $other = '', $flags = 0)
     {
         if (!$this->_pdo)
             throw new FException('DB is not connected');
@@ -219,14 +272,30 @@ class FDataBase extends FEventDispatcher
             return null;
     }
 
-    // simple one table select all records
-    public function doSelectAll($table, $fields = Array(), $where = '', $other = '', $flags = 0)
+    /**
+     * simple one table select all records
+     * @param string $table
+     * @param string|array $fields
+     * @param string|array $where
+     * @param string|array $other
+     * @param int $flags
+     * @return array|mixed|null
+     */
+    public function doSelectAll($table, $fields = array(), $where = '', $other = '', $flags = 0)
     {
         return $this->doSelect ($table, $fields, $where, $other, $flags | self::SQL_SELECTALL);
     }
     
-    // multitable select
-    public function doMultitableSelect($tqueries, $other = '', $flags = 0)
+    /**
+     * multitable select
+     * @param array $tqueries
+     * @param string $other
+     * @param int $flags
+     * @return array|mixed|null
+     * @throws FException
+     * @see FDBaseQCmysql::multitableSelect
+     */
+    public function doMultitableSelect(array $tqueries, $other = '', $flags = 0)
     {
         if (!$this->_pdo)
             throw new FException('DB is not connected');
@@ -250,8 +319,16 @@ class FDataBase extends FEventDispatcher
         else
             return null;
     }
-    
-    public function doInsert($table, Array $data, $replace = false, $flags = 0)
+
+    /**
+     * @param string $table
+     * @param array $data
+     * @param bool $replace
+     * @param int $flags
+     * @return bool|null|mixed
+     * @throws FException
+     */
+    public function doInsert($table, array $data, $replace = false, $flags = 0)
     {
         if (!$this->_pdo)
             throw new FException('DB is not connected');
@@ -268,7 +345,15 @@ class FDataBase extends FEventDispatcher
             return null;
     }
 
-    public function doUpdate($table, Array $data, $where = '', $flags = 0)
+    /**
+     * @param string $table
+     * @param array $data
+     * @param string|array $where
+     * @param int $flags
+     * @return int|null
+     * @throws FException
+     */
+    public function doUpdate($table, array $data, $where = '', $flags = 0)
     {
         if (!$this->_pdo)
             throw new FException('DB is not connected');
@@ -278,6 +363,13 @@ class FDataBase extends FEventDispatcher
         return $this->exec($query, true);
     }
 
+    /**
+     * @param string $table
+     * @param string|array $where
+     * @param int $flags
+     * @return int|null
+     * @throws FException
+     */
     public function doDelete($table, $where = '', $flags = 0)
     {
         if (!$this->_pdo)
@@ -288,7 +380,6 @@ class FDataBase extends FEventDispatcher
         return $this->exec($query, true);
     }
 
-    //
     /**
      * Base direct query method
      * @param string $query
@@ -327,16 +418,26 @@ class FDataBase extends FEventDispatcher
 
         $this->_queriesCount++;
         $this->_queriesTime += $query_time;
-        $this->_history[] = Array('query' => $query, 'time' => $query_time);
+        $this->_history[] = array('query' => $query, 'time' => $query_time);
 
         return $this->_qResult;
     }
 
+    /**
+     * @param $query
+     * @param bool $noprefixrepl
+     * @return null|PDOStatement
+     */
     public function exec($query, $noprefixrepl = false)
     {
         return $this->query($query, $noprefixrepl, true);
     }
 
+    /**
+     * @param string $string
+     * @return string
+     * @throws FException
+     */
     public function quote($string)
     {
         if (!$this->_pdo)
@@ -391,8 +492,17 @@ class FDBSelect
     protected $limit  = array();
     protected $flags  = 0;
 
+    /**
+     * @var FDataBase
+     */
     protected $dbo    = null;
-    
+
+    /**
+     * @param $tableName
+     * @param string|bool $tableAlias - false for auto
+     * @param array|null $fields
+     * @param FDataBase|null $dbo
+     */
     public function __construct($tableName, $tableAlias = false, array $fields = null, FDataBase $dbo = null)
     {
         if (!$tableAlias || !is_string($tableAlias))
@@ -411,19 +521,33 @@ class FDBSelect
             
         return $this;
     }
-    
+
+    /**
+     * @return FDBSelect
+     */
     public function distinct()
     {
         $this->flags|= FDataBase::SQL_DISTINCT;
         return $this;
     }
 
+    /**
+     * @return FDBSelect
+     */
     public function calculateRows()
     {
         $this->flags|= FDataBase::SQL_CALCROWS;
         return $this;
     }
 
+    /**
+     * @param string $tableName
+     * @param string|array $joinOn
+     * @param string|bool $tableAlias - false for auto
+     * @param array|null $fields
+     * @param int $joinType
+     * @return FDBSelect
+     */
     public function join($tableName, $joinOn, $tableAlias = false, array $fields = null, $joinType = self::JOIN_INNER)
     {
         if (!$tableAlias || !is_string($tableAlias))
@@ -443,7 +567,7 @@ class FDBSelect
                 {
                     if (is_string($toField)) {
                         $refTableAlias = $this->_determineTableAliasWithColumn($toField);
-                        if (FStr::isWord($toField)) {
+                        if (FStr::isWord($refTableAlias)) {
                             $this->joins[$tableAlias][$field] = array($refTableAlias, $toField);
                         } 
                         else 
@@ -467,11 +591,24 @@ class FDBSelect
         return $this;
     }
 
+    /**
+     * @param string $tableName
+     * @param string|array $joinOn
+     * @param string|bool $tableAlias - false for auto
+     * @param array|null $fields
+     * @return FDBSelect
+     */
     public function joinLeft($tableName, $joinOn, $tableAlias = false, array $fields = null)
     {
         return $this->join($tableName, $joinOn, $tableAlias, $fields, self::JOIN_LEFT);
     }
-    
+
+    /**
+     * @param string|FDBSelect $column
+     * @param string|bool $alias
+     * @param string|bool|null $tableAlias - false for autodetection, null to force no tableAlias
+     * @return FDBSelect
+     */
     public function column($column, $alias = false, $tableAlias = false)
     {
         $this->_determineTableAliasWithColumn($column, $tableAlias);
@@ -496,6 +633,11 @@ class FDBSelect
         return $this;
     }
 
+    /**
+     * @param array $columns
+     * @param string|bool|null $tableAlias - false for autodetection, null to force no tableAlias
+     * @return FDBSelect
+     */
     public function columns(array $columns, $tableAlias = false)
     {
         foreach ($columns as $key => &$val)
@@ -504,6 +646,13 @@ class FDBSelect
         return $this;
     }
 
+    /**
+     * @param string|array $where
+     * @param mixed $value
+     * @param string|bool|null $tableAlias - false for autodetection, null to force no tableAlias
+     * @param bool $whereOr
+     * @return FDBSelect
+     */
     public function where($where, $value = null, $tableAlias = false, $whereOr = false)
     {
         if (is_array($where))
@@ -519,11 +668,7 @@ class FDBSelect
 
         $this->_determineTableAliasWithColumn($where, $tableAlias);
 
-        if (FStr::isWord($where))
-        {
-            if (isset($this->fields[$where]) && is_array($this->fields[$where]))
-                list($tableAlias, $where) = $this->fields[$where];
-                
+        if (FStr::isWord($where)) {
             $this->where[] = array($tableAlias, $where, $value, (boolean) $whereOr);
         }
         elseif (preg_match('#(?<!\w|\\\\)\?#', $where))
@@ -534,6 +679,12 @@ class FDBSelect
         return $this;
     }
 
+    /**
+     * @param string|array $where
+     * @param mixed $value
+     * @param string|bool|null $tableAlias - false for autodetection, null to force no tableAlias
+     * @return FDBSelect
+     */
     public function whereOr($where, $value = null, $tableAlias = false)
     {
         return $this->where($where, $value, $tableAlias, true);
@@ -542,7 +693,7 @@ class FDBSelect
     /**
      * @param string $order
      * @param bool $desc
-     * @param string|bool|null $tableAlias
+     * @param string|bool|null $tableAlias - false for autodetection, null to force no tableAlias
      * @return FDBSelect
      */
     public function order($order, $desc = false, $tableAlias = false)
@@ -552,11 +703,16 @@ class FDBSelect
         if (FStr::isWord($order)) // column given
             $this->order[] = array($tableAlias, $order, (boolean) $desc);
         else
-            $this->order[] = $order;
+            $this->order[] = (string) $order;
 
         return $this;
     }
 
+    /**
+     * @param string $group
+     * @param string|bool|null $tableAlias - false for autodetection, null to force no tableAlias
+     * @return FDBSelect
+     */
     public function group($group, $tableAlias = false)
     {
         $this->_determineTableAliasWithColumn($group, $tableAlias);
@@ -569,18 +725,30 @@ class FDBSelect
         return $this;
     }
 
+    /**
+     * @param int $count
+     * @param int|bool $start
+     * @return FDBSelect
+     */
     public function limit($count, $start = false)
     {
         $this->limit = array((int) $count, $start ? (int) $start : null);
 
         return $this;
     }
-    
+
+    /**
+     * @param int $add_params
+     * @return string
+     */
     public function toString($add_params = 0)
     {
         return $this->dbo->parseDBSelect($this, $this->flags | (int) $add_params);
     }
 
+    /**
+     * @return array
+     */
     public function toArray()
     {
         return array(
@@ -596,11 +764,19 @@ class FDBSelect
             );
     }
 
+    /**
+     * @return FDataBase|null
+     */
     public function getDBO()
     {
         return $this->dbo;
     }
-    
+
+    /**
+     * @param int $fetch_mode
+     * @param int $add_params
+     * @return array|mixed|null
+     */
     public function fetch($fetch_mode = self::FETCH_ALL, $add_params = 0)
     {
         if ($fetch_mode == self::FETCH_ALL)
@@ -609,27 +785,49 @@ class FDBSelect
         return $this->dbo->execDBSelect($this, $this->flags | (int) $add_params);
     }
 
+    /**
+     * @param int $add_params
+     * @return array|mixed|null
+     */
     public function fetchAll($add_params = 0)
     {
         return $this->fetch(self::FETCH_ALL, $add_params);
     }
-    
+
+    /**
+     * @param int $add_params
+     * @return array|mixed|null
+     */
     public function fetchOne($add_params = 0)
     {
         return $this->fetch(self::FETCH_ONE, $add_params);
     }
 
+    /**
+     * @param string $name
+     * @param int $add_params
+     * @return bool
+     */
     public function createView($name, $add_params = 0)
     {
         return $this->dbo->createView($name, $this, $this->flags | (int) $add_params);
     }
 
+    /**
+     * @param int $add_params
+     * @return FDBSelect
+     */
     public function addFlags($add_params)
     {
         $this->flags |= (int) $add_params;
         return $this;
     }
-    
+
+    /**
+     * @param string $field
+     * @param string|bool|null $tableAlias - false for autodetection, null to force no tableAlias
+     * @return string|null
+     */
     protected function _determineTableAliasWithColumn(&$field, &$tableAlias = false)
     {
         if (count($fParts = explode('.', $field)) == 2 // two parts separated by '.'
@@ -639,17 +837,26 @@ class FDBSelect
             $field = $fParts[1];
             $tableAlias = $fParts[0];
         }
-        elseif (is_null($tableAlias) || isset($this->fields[$field]))
+        elseif (is_null($tableAlias)) {
             return ($tableAlias = null);
-            
-        if (!$tableAlias)
+        }
+        elseif (!$tableAlias && isset($this->fields[$field]) && is_array($this->fields[$field])) {
+            list($tableAlias, $field) = $this->fields[$field];
+            return $tableAlias;
+        }
+
+        if (!$tableAlias) {
             list($tableAlias) = array_keys($this->tables);
-        else
+        } else {
             $tableAlias = (string) $tableAlias;
+        }
 
         return $tableAlias;
     }
 
+    /**
+     * @return array
+     */
     public function __sleep()
     {
         return array('tables', 'fields', 'where', 'joins', 'joints', 'order', 'group', 'limit', 'flags');
