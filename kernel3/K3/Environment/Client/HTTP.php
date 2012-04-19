@@ -12,7 +12,7 @@ class K3_Environment_Client_HTTP extends K3_Environment_Client
         $this->_cookies =& $_COOKIE; // TODO: think if we need to get a copy instead
 
         $this->pool['IP']        = $_SERVER['REMOTE_ADDR'];
-        $this->pool['IPInteger'] = ip2long($this->pool['clientIP']);
+        $this->pool['IPInteger'] = ip2long($this->pool['IP']);
     }
 
     /**
