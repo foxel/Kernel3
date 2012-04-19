@@ -27,7 +27,7 @@ class FMail
         }
 
         if (!FStr::isEmail($from_addr))
-            $from_addr = 'no-reply@'.$env->serverName;
+            $from_addr = 'no-reply@'.$env->server->domain;
 
         $this->send_to = Array();
         $this->copy_to = Array();
@@ -149,7 +149,7 @@ class FMail
 
         $m_headers = Array(
             'From: '.$m_from,
-            'Message-ID: <'.md5(uniqid(time())).'@'.F()->appEnv->serverName.'>',
+            'Message-ID: <'.md5(uniqid(time())).'@'.F()->appEnv->server->domain.'>',
             'MIME-Version: 1.0',
             'Date: '.date('r', time()),
             'X-Priority: 3',

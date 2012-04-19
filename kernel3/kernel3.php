@@ -251,7 +251,7 @@ class F extends FEventDispatcher
      */
     protected function prepareDefaultEnvironment()
     {
-        $env = new K3_Environment_HTTP();
+        $env = new K3_Environment('HTTP');
         $env->setRequest(new K3_Request_HTTP($env));
         $env->setResponse(new K3_Response_HTTP($env));
         $env->setSession(new K3_Session($env));

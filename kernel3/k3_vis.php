@@ -307,7 +307,7 @@ class FVISInterface extends FEventDispatcher
         $this->JS_loaded  = Array();
         $this->vis_consts = Array(
             'TIME'    => F()->Timer->qTime(),
-            'ROOTURL' => $this->env->rootUrl,
+            'ROOTURL' => $this->env->server->rootUrl,
         );
 
         if (!$keep_nodes)

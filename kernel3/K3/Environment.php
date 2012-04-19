@@ -4,22 +4,13 @@
  * @property K3_Request  $request
  * @property K3_Response $response
  * @property K3_Session  $session
- * 
- * @property string $clientIP
- * @property int    $clientIPInteger
- * @property string $rootUrl
- * @property string $rootPath
- * @property string $rootRealPath
- * @property string $serverName
- * @property int    $serverPort
-
- * @property string $cookieDomain
- * @property string $cookiePrefix
+ *
+ * @property K3_Environment_Client $client
+ * @property K3_Environment_Server $server
+ *
  */
-abstract class K3_Environment extends FEventDispatcher
+class K3_Environment extends FEventDispatcher
 {
-    const DEFAULT_COOKIE_PREFIX = 'K3';
-
     /**
      * @var K3_Request
      */
@@ -36,38 +27,50 @@ abstract class K3_Environment extends FEventDispatcher
     protected $_session = null;
 
     /**
-     * @var array
+     * @var K3_Environment_Server
      */
-    protected $_cookies = array();
+    protected $_server = null;
+
+    /**
+     * @var K3_Environment_Client
+     */
+    protected $_client = null;
 
     /**
      * @var array
      */
     protected $_elements = array();
 
-    public function __construct()
+    /**
+     * @param string $class
+     */
+    public function __construct($class = 'HTTP')
     {
-        $this->pool = array(
-            'clientIP'          => '',
-            'clientIPInteger'   => 0,
-            'rootUrl'           => '',
-            'rootPath'          => '',
-            'rootRealPath'      => '',
-            'serverName'        => '',
-            'serverPort'        => 80,
-
-            'cookieDomain'      => false,
-            'cookiePrefix'      => self::DEFAULT_COOKIE_PREFIX,
-        );
+        $this->setClient(K3_Environment_Client::construct($class, $this));
+        $this->setServer(K3_Environment_Server::construct($class, $this));
     }
 
     /**
-     * @param  integer $securityLevel
-     * @return string
+     * @param  string $name
+     * @param  mixed $element
+     * @return K3_Environment
      */
-    public function getClientSignature($securityLevel = 0)
+    public function put($name, $element)
     {
-        return md5(implode('|', array_slice(explode('.', $this->clientIP), 0, $securityLevel)));
+        $this->_elements[$name] = $element;
+
+        return $this;
+    }
+
+    /**
+     * @param  string $name
+     * @return mixed
+     */
+    public function get($name)
+    {
+        return isset($this->_elements[$name])
+            ? $this->_elements[$name]
+            : null;
     }
 
     /**
@@ -84,62 +87,6 @@ abstract class K3_Environment extends FEventDispatcher
             return parent::__get($name);
         }
     }
-
-    public function setCookiePrefix($newPrefix = false, $renameOldCookies = false)
-    {
-        if (!$newPrefix || !is_string($newPrefix))
-            $newPrefix = self::DEFAULT_COOKIE_PREFIX;
-
-        // special for chenging prefix without dropping down the session
-        if ($renameOldCookies && $this->pool['cookiePrefix'] != $newPrefix)
-        {
-            $oldPrefix_ = $this->pool['cookiePrefix'].'_';
-            foreach ($this->_cookies as $name => $value)
-            {
-                if (strpos($name, $oldPrefix_) === 0)
-                {
-                    $this->setCookie($name, false, false, false, false, true);
-                    $name = $newPrefix.'_'.substr($name, strlen($oldPrefix_));
-                    $this->setCookie($name, $value, false, false, false, true);
-                }
-                $this->_cookies[$name] = $value;
-            }
-        }
-        $this->pool['cookiePrefix'] = (string) $newPrefix;
-
-        return $this;
-    }
-
-    public function getCookie($name, $addPrefix = true)
-    {
-        if ($addPrefix) {
-            $name = $this->pool['cookiePrefix'].'_'.$name;
-        }
-
-        return (isset($this->_cookies[$name])) ? $this->_cookies[$name] : null;
-    }
-
-    // sets cookies domain (checks if current client request is sent on that domain or it's sub)
-    public function setCookieDomain($domain)
-    {
-        if (!preg_match('#[\w\.]+\w\.\w{2,4}#', $domain)) {
-            trigger_error('Tried to set incorrect cookies domain.', E_USER_WARNING);
-        } else {
-            $my_domain = '.'.ltrim(strtolower($this->serverName), '.');
-            $domain    = '.'.ltrim(strtolower($domain), '.');
-            $len = strlen($domain);
-            if (substr($my_domain, -$len) == $domain) {
-                $this->pool['cookieDomain'] = $domain;
-            } else {
-                trigger_error('Tried to set incorrect cookies domain.', E_USER_WARNING);
-            }
-        }
-
-        return $this;
-    }
-
-    abstract public function setCookie($name, $value = false, $expire = false, 
-        $root = false, $addPrefix = true, $setDomain = true);
 
     /**
      * @param K3_Request $request
@@ -193,25 +140,36 @@ abstract class K3_Environment extends FEventDispatcher
     }
 
     /**
-     * @param  string $name
-     * @param  mixed $element
-     * @return K3_Environment
+     * @param K3_Environment_Client $client
      */
-    public function put($name, $element)
+    public function setClient(K3_Environment_Client $client)
     {
-        $this->_elements[$name] = $element;
-
-        return $this;
+        $this->_client = $client;
+        $this->_client->setEnvironment($this);
     }
 
     /**
-     * @param  string $name
-     * @return mixed
+     * @return K3_Environment_Client
      */
-    public function get($name)
+    public function getClient()
     {
-        return isset($this->_elements[$name])
-            ? $this->_elements[$name]
-            : null;
+        return $this->_client;
+    }
+
+    /**
+     * @param K3_Environment_Server $server
+     */
+    public function setServer(K3_Environment_Server $server)
+    {
+        $this->_server = $server;
+        $this->_server->setEnvironment($this);
+    }
+
+    /**
+     * @return K3_Environment_Server
+     */
+    public function getServer()
+    {
+        return $this->_server;
     }
 }

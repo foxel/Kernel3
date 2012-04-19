@@ -577,13 +577,13 @@ class FStr
             if (isset($url_p['path']))
                 $url.= preg_replace('#(\/|\\\)+#', '/', $url_p['path']);
         } else {
-            $url.= ($force_host) ? $force_host : $env->serverName;
+            $url.= ($force_host) ? $force_host : $env->server->domain;
             if (isset($url_p['path']) && strlen($url_p['path'])) {
                 if ($url_p['path'][0] != '/') {
-                    $url_p['path'] = '/'.$env->rootPath.'/'.$url_p['path'];
+                    $url_p['path'] = '/'.$env->server->rootPath.'/'.$url_p['path'];
                 }
             } else {
-                $url_p['path'] = '/'.$env->rootPath.'/'.F_SITE_INDEX;
+                $url_p['path'] = '/'.$env->server->rootPath.'/'.F_SITE_INDEX;
             }
 
             $url_p['path'] = preg_replace('#(\/|\\\)+#', '/', $url_p['path']);

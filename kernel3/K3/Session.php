@@ -58,7 +58,7 @@ class K3_Session extends K3_Environment_Element
 
         $this->mode |= $mode & (self::MODES_ALLOW);
 
-        $this->SID = $this->env->getCookie(self::SID_NAME);
+        $this->SID = $this->env->client->getCookie(self::SID_NAME);
         if ($ForceSID = $this->env->request->getString('ForceFSID', K3_Request::POST, FStr::HEX))
             $this->SID = $ForceSID;
 
@@ -81,7 +81,7 @@ class K3_Session extends K3_Environment_Element
             $this->throwEventRef('preopen', $this->mode, $this->SID);
 
             if (!($this->mode & self::MODE_FIXED))
-                $this->env->setCookie(self::SID_NAME, $this->SID);
+                $this->env->client->setCookie(self::SID_NAME, $this->SID);
 
             // allows mode changes and any special reactions
             $this->throwEventRef('opened', $this->mode, $this->SID);
@@ -97,7 +97,7 @@ class K3_Session extends K3_Environment_Element
             return true;
         }
         else
-            $this->env->setCookie(self::SID_NAME);
+            $this->env->client->setCookie(self::SID_NAME);
 
         $this->mode = $oldMode;
         return false;
@@ -114,9 +114,9 @@ class K3_Session extends K3_Environment_Element
         if (!is_array($sess) || !$sess)
             return false;
 
-        if ($sess['ip'] != $this->env->clientIPInteger
+        if ($sess['ip'] != $this->env->client->IPInteger
             || $sess['lastused'] < (F()->Timer->qTime() - self::LIFETIME)
-            || $sess['clsign'] != $this->env->getClientSignature($this->securityLevel))
+            || $sess['clsign'] != $this->env->client->getSignature($this->securityLevel))
         {
             FCache::drop(self::CACHEPREFIX.$this->SID);
             return false;
@@ -169,8 +169,8 @@ class K3_Session extends K3_Environment_Element
         $this->throwEventRef('presave', $this->pool);
 
         $dataArray = Array(
-            'ip'       => $this->env->clientIPInteger,
-            'clsign'   => $this->env->getClientSignature($this->securityLevel),
+            'ip'       => $this->env->client->IPInteger,
+            'clsign'   => $this->env->client->getSignature($this->securityLevel),
             'vars'     => serialize($this->pool),
             'lastused' => F()->Timer->qTime(),
             'clicks'   => $this->clicks,
@@ -323,7 +323,7 @@ class K3_Session extends K3_Environment_Element
         }
 
         if (preg_match('#^\w+:#', $url))
-            if (strpos($url, F()->appEnv->rootUrl) !== 0)
+            if (strpos($url, F()->appEnv->server->rootUrl) !== 0)
                 return $vars[1].$vars[3].' = '.$bounds.$url.$bounds;
 
         $url = FStr::urlAddParam($url, self::SID_NAME, $this->SID, true);

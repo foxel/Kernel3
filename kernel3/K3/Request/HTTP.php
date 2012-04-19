@@ -40,12 +40,12 @@ class K3_Request_HTTP extends K3_Request
         
         $this->pool['url'] = preg_replace('#\/|\\\\+#', '/', trim($_SERVER['REQUEST_URI']));
         $this->pool['url'] = preg_replace('#^/+#s', '', $this->pool['url']);
-        if ($this->env->rootPath) {
-            $this->pool['url'] = preg_replace('#^'.$this->env->rootPath.'\/+#', '', $this->pool['url']);
+        if ($this->env->server->rootPath) {
+            $this->pool['url'] = preg_replace('#^'.$this->env->server->rootPath.'\/+#', '', $this->pool['url']);
         }
         if (isset($_SERVER['HTTP_REFERER']) && ($this->pool['referer'] = trim($_SERVER['HTTP_REFERER']))) {
-            if (strpos($this->pool['referer'], $this->env->rootUrl) === 0) {
-                $this->pool['referer'] = substr($this->pool['referer'], strlen($this->env->rootUrl));
+            if (strpos($this->pool['referer'], $this->env->server->rootUrl) === 0) {
+                $this->pool['referer'] = substr($this->pool['referer'], strlen($this->env->server->rootUrl));
                 $this->pool['refererIsExternal'] = false;
             } else {
                 $this->pool['refererIsExternal'] = true;
@@ -86,7 +86,7 @@ class K3_Request_HTTP extends K3_Request
 
         // cookie requests are redirected
         if ($source == self::COOKIE) {
-            $val = $this->env->getCookie($varName);
+            $val = $this->env->client->getCookie($varName);
             return !is_null($val)
                 ? $val
                 : $default;

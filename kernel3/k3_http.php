@@ -9,7 +9,7 @@
  */
 final class FHTTPInterface implements I_K3_Deprecated
 {
-    const DEF_COOKIE_PREFIX = K3_Environment::DEFAULT_COOKIE_PREFIX;
+    const DEF_COOKIE_PREFIX = K3_Environment_Client::DEFAULT_COOKIE_PREFIX;
     // HTTP send content types
     const FILE_ATTACHMENT = K3_Response::DISPOSITION_ATTACHMENT;
     const FILE_RFC1522    = K3_Response::FILENAME_RFC1522;
@@ -19,19 +19,19 @@ final class FHTTPInterface implements I_K3_Deprecated
     public function __get($varName)
     {
         switch ($varName) {
-            case 'IP':       return F()->appEnv->clientIP;
-            case 'IPInt':    return F()->appEnv->clientIPInteger;
-            case 'rootUrl':  return F()->appEnv->rootUrl;
+            case 'IP':       return F()->appEnv->client->IP;
+            case 'IPInt':    return F()->appEnv->client->IPInteger;
+            case 'rootUrl':  return F()->appEnv->server->rootUrl;
             case 'request':  return F()->appEnv->request->url;
-            case 'rootDir':  return F()->appEnv->rootPath;
-            case 'rootFull': return F()->appEnv->rootRealPath;
-            case 'srvName':  return F()->appEnv->serverName;
-            case 'srvPort':  return F()->appEnv->serverPort;
+            case 'rootDir':  return F()->appEnv->server->rootPath;
+            case 'rootFull': return F()->appEnv->server->rootRealPath;
+            case 'srvName':  return F()->appEnv->server->domain;
+            case 'srvPort':  return F()->appEnv->server->port;
             case 'referer':  return F()->appEnv->request->referer;
             case 'extRef':   return F()->appEnv->request->refererIsExternal;
 
-            case 'cDomain':  return F()->appEnv->cookieDomain;
-            case 'cPrefix':  return F()->appEnv->cookiePrefix;
+            case 'cDomain':  return F()->appEnv->client->cookieDomain;
+            case 'cPrefix':  return F()->appEnv->client->cookiePrefix;
             case 'secure':   return F()->appEnv->request->isSecure;
             case 'isAjax':   return F()->appEnv->request->isAjax;
 
@@ -65,13 +65,13 @@ final class FHTTPInterface implements I_K3_Deprecated
 
     public function setCPrefix($new_prefix = false, $do_rename = false)
     {
-        F()->appEnv->setCookiePrefix($new_prefix, $do_rename);
+        F()->appEnv->client->setCookiePrefix($new_prefix, $do_rename);
         return $this;
     }
 
     public function getCookie($name)
     {
-        return F()->appEnv->getCookie($name);
+        return F()->appEnv->client->getCookie($name);
     }
 
     public function write($text, $no_nl = false)
@@ -187,7 +187,7 @@ final class FHTTPInterface implements I_K3_Deprecated
     // sets cookies domain (checks if current client request is sent on that domain or it's sub)
     public function setCookiesDomain($domain)
     {
-        F()->appEnv->setCookieDomain($domain);
+        F()->appEnv->client->setCookieDomain($domain);
 
         return $this;
     }
@@ -195,7 +195,7 @@ final class FHTTPInterface implements I_K3_Deprecated
     // Sets cookie with root dir parameter (needed on sites with many independent systems in folders)
     public function setCookie($name, $value = false, $expire = false, $root = false, $no_domain = false, $no_prefix = false)
     {
-        return F()->appEnv->setCookie($name, $value, $expire, $root, !$no_prefix, !$no_domain);
+        return F()->appEnv->client->setCookie($name, $value, $expire, $root, !$no_prefix, !$no_domain);
     }
 
     // Redirecting function
@@ -216,7 +216,7 @@ final class FHTTPInterface implements I_K3_Deprecated
     // returns client signature based on browser, ip and proxy
     public function getClientSignature($level = 0)
     {
-        return F()->appEnv->getClientSignature($level);
+        return F()->appEnv->client->getSignature($level);
     }
 
     // filters off OB output
