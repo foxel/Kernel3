@@ -87,9 +87,9 @@ class FDBaseQCmysql
                     $field = (string) $val[1];
                     if (FStr::isWord($field)) {
                         $field = '`'.$field.'`';
-                        if ($val[0]) {
-                            $field = '`'.$val[0].'`.'.$field;
-                        }
+                    }
+                    if ($val[0]) {
+                        $field = '`'.$val[0].'`.'.$field;
                     }
                 } else {
                     $field = '('.strval($val).')';
