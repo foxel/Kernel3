@@ -108,7 +108,7 @@ abstract class K3_Response extends K3_Environment_Element implements I_K3_Respon
             return false;
 
         if (!isset($params['filename'])) {
-            $params['filename'] = $file;
+            $params['filename'] = FStr::basename($file);
         }
 
         return $this->sendDataStream(new FFileStream($file), $params, $flags);
@@ -207,7 +207,7 @@ abstract class K3_Response extends K3_Environment_Element implements I_K3_Respon
             $this->setHeader('Cache-Control', 'no-cache');
         }
         // disposition
-        $disposition = ($flags & self::DISPOSITION_ATTACHMENT)
+        $disposition = ($flags & self::DISPOSITION_ATTACHMENT || (isset($params['contentType']) && $params['contentType'] == 'application/octet-stream'))
             ? 'attachment'
             : 'inline';
         $dispositionHeader = array();
