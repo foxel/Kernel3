@@ -89,7 +89,6 @@ class FCache
     {
         $names = explode(' ', $list);
         if (count($names)) {
-            $out = Array();
             foreach ($names as $name)
                 self::drop($name);
             return true;
@@ -103,11 +102,11 @@ class FCache
         self::$upd_cache = array_unique(self::$upd_cache);
 
         foreach (self::$upd_cache as $name) {
-            $query = false;
-            if (is_null(self::$chdata[$name]))
+            if (is_null(self::$chdata[$name])) {
                 self::CFS_Drop($name);
-            else
+            } else {
                 self::CFS_Save($name, self::$chdata[$name]);
+            }
         }
 
         self::$upd_cache = Array();
@@ -150,30 +149,31 @@ class FCache
 
         $folder = (strpos($folder, self::$cache_folder.'/') === 0) ? $folder : self::$cache_folder;
         $stack = Array();
-        if (is_dir($folder) && $dir = opendir($folder))
-        {
+        if (is_dir($folder) && $dir = opendir($folder)) {
             do {
+                $dirNotEmpty = true;
                 while ($entry = readdir($dir))
                     if ($entry!='.' && $entry!='..') {
                         $entry = $folder.'/'.$entry;
-                        if (is_file($entry))
-                        {
+                        if (is_file($entry)) {
                             $einfo = pathinfo($entry);
-                            if (strtolower($einfo['extension'])=='chd')
+                            if (strtolower($einfo['extension'])=='chd') {
                                 unlink($entry);
-                        }
-                        elseif (is_dir($entry))
-                        {
-                            if ($ndir = opendir($entry))
-                            {
+                            }
+                        } elseif (is_dir($entry)) {
+                            if ($ndir = opendir($entry)) {
                                 array_push($stack, Array($dir, $folder));
                                 $dir = $ndir;
                                 $folder = $entry;
                             }
+                        } else {
+                            $dirNotEmpty = true;
                         }
                     }
                 closedir($dir);
-                rmdir($folder);
+                if (!$dirNotEmpty) {
+                    rmdir($folder);
+                }
             } while (list($dir, $folder) = array_pop($stack));
         }
     }
@@ -238,4 +238,3 @@ class FCache
 
 FCache::initCacher();
 
-?>

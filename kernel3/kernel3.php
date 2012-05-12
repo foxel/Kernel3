@@ -50,8 +50,10 @@ Error_Reporting(F_DEBUG ? E_ALL : 0);
 if (F_DEBUG) 
     ini_set('display_errors', 'On');
 
-if (get_magic_quotes_runtime())
+if (get_magic_quotes_runtime()) {
     set_magic_quotes_runtime(0);
+}
+
 set_time_limit(30);  // not '0' - once i had my script running for a couple of hours collecting GBytes of errors :)
 // here comes the fatal catcher :P
 register_shutdown_function(create_function('', 'if (($a = error_get_last()) && $a[\'type\'] == E_ERROR)
@@ -75,64 +77,66 @@ set_error_handler(create_function('$c, $m, $f, $l', 'throw new ErrorException($m
     E_ALL & ~(E_NOTICE | E_WARNING | E_USER_NOTICE | E_USER_WARNING | E_STRICT | E_DEPRECATED | E_USER_DEPRECATED));
 
 
-
 /**#@+
  * @internal this will build a list of base includes to include in one file
  * @ignore
  */
 $base_modules_files = Array(
+    F_KERNEL_DIR.DIRECTORY_SEPARATOR.'K3/Autoloader.php',    // kernel 3 autoloader
     F_KERNEL_DIR.DIRECTORY_SEPARATOR.'k3_misc.php',          // kernel 3 classes and functions library
     F_KERNEL_DIR.DIRECTORY_SEPARATOR.'k3_timer.php',         // kernel 3 basic classes
     F_KERNEL_DIR.DIRECTORY_SEPARATOR.'k3_cache.php',         // kernel 3 cacher class
     F_KERNEL_DIR.DIRECTORY_SEPARATOR.'k3_strings.php',       // kernel 3 strings parsing
-    F_KERNEL_DIR.DIRECTORY_SEPARATOR.'k3_http.php',          // kernel 3 HTTP interface
-    F_KERNEL_DIR.DIRECTORY_SEPARATOR.'k3_request.php',       // kernel 3 GPC interface
     F_KERNEL_DIR.DIRECTORY_SEPARATOR.'k3_lang.php',          // kernel 3 LNG interface
     F_KERNEL_DIR.DIRECTORY_SEPARATOR.'k3_dbase.php',         // kernel 3 database interface
-    F_KERNEL_DIR.DIRECTORY_SEPARATOR.'k3_session.php',       // kernel 3 session extension
-    F_KERNEL_DIR.DIRECTORY_SEPARATOR.'k3_registry.php',      // kernel 3 registry extension
 );
 // we'll do some trick with caching base modules in one file
-$base_modules_stats = Array();
-foreach ($base_modules_files as $fname)
-    $base_modules_stats[] = filemtime($fname).'|'.filesize($fname);
-$kernel_codecache_dir = is_writable(F_KERNEL_DIR) ? F_KERNEL_DIR : F_CODECACHE_DIR;
-$base_modules_stats = md5(implode('|', $base_modules_stats));
-$base_modules_file = $kernel_codecache_dir.DIRECTORY_SEPARATOR.'.k3.compiled.'.$base_modules_stats;
-if (extension_loaded('bcompiler') && file_exists($base_modules_file.'.bc'))
-    require_once($base_modules_file.'.bc');
-elseif (file_exists($base_modules_file.'.php'))
-    require_once($base_modules_file.'.php');
-else
-{
-    foreach (scandir($kernel_codecache_dir) as $fname)
-        if (preg_match('#^.k3\.compiled\.[0-9a-fA-F]{32}\.(php|bc)?$#', $fname))
-            unlink($kernel_codecache_dir.DIRECTORY_SEPARATOR.$fname);
-    $base_modules_eval = array();
-    foreach ($base_modules_files as $fname)
-        $base_modules_eval[] = preg_replace('#^\s*\<\?php\s*|^\s*\<\?\s*|\?\>\s*$#D', '', php_strip_whitespace($fname));
-    $base_modules_eval = preg_replace('#(?<!^)if\s+\(!defined\(\'F_STARTED\'\)\)\s+die\(\'[^\']+\'\)\;\s*#', '', implode(PHP_EOL, $base_modules_eval));
-
-    if (file_put_contents($base_modules_file.'.php', "<?php\n".$base_modules_eval."\n?>"))
-    {
-        if (function_exists('bcompiler_write_file'))
-        {
-            $fileHandle = fopen($base_modules_file.'.bc', 'w');
-            bcompiler_write_header($fileHandle);
-            bcompiler_write_file($fileHandle, $base_modules_file.'.php'); 
-            bcompiler_write_footer($fileHandle);
-            fclose($fileHandle); 
-            unset($fileHandle);
-        }
-        eval($base_modules_eval);
+if (F_DEBUG) {
+    foreach ($base_modules_files as $fname) {
+        require_once($fname);
     }
+} else {
+    $base_modules_stats = Array();
+    foreach ($base_modules_files as $fname)
+        $base_modules_stats[] = filemtime($fname).'|'.filesize($fname);
+    $kernel_codecache_dir = is_writable(F_KERNEL_DIR) ? F_KERNEL_DIR : F_CODECACHE_DIR;
+    $base_modules_stats = md5(implode('|', $base_modules_stats));
+    $base_modules_file = $kernel_codecache_dir.DIRECTORY_SEPARATOR.'.k3.compiled.'.$base_modules_stats;
+    if (false && extension_loaded('bcompiler') && file_exists($base_modules_file.'.bc'))
+        require_once($base_modules_file.'.bc');
+    elseif (file_exists($base_modules_file.'.php'))
+        require_once($base_modules_file.'.php');
     else
     {
-        trigger_error('Kernel: Error creating base modules cache.', E_USER_WARNING);
+        foreach (scandir($kernel_codecache_dir) as $fname)
+            if (preg_match('#^.k3\.compiled\.[0-9a-fA-F]{32}\.(php|bc)?$#', $fname))
+                unlink($kernel_codecache_dir.DIRECTORY_SEPARATOR.$fname);
+        $base_modules_eval = array();
         foreach ($base_modules_files as $fname)
-            require_once($fname);
+            $base_modules_eval[] = preg_replace('#^\s*\<\?php\s*|^\s*\<\?\s*|\?\>\s*$#D', '', php_strip_whitespace($fname));
+        $base_modules_eval = preg_replace('#(?<!^)if\s+\(!defined\(\'F_STARTED\'\)\)\s+die\(\'[^\']+\'\)\;\s*#', '', implode(PHP_EOL, $base_modules_eval));
+
+        if (file_put_contents($base_modules_file.'.php', "<?php\n".$base_modules_eval."\n?>"))
+        {
+            if (function_exists('bcompiler_write_file'))
+            {
+                $fileHandle = fopen($base_modules_file.'.bc', 'w');
+                bcompiler_write_header($fileHandle);
+                bcompiler_write_file($fileHandle, $base_modules_file.'.php');
+                bcompiler_write_footer($fileHandle);
+                fclose($fileHandle);
+                unset($fileHandle);
+            }
+            eval($base_modules_eval);
+        }
+        else
+        {
+            trigger_error('Kernel: Error creating base modules cache.', E_USER_WARNING);
+            foreach ($base_modules_files as $fname)
+                require_once($fname);
+        }
+        unset($base_modules_eval);
     }
-    unset($base_modules_eval);
 }
 unset($kernel_codecache_dir, $base_modules_files, $base_modules_stats, $base_modules_file);
 /**#@+*/
@@ -140,6 +144,24 @@ unset($kernel_codecache_dir, $base_modules_files, $base_modules_stats, $base_mod
 /**
  * the main kernel class
  * used to control all the modules
+ * @property K3_Autoloader $Autoloader
+ * @property FTimer $Timer
+ * @property FCache $Cache
+ * @property FStr $Str
+ * @property K3_Environment $appEnv
+ * @property K3_Request $Request
+ * @property K3_Response $Response
+ * @property K3_Session $Sess
+ * @property K3_Session $Session
+ * @property FLNGData $LNG
+ * @property FDataBase $DBase
+ * @property K3_Registry $Registry
+ *
+ * @property FVISInterface $VIS
+ * @property FFlexyStoreFactory $FlexyStore
+ * @property FCaptcha $Captcha
+ * @property FParser $Parser
+ * @property FMetaFileFactory $MetaFile
  */
 class F extends FEventDispatcher
 {
@@ -161,45 +183,50 @@ class F extends FEventDispatcher
         E_RECOVERABLE_ERROR => 'PHP RECOVERABLE',
         );
 
+    /**
+     * @var F
+     */
     static private $self = null;
-    private $clfiles = Array();
     private $classes = Array();
     private $clclose = Array();
 
     private function __construct()
     {
-        $this->pool['Timer'] = new FTimer();
-        $this->pool['Cache'] = FCache::getInstance();
-        $this->pool['Str']   = FStr::getInstance();
-        $this->pool['HTTP']  = FHTTPInterface::getInstance();
-        $this->pool['GPC']   = FGPC::getInstance();
-        $this->pool['LNG']   = FLNGData::getInstance();
+        set_exception_handler(Array($this, 'handleException'));
+        set_error_handler(Array($this, 'logError'), F_DEBUG ? E_ALL : E_ALL & ~(E_NOTICE | E_USER_NOTICE | E_STRICT));
+
+        $this->pool['Autoloader'] = new K3_Autoloader();
+        $this->pool['Timer']      = new FTimer();
+        $this->pool['Cache']      = FCache::getInstance();
+        $this->pool['Str']        = FStr::getInstance();
+        $this->pool['LNG']        = FLNGData::getInstance();
+        $this->pool['appEnv']     = $e = $this->prepareDefaultEnvironment();
+        $this->pool['Request']    = $e->getRequest();
+        $this->pool['Response']   = $e->getResponse();
+        $this->pool['Sess']       =
+        $this->pool['Session']    = $e->getSession();
         //$this->pool['DBase'] = new FDataBase();
         $this->classes['DBase']    = 'FDataBase';
-        $this->classes['Session']  = 
-        $this->classes['Sess']     = 'FSession';
-        $this->classes['Registry'] = 'FRegistry';
+        $this->classes['Registry'] = 'K3_Registry';
         $this->classes['Config']   = 'FConfig';
         //$this->pool['DBObject'] = new StaticInstance('FDBObject');
 
-        
-        set_exception_handler(Array($this, 'handleException'));
-        set_error_handler(Array($this, 'logError'), E_ALL & ~(E_NOTICE | E_USER_NOTICE | E_STRICT));
-
-        $this->pool['LNG']->_Start();
+        $this->pool['LNG']->_Start(); // TODO: introduce F_Kernel_Module abstract class / interface
 
         if ($CL_Config = FMisc::loadDatafile(self::KERNEL_DIR.DIRECTORY_SEPARATOR.'modules.qfc', FMisc::DF_SLINE, false, '|'))
         {
+            $this->Autoloader->registerClassPath(self::KERNEL_DIR);
+
             foreach ($CL_Config as $mod => $cfg)
             {
                 $this->classes[$mod] = ($cfg[1]) ? array_shift($cfg) : 'F'.$mod;
-                $this->clfiles[$mod] = self::KERNEL_DIR.DIRECTORY_SEPARATOR.array_shift($cfg);
+                $this->Autoloader->registerClassFile($this->classes[$mod], array_shift($cfg));
             }
         }
     }
 
     /** This method is used to access the kernel from any context (as it is a static method).
-     * @return object Returns module object (if $name is defined) or kernel root object.
+     * @return F|object Returns module object (if $name is defined) or kernel root object.
      * @param string $name Name of the kernel module to access. If empty - kernel object returned
      */
     public static function kernel($name = null)
@@ -209,6 +236,26 @@ class F extends FEventDispatcher
         return is_null($name)
             ? self::$self
             : self::$self->__get($name);
+    }
+
+    /**
+     * @return K3_Environment
+     */
+    public function e()
+    {
+        return $this->pool['appEnv'];
+    }
+
+    /**
+     * @return K3_Environment
+     */
+    protected function prepareDefaultEnvironment()
+    {
+        $env = new K3_Environment('HTTP');
+        $env->setRequest(new K3_Request_HTTP($env));
+        $env->setResponse(new K3_Response_HTTP($env));
+        $env->setSession(new K3_Session($env));
+        return $env;
     }
 
     /** Tests if module with given name is accessable
@@ -237,16 +284,7 @@ class F extends FEventDispatcher
         if (isset($this->pool[$mod_name]))
             return ($this->pool[$mod_name] instanceof $mod_class);
 
-        if (!class_exists($mod_class) && isset($this->clfiles[$mod_name]))
-        {
-            $mod_file = $this->clfiles[$mod_name];
-            if (file_exists($mod_file))
-                include_once($mod_file);
-            else
-                trigger_error('Kernel: can\'t locate "'.$mod_file.'" module file', E_USER_ERROR);
-        }
-
-        if (class_exists($mod_class))
+        if (class_exists($mod_class, true))
         {
             $res = method_exists($mod_class, 'getInstance')
                 ? ($this->pool[$mod_name] = call_user_func(Array($mod_class, 'getInstance')))
@@ -269,12 +307,18 @@ class F extends FEventDispatcher
 
     /** Handles exceptions and writes logs
      * @access private
+     * @param Exception $e
      * @ignore
      */
     public function handleException(Exception $e)
     {
         $logfile = F_LOGS_ROOT.DIRECTORY_SEPARATOR.'fatal.log';
-        $eName = get_class($e).(($e instanceof ErrorException) ? '['.self::$ERR_TYPES[$e->getSeverity()].']' : '');
+        $eName = get_class($e);
+        if ($e instanceof ErrorException) {
+            /* @var ErrorException $e */
+            $eName.= '['.self::$ERR_TYPES[$e->getSeverity()].']';
+        }
+
         if ($logfile = fopen($logfile, 'ab'))
         {
             fwrite($logfile, date('[d M Y H:i]').' '.$eName.': '.$e->getMessage().'. File: '.$e->getFile().'. Line: '.$e->getLine().'.'.PHP_EOL.$e->getTraceAsString().'.'.PHP_EOL);
@@ -286,11 +330,19 @@ class F extends FEventDispatcher
             header ($_SERVER["SERVER_PROTOCOL"].' 503 Service Unavailable');
             header('Content-Type: text/html; charset='.self::INTERNAL_ENCODING);
         }
-        print '<html><head><title>'.$this->LNG->lang('ERR_CRIT_PAGE', false, true).'</title></head><body><h1>'.$this->LNG->lang('ERR_CRIT_PAGE', false, true).'</h1>'.$this->LNG->lang('ERR_CRIT_MESS', false, true).'</body></html>';
+        if (F_DEBUG) {
+            print $eName.': '.$e->getMessage().'. File: '.$e->getFile().'. Line: '.$e->getLine().'.'.PHP_EOL;
+        } else {
+            print '<html><head><title>'.$this->LNG->lang('ERR_CRIT_PAGE', false, true).'</title></head><body><h1>'.$this->LNG->lang('ERR_CRIT_PAGE', false, true).'</h1>'.$this->LNG->lang('ERR_CRIT_MESS', false, true).'</body></html>';
+        }
     }
 
     /** Handles errors, writes logs and throws exceptions for critical errors
      * @access private
+     * @param int $c
+     * @param string $m
+     * @param string $f
+     * @param int $l
      * @ignore
      */
     public function logError($c, $m, $f = '', $l = 0)
@@ -322,7 +374,7 @@ class F extends FEventDispatcher
         elseif (isset($this->classes[$name]) && $this->runModule($name))
             return $this->pool[$name];
 
-        return new FNullObject('F(\''.$name.'\')');
+        return new FNullObject('F()->'.$name);
     }
 
     /** Handles calling modules like functions
@@ -344,11 +396,10 @@ class F extends FEventDispatcher
 }
 
 /** This function is used to access the kernel from any context with 'F()'.
- * @return object Returns module object (if $name is defined) or kernel root object.
+ * @return F|object Returns module object (if $name is defined) or kernel root object.
  * @param string $name Name of the kernel module to access
  * @see F::kernel
  */
 function F($name = null) { return F::kernel($name); }
 $GLOBALS['QF'] = $GLOBALS['F'] = F();
 
-?>

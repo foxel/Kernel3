@@ -1,7 +1,6 @@
 <?php
 
-define ('STARTED', True);
-
+require_once 'init.php';
 require_once 'kernel3.php';
 
 /*$m = F()->Mail->create('testmail');
@@ -15,6 +14,5 @@ $page = '<html><head><!--Meta-Content-Type--><title>'.F_SITE_INDEX.'</title></he
 <body>
 <hr>'.highlight_file(__FILE__, true).'
 <hr><!--Page-Stats--></body></html>';
-F('HTTP')->write($page);
-F('HTTP')->sendBuffer();
-?>
+F()->Response->write($page);
+F()->Response->sendBuffer();

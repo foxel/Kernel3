@@ -20,10 +20,14 @@ class FMail
     private $text    = '';
     private $parts   = Array();
 
-    public function __construct($subject = false, $from_name = false, $from_addr = false)
+    public function __construct($subject = false, $from_name = false, $from_addr = false, K3_Environment $env = null)
     {
+        if (is_null($env)) {
+            $env = F()->appEnv;
+        }
+
         if (!FStr::isEmail($from_addr))
-            $from_addr = 'no-reply@'.F()->HTTP->srvName;
+            $from_addr = 'no-reply@'.$env->server->domain;
 
         $this->send_to = Array();
         $this->copy_to = Array();
@@ -94,11 +98,11 @@ class FMail
             $FileSize = filesize($file);
             $FileTime = gmdate('D, d M Y H:i:s ', filemtime($file)).'GMT';
             // making part headers
-            $data = Array(
+            $data = array(
                 'Content-Type: '.$filemime.'; name="'.$filebname.'"',
                 'Content-Location: '.$filename,
                 'Content-Transfer-Encoding: base64',
-                );
+            );
 
             $data = implode(self::BR, $data).self::BR;
             $data.= self::BR; // closing headers
@@ -145,7 +149,7 @@ class FMail
 
         $m_headers = Array(
             'From: '.$m_from,
-            'Message-ID: <'.md5(uniqid(time())).'@'.F()->HTTP->srvName.'>',
+            'Message-ID: <'.md5(uniqid(time())).'@'.F()->appEnv->server->domain.'>',
             'MIME-Version: 1.0',
             'Date: '.date('r', time()),
             'X-Priority: 3',
@@ -222,4 +226,7 @@ class FMail
         return new StaticInstance('FMail');
     }
 }
-?>
+
+/*
+ * @TODO: add Mail factory
+ */

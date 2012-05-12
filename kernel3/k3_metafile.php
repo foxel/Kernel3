@@ -69,7 +69,7 @@ class FMetaFile extends FDataStream
         $i = count($this->parts);
         $this->parts[$i] = $p = new FMetaFilePart();
         $p->o = $part;
-        $p->l = $p->o->size();
+        $p->l = $part->size();
         if ($this->cluster > 0 && $p->l%$this->cluster)
             $p->l = intval($p->l/$this->cluster+1)*$this->cluster;
         $p->p = $this->fsize;
@@ -185,7 +185,15 @@ class FMetaTar extends FMetaFile
         $this->root_link = preg_replace('#^(\\\\|/)#', '', FStr::cast($root_link ? $root_link : F_SITE_ROOT, FStr::UNIXPATH)).DIRECTORY_SEPARATOR;
     }
 
-    // Packs a real file to archive
+    /**
+     * Packs a real file to archive
+     * @param string $filename
+     * @param string $pack_to
+     * @param string|int $force_mode
+     * @param string|int $force_fmode
+     * @param callback|null $ch_callback
+     * @return bool
+     */
     public function add($filename, $pack_to = '', $force_mode = '', $force_fmode = '', $ch_callback = null)
     {
         if (!is_file($filename) && !is_dir($filename))
@@ -323,7 +331,7 @@ class FMetaTar extends FMetaFile
         $header = $this->makeRawHeader($header);
         parent::add(new FStringStream($header));
 
-        $this->conts[] = $pack_to;
+        $this->conts[] = $dirname;
 
         return true;
     }
@@ -370,4 +378,3 @@ class FMetaTar extends FMetaFile
 
 }
 
-?>

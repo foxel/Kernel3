@@ -137,7 +137,7 @@ class FStr
 
                 $out.= (isset($table[$ch]))
                      ? $table[$ch]
-                     : $out.= '?';
+                     : $out.= $unk;
             }
             return $out;
         }
@@ -370,9 +370,7 @@ class FStr
         {
             $def = 'Array ('.PHP_EOL;
             $fields = Array();
-            $maxlen = 0;
-            foreach( $data as $key => $val )
-            {
+            foreach( $data as $key => $val ) {
                 $field = (is_numeric($key)) ? $key." => " : '\''.addslashes($key).'\' => ';
                 $field.= self::PHPDefine($val, $tabs+1);
                 $fields[]= $pref.$field;
@@ -382,6 +380,19 @@ class FStr
         else
             $def = '\''.addslashes($data).'\'';
         return $def;
+    }
+
+    static public function implodeRecursive(array $array, $glue = '')
+    {
+        $out = array();
+        foreach ($array as $value) {
+            if (is_array($value)) {
+                $value = self::implodeRecursive($value, $glue);
+            }
+            $out[] = (string) $value;
+        }
+
+        return implode($glue, $out);
     }
 
     static public function heredocDefine($str, $heredoc_id = 'HSTR', $add_semicolon = false)
@@ -394,7 +405,9 @@ class FStr
         return preg_replace('#\&(?!([A-z]+|\#\d{1,5}|\#x[0-9a-fA-F]{2,4});)#', '&amp;', $string);
     }
 
+    /** @var array */
     static private $SCHARS = null;
+    /** @var array */
     static private $NQSCHARS = null;
 
     static public function smartHTMLSchars($string, $no_quotes = false)
@@ -435,7 +448,7 @@ class FStr
         $res = !!preg_match('#^'.self::EMAIL_MASK.'$#D', $string);
         if ($res && $checkDNS)
         {
-            list($user, $domain) = split('@',$string);
+            list($user, $domain) = explode('@', $string);
             $res = checkdnsrr($domain, 'MX');
         }
 
@@ -528,27 +541,30 @@ class FStr
     }
 
     // generates full url
-    static public function fullUrl($url, $with_amps = false, $force_host = '')
+    static public function fullUrl($url, $with_amps = false, $force_host = '', K3_Environment $env = null)
     {
-        if ($url[0] == '#')
+        $url = (string) $url;
+
+        if ($url && $url[0] == '#')
             return $url;
+
+        if (is_null($env)) {
+            $env = F()->appEnv;
+        }
 
         $url_p = parse_url($url);
 
-        if (isset($url_p['scheme']))
-        {
+        if (isset($url_p['scheme'])) {
             $scheme = strtolower($url_p['scheme']);
             if ($scheme == 'mailto')
                 return $url;
             $url = $scheme.'://';
+        } else {
+            $url = ($env->request->isSecure) ? 'https://' : 'http://';
         }
-        else
-            $url = (F()->HTTP->secure) ? 'https://' : 'http://';
 
-        if (isset($url_p['host']))
-        {
-            if (isset($url_p['username']))
-            {
+        if (isset($url_p['host'])) {
+            if (isset($url_p['username'])) {
                 $url.= $url_p['username'];
                 if (isset($url_p['password']))
                     $url.= $url_p['password'];
@@ -560,27 +576,27 @@ class FStr
 
             if (isset($url_p['path']))
                 $url.= preg_replace('#(\/|\\\)+#', '/', $url_p['path']);
-        }
-        else
-        {
-            $url.= ($force_host) ? $force_host : F()->HTTP->srvName;
-            if (isset($url_p['path']))
-            {
-                if ($url_p['path']{0} != '/')
-                    $url_p['path'] = '/'.F()->HTTP->rootDir.'/'.$url_p['path'];
+        } else {
+            $url.= ($force_host) ? $force_host : $env->server->domain;
+            if (isset($url_p['path']) && strlen($url_p['path'])) {
+                if ($url_p['path'][0] != '/') {
+                    $url_p['path'] = '/'.$env->server->rootPath.'/'.$url_p['path'];
+                }
+            } else {
+                $url_p['path'] = '/'.$env->server->rootPath.'/'.F_SITE_INDEX;
             }
-            else
-                $url_p['path'] = '/'.F()->HTTP->rootDir.'/'.F_SITE_INDEX;
 
             $url_p['path'] = preg_replace('#(\/|\\\)+#', '/', $url_p['path']);
             $url.= $url_p['path'];
         }
 
-        if (isset($url_p['query']))
+        if (isset($url_p['query'])) {
             $url.= '?'.$url_p['query'];
+        }
 
-        if (isset($url_p['fragment']))
+        if (isset($url_p['fragment'])) {
             $url.= '#'.$url_p['fragment'];
+        }
 
         $url = ($with_amps) ? preg_replace('#\&(?![A-z]+;)#', '&amp;', $url) : str_replace('&amp;', '&', $url);
 
@@ -618,24 +634,23 @@ class FStr
         $unk = (isset($table[0x3F])) // Try set unknown to '?'
              ? $table[0x3F]
              : '';
-        if ($letters = self::_utfExplode($string))
-        {
-            $out = '';
+        $out = '';
+
+        if ($letters = self::_utfExplode($string)) {
             reset($letters);
             while (list($i, $lett) = each($letters))
             {
                 $uni = ord($lett[0]);
 
-                if ($uni < 0x80)
-                    $uni = $uni;
-                elseif (($uni >> 5) == 0x06)
+                if ($uni < 0x80) {
+                    // do nothing
+                } elseif (($uni >> 5) == 0x06) {
                     $uni = (($uni & 0x1F) <<  6) | (ord($lett[1]) & 0x3F);
-                elseif (($uni >> 4) == 0x0E)
+                } elseif (($uni >> 4) == 0x0E) {
                     $uni = (($uni & 0x0F) << 12) | ((ord($lett[1]) & 0x3F) <<  6) | (ord($lett[2]) & 0x3F);
-                elseif (($uni >> 3) == 0x1E)
+                } elseif (($uni >> 3) == 0x1E) {
                     $uni = (($uni & 0x07) << 18) | ((ord($lett[1]) & 0x3F) << 12) | ((ord($lett[2]) & 0x3F) << 6) | (ord($lett[3]) & 0x3F);
-                else
-                {
+                } else {
                     $out.= $unk;
                     continue;
                 }
@@ -645,6 +660,7 @@ class FStr
                      : $unk;
             }
         }
+
         return $out;
     }
 
@@ -672,11 +688,11 @@ class FStr
                 $uni = $table[$ch];
                 if ($uni < 0x80)
                     $out.= chr($uni);
-                elseif ($UtfCharInDec < 0x800)
+                elseif ($uni < 0x800)
                     $out.= chr(($uni >>  6) + 0xC0).chr(($uni & 0x3F) + 0x80);
-                elseif ($UtfCharInDec < 0x10000)
+                elseif ($uni < 0x10000)
                     $out.= chr(($uni >> 12) + 0xE0).chr((($uni >>  6) & 0x3F) + 0x80).chr(($uni & 0x3F) + 0x80);
-                elseif ($UtfCharInDec < 0x200000)
+                elseif ($uni < 0x200000)
                     $out.= chr(($uni >> 18) + 0xF0).chr((($uni >> 12) & 0x3F) + 0x80).chr((($uni >> 6)) & 0x3F + 0x80). chr(($uni & 0x3F) + 0x80);
                 else
                     $out.= '?';
@@ -766,7 +782,6 @@ class FStr
 
     static private function _hexToUtf($UtfCharInHex)
     {
-        $OutputChar = '';
         $UtfCharInDec = hexdec($UtfCharInHex);
 
         if ($UtfCharInDec & 0x1F0000)
@@ -792,5 +807,3 @@ class FStr
 }
 
 FStr::initEncoders();
-
-?>

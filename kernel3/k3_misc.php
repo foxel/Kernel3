@@ -44,7 +44,6 @@ abstract class FBaseClass
     public function __call($name, $arguments)
     {
          throw new FException(get_class($this).' has no '.$name.' method');
-         return null;
     }
 
     protected function poolLink($names)
@@ -96,17 +95,16 @@ abstract class FEventDispatcher extends FBaseClass
 {
     private $events = Array();
 
-    private function __construct() {}
-
     public function addEventHandler($ev_name, $func_link)
     {
         $ev_name = strtolower($ev_name);
 
-        if (!is_callable($func_link))
-            return false;
+        if (is_callable($func_link)) {
+            $this->events[$ev_name][] = $func_link;
+            return true;
+        }
 
-        $this->events[$ev_name][] = $func_link;
-        return true;
+        return false;
     }
 
     // first three arguments may be parsed by link
@@ -174,6 +172,7 @@ abstract class FDataStream extends FBaseClass
     abstract public function seek($pos);
     abstract public function write($data);
 
+    /** @var int */
     protected $mode = 0;
     public function mode() { return $this->mode; }
     public function mtime() { return time(); }
@@ -195,8 +194,10 @@ abstract class FDataStream extends FBaseClass
 /** file data streaming */
 class FFileStream extends FDataStream
 {
-    private $stream = null;
-    private $filename = '';
+    /** @var resource|null */
+    protected $stream = null;
+    /** @var string */
+    protected $filename = '';
     public function __construct($fname) { $this->filename = $fname; }
     public function open($mode = 'rb') { return (($this->stream = fopen($this->filename, $this->mode = $mode)) !== false); }
     public function close() { return fclose($this->stream); }
@@ -302,7 +303,7 @@ final class FMisc
     const DF_BLOCK = 4;
     const DF_FROMSTR = 16; //flag
 
-    private static $dfMasks  = Array('', '', '#^\s*([\w\-\/]+)\s*=>(.*)$#m', '#^((?>\w+)):(.*?)\r?\n---#sm', '#<<\+ \'(?>(\w+))\'>>(.*?)<<- \'\\1\'>>#s');
+    private static $dfMasks  = Array('', '', '#^\s*([\w\-\.\/]+)\s*=>(.*)$#m', '#^((?>\w+)):(.*?)\r?\n---#sm', '#<<\+ \'(?>(\w+))\'>>(.*?)<<- \'\\1\'>>#s');
     private static $cbCode   = false;
     private static $sdCBacks = Array();
     private static $inited   = false;
@@ -313,7 +314,7 @@ final class FMisc
     static public function initCore()
     {
         if (self::$inited)
-            return false;
+            return;
             
         self::$cbCode = rand();
         register_shutdown_function(Array(__CLASS__, 'phpShutdownCallback'), self::$cbCode);
@@ -323,8 +324,8 @@ final class FMisc
     static public function phpShutdownCallback($code)
     {
         if ($code != self::$cbCode)
-            return false;
-            
+            return;
+
         while (!is_null($cBack = array_pop(self::$sdCBacks)))
         {
             $func = array_shift($cBack);
@@ -407,8 +408,6 @@ final class FMisc
             default:
                 return $indata;
         }
-
-        return null;
     }
 
     // checks if given timestamp is in DST period
@@ -692,4 +691,3 @@ class F2DArray
     }
 }
 
-?>

@@ -172,7 +172,7 @@ final class FCaptcha extends FEventDispatcher
         imagedestroy($imgi);
         imagedestroy($img);
         
-        FSession()->captchaString = $string;
+        F()->Session->captchaString = $string;
         
         return $imgData;
     }
@@ -184,8 +184,8 @@ final class FCaptcha extends FEventDispatcher
         
         if (!$check_for)
         {
-            $check_for = FSession()->captchaString;
-            unset(FSession()->captchaString);
+            $check_for = F()->Session->captchaString;
+            unset(F()->Session->captchaString);
         }
         else
             $check_for = preg_replace('#[^'.self::FONT_CHARS.'\s]#', '', strtolower(trim($check_for)));
@@ -220,4 +220,3 @@ final class FCaptcha extends FEventDispatcher
     }
 }
 
-?>

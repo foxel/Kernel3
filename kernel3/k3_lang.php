@@ -28,6 +28,10 @@ class FLNGData // extends FEventDispatcher
     private $auto_loads = Array();
     public  $timeZone = 0;
 
+    /**
+     * @static
+     * @return FLNGData
+     */
     public static function getInstance()
     {
         if (!self::$self)
@@ -63,7 +67,7 @@ class FLNGData // extends FEventDispatcher
 
     public function select($lang)
     {
-        trigger_error('LANG: tried to use "select"', E_USER_WARNING );
+        trigger_error('LANG: tried to use "select('.$lang.')"', E_USER_WARNING );
         return false;
     }
 
@@ -106,7 +110,7 @@ class FLNGData // extends FEventDispatcher
                 ksort($aldata);
                 FCache::set($cachename, $aldata);
                 $this->auto_loads[$hash] = $aldata;
-                F()->Timer->logEvent($filename.' lang autoloads installed (from filesystem)');
+                F()->Timer->logEvent($directory.' lang autoloads installed (from filesystem)');
             }
             else
             {
@@ -160,7 +164,13 @@ class FLNGData // extends FEventDispatcher
 
     }
 
-    public function lang($key, $params = false, $load = false)
+    /**
+     * @param $key
+     * @param mixed $params
+     * @param bool $load
+     * @return string
+     */
+    public function lang($key, $params = null, $load = false)
     {
         $key = strtoupper($key);
         if (!$key)
@@ -178,8 +188,7 @@ class FLNGData // extends FEventDispatcher
         else
             return '['.$key.']';
 
-        if ($params)
-        {
+        if ($params) {
             $params = is_array($params) ? array_values($params) : Array($params);
             $out = FStr::smartSprintf($out, $params);
         }
@@ -230,8 +239,8 @@ class FLNGData // extends FEventDispatcher
                 4 => 'DATETIME_TR_MONTHS_SHORT',
                 );
 
-            if (!isset($this->lang[$lnames[0]]))
-                $this->tryAutoLoad($lnames[0]);
+            if (!isset($this->lang[$lnames[1]]))
+                $this->tryAutoLoad($lnames[1]);
 
             $translate = Array();
             for ($i = 1; $i<=4; ++$i)
@@ -449,9 +458,12 @@ class FLNGData // extends FEventDispatcher
 
         $lngs = array_keys($this->getAcceptLang());
         $lngs[] = 'en';
-        foreach ($lngs as $lng)
-            if (file_exists($file = F::KERNEL_DIR.DIRECTORY_SEPARATOR.'krnl_'.$lng.'.lng'))
+        $lng = $file = '';
+        foreach ($lngs as $lng) {
+            if (file_exists($file = F::KERNEL_DIR.DIRECTORY_SEPARATOR.'krnl_'.$lng.'.lng')) {
                 break;
+            }
+        }
         
         $cachename = self::CACHEPREFIX.'krnl_'.$lng;
 
@@ -472,4 +484,3 @@ class FLNGData // extends FEventDispatcher
     }
     
 }
-?>
