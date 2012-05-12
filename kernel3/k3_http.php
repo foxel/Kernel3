@@ -135,6 +135,7 @@ final class FHTTPInterface implements I_K3_Deprecated
                 exit();
             }
 
+        FMisc::obFree();
         return F()->appEnv->response->sendDataStream($stream, $params, $flags);
     }
 
@@ -146,6 +147,7 @@ final class FHTTPInterface implements I_K3_Deprecated
         if (!$filename)
             $filename = $file;
 
+        FMisc::obFree();
         return $this->sendDataStream(new FFileStream($file), $filename, $filemime, $filemtime, $flags);
     }
 
@@ -159,6 +161,8 @@ final class FHTTPInterface implements I_K3_Deprecated
             $params['filename'] = $send_filename;
             $flags |= K3_Response::DISPOSITION_ATTACHMENT;
         }
+
+        FMisc::obFree();
         return F()->appEnv->response->sendBuffer($recode_to, $params, $flags);
     }
 
@@ -180,7 +184,6 @@ final class FHTTPInterface implements I_K3_Deprecated
         }
 
         FMisc::obFree();
-
         return F()->appEnv->response->sendBuffer(false, $params, $flags);
     }
 
