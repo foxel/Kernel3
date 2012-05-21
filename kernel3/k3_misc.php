@@ -69,24 +69,22 @@ class FDataPool extends FBaseClass implements ArrayAccess
 
     public function offsetGet($name)
     {
-        return (isset($this->pool[$name]))
-            ? $this->pool[$name]
-            : null;
+        return $this->__get($name);
     }
 
     public function offsetSet($name, $val)
     {
-        return $val;
+        return $this->__set($name, $val);
     }
 
     public function offsetExists($name)
     {
-        return isset($this->pool[$name]);
+        return $this->__isset($name);
     }
 
     public function offsetUnset($name)
     {
-        return false;
+        return $this->__unset($name);
     }
 }
 
