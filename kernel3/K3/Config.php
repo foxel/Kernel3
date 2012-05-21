@@ -40,6 +40,25 @@ class K3_Config extends FDataPool
     }
 
     /**
+     * @param bool $recursive
+     * @return array
+     */
+    function toArray($recursive = true)
+    {
+        $array = array();
+        foreach ($this->pool as $key => $value) {
+            if ($value instanceof K3_Config) {
+                /** @var $value K3_Config */
+                $value = $recursive
+                    ? $value->toArray($recursive)
+                    : $value->__toString();
+            }
+            $array[$key] = $value;
+        }
+        return $array;
+    }
+
+    /**
      * @return null|string
      */
     function value()

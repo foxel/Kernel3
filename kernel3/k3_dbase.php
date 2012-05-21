@@ -88,22 +88,40 @@ class FDataBase extends FEventDispatcher
     }
 
     /**
-     * @param array $params
+     * @param array|K3_Config $dataSource
      * @param string $username
      * @param string $password
      * @param string $tbPrefix
-     * @param array $options
+     * @param array $pdoOptions
+     * @throws FException
      * @return bool
      */
-    public function connect(array $params, $username = '', $password = '', $tbPrefix = '', $options = array())
+    public function connect($dataSource, $username = '', $password = '', $tbPrefix = '', $pdoOptions = array())
     {
+        if ($dataSource instanceof K3_Config) {
+            /** @var $dataSource K3_Config */
+            if (isset($dataSource->dataSource)) {
+                return $this->connect(
+                    $dataSource->dataSource->toArray(false),
+                    $dataSource->username,
+                    $dataSource->password,
+                    $dataSource->prefix,
+                    (array) $dataSource->pdoOptions
+                );
+            } else {
+                $dataSource = $dataSource->toArray(false);
+            }
+        } elseif (!is_array($dataSource)) {
+            throw new FException('$dataSource must be either an array or K3_Config instance');
+        }
+
         $conn_pars = array();
-        if (!is_array($params))
+        if (!is_array($dataSource))
             return false;
-        foreach ($params as $key => $value)
+        foreach ($dataSource as $key => $value)
             $conn_pars[] = $key.'='.$value;
         $conn_pars = $this->_dbDSNType[$this->_dbType].':'.implode(';', $conn_pars);
-        $this->_pdo = new PDO($conn_pars, $username, $password, $options);
+        $this->_pdo = new PDO($conn_pars, $username, $password, $pdoOptions);
         $this->_tbPrefix = (string) $tbPrefix;
         $qcDriver = 'FDBaseQC'.$this->_dbDrivers[$this->_dbType];
         $this->_queryConstructor = new $qcDriver($this->_pdo, $this);
