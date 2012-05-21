@@ -36,6 +36,8 @@ if (!defined('F_STARTED'))
  */
 class FMPC extends FBaseClass
 {
+    const DEFAULT_PORT = 6600;
+
     // TCP/Connection variables
     protected $host;
     protected $port;
@@ -70,10 +72,12 @@ class FMPC extends FBaseClass
     protected $lastQueryTime = 0;
     protected $totalQueryTime = 0;
 
-    public function __construct($host, $port = 6600, $password = null)
+    public function __construct($host, $port = self::DEFAULT_PORT, $password = null)
     {
         $this->host = (string) $host;
-        $this->port = (int) $port;
+        $this->port = $port
+            ? (int) $port
+            : self::DEFAULT_PORT;
 
         // connecting
         $this->mpd_sock = fsockopen($this->host, $this->port, $errNo, $errStr, 10);
