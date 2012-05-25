@@ -2,13 +2,13 @@
 
 class K3_Autoloader
 {
-    protected $folders = array(F_KERNEL_DIR);
-    protected $classNameReplacePattern = array(
+    protected $_folders = array(F_KERNEL_DIR);
+    protected $_classNameReplacePattern = array(
         '_'  => DIRECTORY_SEPARATOR,
         '\\' => DIRECTORY_SEPARATOR,
     );
-    protected $includeFileSuffix = '.php';
-    protected $fixedClassFiles = array();
+    protected $_includeFileSuffix = '.php';
+    protected $_fixedClassFiles = array();
 
     public function __construct()
     {
@@ -17,23 +17,46 @@ class K3_Autoloader
 
     public function registerClassFile($className, $fileName)
     {
-        $this->fixedClassFiles[$className] = (string) $fileName;
+        $this->_fixedClassFiles[$className] = (string) $fileName;
     }
 
-    public function registerClassPath($dirPath)
+    public function registerClassPath($dirPath, $nameSpace = null)
     {
-        if (!in_array($dirPath, $this->folders)) {
-            $this->folders[] = $dirPath;
+        if (!in_array($dirPath, $this->_folders)) {
+            if (strlen($nameSpace)) {
+                $this->_folders[(string) $nameSpace] = $dirPath;
+            } else {
+                $this->_folders[] = $dirPath;
+            }
         }
     }
 
     protected function autoload($className)
     {
-        $fileName = isset($this->fixedClassFiles[$className])
-            ? $this->fixedClassFiles[$className]
-            : strtr($className, $this->classNameReplacePattern).$this->includeFileSuffix;
+        $fixedFileName = isset($this->_fixedClassFiles[$className])
+            ? $this->_fixedClassFiles[$className]
+            : null;
 
-        foreach ($this->folders as $folder) {
+        foreach ($this->_folders as $nameSpace => $folder) {
+            if ($fixedFileName) {
+                $fileName = $fixedFileName;
+            } elseif (is_string($nameSpace)) {
+                $fileName = null;
+                foreach (array_keys($this->_classNameReplacePattern) as $classNameSeparator) {
+                    $nsPrefix = $nameSpace.$classNameSeparator;
+                    if (strlen($nsPrefix) < strlen($className) && strpos($className, $nsPrefix) === 0) {
+                        $fileName = strtr(substr_replace($className, '', 0, strlen($nsPrefix)), $this->_classNameReplacePattern).$this->_includeFileSuffix;
+                        break;
+                    }
+                }
+            } else {
+                $fileName = strtr($className, $this->_classNameReplacePattern).$this->_includeFileSuffix;
+            }
+
+            if (!$fileName) {
+                continue;
+            }
+
             $fullFile = $folder.DIRECTORY_SEPARATOR.$fileName;
             if (is_file($fullFile)) {
                 include_once($fullFile);
