@@ -86,6 +86,11 @@ class FDataPool extends FBaseClass implements ArrayAccess
     {
         return $this->__unset($name);
     }
+
+    public function getKeys()
+    {
+        return array_keys($this->pool);
+    }
 }
 
 /** basic event dispatcher class */

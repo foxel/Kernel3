@@ -60,12 +60,12 @@ class K3_Autoloader
             $fullFile = $folder.DIRECTORY_SEPARATOR.$fileName;
             if (is_file($fullFile)) {
                 include_once($fullFile);
+
+                if (!class_exists($className) && !interface_exists($className)) {
+                    throw new FException('Error Loading class "'.$className.'" from "'.$fullFile.'" file.');
+                }
                 break;
             }
-        }
-
-        if (!class_exists($className) && !interface_exists($className)) {
-            throw new FException('Error Loading class: '.$className);
         }
     }
 }
