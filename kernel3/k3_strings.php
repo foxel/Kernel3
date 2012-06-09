@@ -603,6 +603,33 @@ class FStr
         return $url;
     }
 
+    /**
+     * @static
+     * @param string $url
+     * @return array
+     */
+    public static function getZendStyleURLParams($url)
+    {
+        $parts = parse_url($url);
+        $out = array();
+        if (isset($parts['path'])) {
+            $pathParams = explode('/', $parts['path']);
+            reset($pathParams);
+            while ($key = current($pathParams)) {
+                $out[$key] = rawurldecode(next($pathParams));
+                next($pathParams);
+            }
+        }
+        if (isset($parts['query'])) {
+            parse_str($parts['query'], $tmp = array());
+            foreach ($tmp as $key => $value) {
+                $out[$key] = $value;
+            }
+        }
+
+        return $out;
+    }
+
     // UIDs and hashes
     static public function shortUID($add_entr = '')
     {

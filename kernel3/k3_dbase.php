@@ -429,7 +429,7 @@ class FDataBase extends FEventDispatcher
 
         if ($err[1]) {
             $this->_qResult = null;
-            throw new FException('SQL Error '.$err[0].' ('.$this->_dbType.' '.$err[1].'): '.$err[2]);
+            throw new FException('SQL Error '.$err[0].' ('.$this->_dbType.' '.$err[1].'): '.$err[2].PHP_EOL.'Query: '.$query);
         }
 
         $query_time = F()->Timer->MicroTime() - $start_time;
@@ -745,12 +745,12 @@ class FDBSelect
 
     /**
      * @param int $count
-     * @param int|bool $start
+     * @param int|bool $offset
      * @return FDBSelect
      */
-    public function limit($count, $start = false)
+    public function limit($count, $offset = false)
     {
-        $this->limit = array((int) $count, $start ? (int) $start : null);
+        $this->limit = array((int) $count, $offset ? (int) $offset : null);
 
         return $this;
     }
