@@ -306,6 +306,9 @@ class FVISInterface extends FEventDispatcher
         $this->CSS_loaded = false;
         $this->JS_loaded  = Array();
         $this->vis_consts = Array(
+            'FALSE'   => false,
+            'TRUE'    => true,
+            'NULL'    => null,
             'TIME'    => F()->Timer->qTime(),
             'ROOTURL' => $this->env->server->rootUrl,
         );
@@ -1225,7 +1228,9 @@ class FVISInterface extends FEventDispatcher
                     $static = $this_static = false;
                 }
                 $st_pars[$id]  = $val;
-                $dyn_pars[$id] = ($this_static) ? FStr::heredocDefine($val, 'FTEXT') : '$'.$val;
+                $dyn_pars[$id] = ($this_static)
+                    ? (is_bool($val) || is_null($val) ? FStr::PHPDefine($val) : FStr::heredocDefine($val, 'FTEXT'))
+                    : '$'.$val;
                 $dyn_pars_js[$id] = ($this_static) ? FStr::JSDefine($val) : 'v.'.$val;
             }
             elseif (is_numeric($val) && $val[0] != '0')
