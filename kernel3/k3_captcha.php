@@ -132,9 +132,9 @@ final class FCaptcha extends FEventDispatcher
             //    continue;
 
             $color_0  = imagecolorat($imgi, $sx, $sy) & 0xFF;
-            $color_x  = imagecolorat($imgi, $sx+1, $sy) & 0xFF;
-            $color_y  = imagecolorat($imgi, $sx, $sy+1) & 0xFF;
-            $color_xy = imagecolorat($imgi, $sx+1, $sy+1) & 0xFF;
+            $color_x  = imagecolorat($imgi, min($sx+1, $width-1), $sy) & 0xFF;
+            $color_y  = imagecolorat($imgi, $sx, min($sy+1, $height-1)) & 0xFF;
+            $color_xy = imagecolorat($imgi, min($sx+1, $width-1), min($sy+1, $height-1)) & 0xFF;
 
             $frsx = $sx - floor($sx);
             $frsy = $sy - floor($sy);
