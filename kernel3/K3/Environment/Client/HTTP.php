@@ -27,7 +27,7 @@ class K3_Environment_Client_HTTP extends K3_Environment_Client
     public function setCookie($name, $value = false, $expire = false, $rootPath = false, $addPrefix = true, $setDomain = true)
     {
         if (!$rootPath) {
-            $rootPath = ($this->pool['rootPath']) ? '/'.$this->pool['rootPath'].'/' : '/';
+            $rootPath = ($this->env->server->rootPath) ? '/'.$this->env->server->rootPath.'/' : '/';
         }
 
         if ($addPrefix) {
