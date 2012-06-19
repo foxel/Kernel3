@@ -19,6 +19,10 @@ class K3_Config extends FDataPool implements Countable, Iterator
             $lastGroupKey = null;
             foreach ($dataKeys as $fullKey)
             {
+                if (strpos($fullKey, $separator) === false) {
+                    continue;
+                }
+
                 list($groupKey, $itemKey) = explode($separator, $fullKey, 2);
                 if (strlen($itemKey)) {
                     if (!isset($groups[$groupKey])) {

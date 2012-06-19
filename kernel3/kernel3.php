@@ -46,6 +46,19 @@ if (!defined('F_CODECACHE_DIR'))
     define('F_CODECACHE_DIR', F_SITE_ROOT);
 /**#@+*/
 
+/**#@+
+ * @internal this will add missing error constants for older PHP
+ * @ignore
+ */
+if (!defined('E_RECOVERABLE_ERROR'))
+    define('E_RECOVERABLE_ERROR', 4096);
+if (!defined('E_DEPRECATED'))
+    define('E_DEPRECATED', 8192);
+if (!defined('E_USER_DEPRECATED'))
+    define('E_USER_DEPRECATED', 16384);
+/**#@+*/
+
+
 Error_Reporting(F_DEBUG ? E_ALL : 0);
 if (F_DEBUG) 
     ini_set('display_errors', 'On');
@@ -60,22 +73,15 @@ register_shutdown_function(create_function('', 'if (($a = error_get_last()) && $
     { file_put_contents(F_LOGS_ROOT.DIRECTORY_SEPARATOR.\'php_fatal.log\', sprintf(\'E%d "%s" at %s:%d\', $a[\'type\'], $a[\'message\'], $a[\'file\'], $a[\'line\']));
     $i = ob_get_level(); while ($i--) @ob_end_clean(); print \'Fatal error. Sorry :(\'; }'));
 
-/**#@+
- * @internal this will add missing error constants for older PHP
- * @ignore
- */
-if (!defined('E_RECOVERABLE_ERROR'))
-    define('E_RECOVERABLE_ERROR', 4096);
-if (!defined('E_DEPRECATED'))
-    define('E_DEPRECATED', 8192);
-if (!defined('E_USER_DEPRECATED'))
-    define('E_USER_DEPRECATED', 16384);
-/**#@+*/
-
 // here we set an error catcher
 set_error_handler(create_function('$c, $m, $f, $l', 'throw new ErrorException($m, 0, $c, $f, $l);'),
     E_ALL & ~(E_NOTICE | E_WARNING | E_USER_NOTICE | E_USER_WARNING | E_STRICT | E_DEPRECATED | E_USER_DEPRECATED));
 
+// load xhprof
+if (F_DEBUG && extension_loaded('xhprof')) {
+    require_once(F_KERNEL_DIR.DIRECTORY_SEPARATOR.'K3/XhProf.php');
+    K3_XhProf::start();
+}
 
 /**#@+
  * @internal this will build a list of base includes to include in one file
