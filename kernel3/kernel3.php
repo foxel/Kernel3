@@ -19,6 +19,10 @@ define ('F_STARTED', True);
 if (!defined('F_DEBUG'))
     define('F_DEBUG', false);
 
+/** kernel profile flag */
+if (!defined('F_PROFILE'))
+    define('F_PROFILE', F_DEBUG);
+
 // let's check the kernel requirements
 if (version_compare(PHP_VERSION, '5.1.0', '<'))
     die('PHP 5.1.0 required');
@@ -60,8 +64,9 @@ if (!defined('E_USER_DEPRECATED'))
 
 
 Error_Reporting(F_DEBUG ? E_ALL : 0);
-if (F_DEBUG) 
+if (F_DEBUG) {
     ini_set('display_errors', 'On');
+}
 
 if (get_magic_quotes_runtime()) {
     set_magic_quotes_runtime(0);
@@ -78,7 +83,7 @@ set_error_handler(create_function('$c, $m, $f, $l', 'throw new ErrorException($m
     E_ALL & ~(E_NOTICE | E_WARNING | E_USER_NOTICE | E_USER_WARNING | E_STRICT | E_DEPRECATED | E_USER_DEPRECATED));
 
 // load xhprof
-if (F_DEBUG && extension_loaded('xhprof')) {
+if (F_PROFILE && extension_loaded('xhprof')) {
     require_once(F_KERNEL_DIR.DIRECTORY_SEPARATOR.'K3/XhProf.php');
     K3_XhProf::start();
 }

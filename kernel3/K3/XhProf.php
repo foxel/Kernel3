@@ -2,12 +2,22 @@
 
 define('XHPROF_FLAGS_K3_DEFAULT', XHPROF_FLAGS_NO_BUILTINS | XHPROF_FLAGS_MEMORY | XHPROF_FLAGS_CPU);
 
+/**
+ * Facebook XhProf support class
+ * Supports runs storage from facebook github recent version
+ * @link https://github.com/facebook/xhprof/
+ */
 final class K3_XhProf
 {
+    const DEFAULT_SOURCE = 'K3';
+    const DEFAULT_SUFFIX = 'xhprof';
+
     /** @var string */
     protected static $_xhProfRunId = null;
     /** @var string */
-    protected static $_xhProfRunSource = 'K3';
+    protected static $_xhProfRunSource = self::DEFAULT_SOURCE;
+    /** @var string */
+    protected static $_xhProfRunFileSuffix = self::DEFAULT_SUFFIX;
     /** @var resource */
     protected static $_handle = null;
     /** @var int */
@@ -17,9 +27,10 @@ final class K3_XhProf
 
     /**
      * @static
+     * @param string|null source
      * @return boolean
      */
-    public static function start()
+    public static function start($source = null)
     {
         $dir = ini_get('xhprof.output_dir');
         if (empty($dir)) {
@@ -27,7 +38,8 @@ final class K3_XhProf
         }
 
         $xhProfRunId = uniqid();
-        $filename = $dir.DIRECTORY_SEPARATOR.$xhProfRunId.'.'.self::$_xhProfRunSource;
+        self::$_xhProfRunSource = (string) ($source ?: self::DEFAULT_SOURCE);
+        $filename = $dir.DIRECTORY_SEPARATOR.$xhProfRunId.'.'.self::$_xhProfRunSource.'.'.self::$_xhProfRunFileSuffix;
 
         if (!self::$_xhProfRunId && self::$_handle = fopen($filename, 'w')) {
             self::$_xhProfRunId = $xhProfRunId;
