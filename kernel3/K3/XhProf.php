@@ -28,9 +28,10 @@ final class K3_XhProf
     /**
      * @static
      * @param string|null source
+     * @param bool $setHeader
      * @return boolean
      */
-    public static function start($source = null)
+    public static function start($source = null, $setHeader = false)
     {
         $dir = ini_get('xhprof.output_dir');
         if (empty($dir)) {
@@ -45,6 +46,9 @@ final class K3_XhProf
             self::$_xhProfRunId = $xhProfRunId;
             xhprof_enable(self::$_flags);
             register_shutdown_function(array(__CLASS__, 'stop'));
+            if ($setHeader) {
+                header('X-XhProf-QueryString: ', self::getXhProfUIRequest());
+            }
             return true;
         }
 
