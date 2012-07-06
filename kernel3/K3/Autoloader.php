@@ -37,6 +37,8 @@ class K3_Autoloader
     public function registerClassFile($className, $fileName)
     {
         $this->_fixedClassFiles[$className] = (string) $fileName;
+
+        return $this;
     }
 
     public function registerClassPath($dirPath, $nameSpace = null)
@@ -48,6 +50,8 @@ class K3_Autoloader
                 $this->_folders[] = $dirPath;
             }
         }
+
+        return $this;
     }
 
     protected function autoload($className)
