@@ -1054,6 +1054,7 @@ class FVISInterface extends FEventDispatcher
         }
 
         $text = preg_replace('#\$\w+\.\=\s*\<\<\<FTEXT\s+FTEXT;#', '', $text);
+        $text = preg_replace('#\r?\nFTEXT\s*.\s*\<\<\<FTEXT\r?\n#', '', $text);
         $jstext = preg_replace('#\w+\+\=\s*"\s+";#', '', $jstext);
         $out = Array('T' => $text, 'V' => $vars, 'J' => $jstext);
         if ($store_to && is_string($store_to))
