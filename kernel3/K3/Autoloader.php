@@ -60,6 +60,16 @@ class K3_Autoloader
             ? $this->_fixedClassFiles[$className]
             : null;
 
+        if (is_file($fixedFileName)) {
+            include_once($fixedFileName);
+
+            if (!class_exists($className) && !interface_exists($className)) {
+                throw new FException('Error Loading class "'.$className.'" from "'.$fixedFileName.'" file.');
+            }
+
+            return;
+        }
+
         foreach ($this->_folders as $nameSpace => $folder) {
             if ($fixedFileName) {
                 $fileName = $fixedFileName;
@@ -87,6 +97,7 @@ class K3_Autoloader
                 if (!class_exists($className) && !interface_exists($className)) {
                     throw new FException('Error Loading class "'.$className.'" from "'.$fullFile.'" file.');
                 }
+
                 break;
             }
         }
