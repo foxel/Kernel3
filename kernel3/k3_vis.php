@@ -130,8 +130,8 @@ class FVISNode extends FBaseClass // FEventDispatcher
 
     public function addData($varname, $data, $replace = false)
     {
-        if (!$data || !$varname)
-            trigger_error('VIS: no data to add', E_USER_WARNING);
+        if (!$varname)
+            trigger_error('VIS: no varname given to add data', E_USER_WARNING);
         else
         {
             $varname = strtoupper($varname);
@@ -709,7 +709,7 @@ class FVISInterface extends FEventDispatcher
         return null;
     }
 
-    public function addData($node, $varname, $data)
+    public function addData($node, $varname, $data, $replace = false)
     {
         $node = $this->findNode($node);
 
@@ -718,7 +718,7 @@ class FVISInterface extends FEventDispatcher
             return false;
         }
 
-        return $node->addData($varname, $data);
+        return $node->addData($varname, $data, $replace);
     }
 
     public function addDataArray($node, $arr, $prefix = '')
