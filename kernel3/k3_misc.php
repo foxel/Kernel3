@@ -116,14 +116,14 @@ class FDataPool extends FBaseClass implements ArrayAccess
 /** basic event dispatcher class */
 abstract class FEventDispatcher extends FBaseClass
 {
-    private $events = Array();
+    protected $_events = Array();
 
     public function addEventHandler($ev_name, $func_link)
     {
         $ev_name = strtolower($ev_name);
 
         if (is_callable($func_link)) {
-            $this->events[$ev_name][] = $func_link;
+            $this->_events[$ev_name][] = $func_link;
             return true;
         }
 
@@ -135,14 +135,14 @@ abstract class FEventDispatcher extends FBaseClass
     {
         $ev_name = strtolower($ev_name);
 
-        if (!isset($this->events[$ev_name]))
+        if (!isset($this->_events[$ev_name]))
             return false;
 
         $args = (func_num_args() > 1)
             ? array_slice(func_get_args(), 1)
             : Array();
 
-        $ev_arr =& $this->events[$ev_name];
+        $ev_arr =& $this->_events[$ev_name];
         foreach ($ev_arr as $ev_link)
             call_user_func_array($ev_link, $args);
         return true;
@@ -153,13 +153,13 @@ abstract class FEventDispatcher extends FBaseClass
     {
         $ev_name = strtolower($ev_name);
 
-        if (!isset($this->events[$ev_name]))
+        if (!isset($this->_events[$ev_name]))
             return false;
 
         if (!is_array($args))
             $args = Array();
 
-        $ev_arr =& $this->events[$ev_name];
+        $ev_arr =& $this->_events[$ev_name];
         foreach ($ev_arr as $ev_link)
             call_user_func_array($ev_link, $args);
         return true;
@@ -170,14 +170,14 @@ abstract class FEventDispatcher extends FBaseClass
     {
         $ev_name = strtolower($ev_name);
 
-        if (!isset($this->events[$ev_name]))
+        if (!isset($this->_events[$ev_name]))
             return false;
 
         $args = Array(&$var);
         if (func_num_args() > 2)
             $args = array_merge($args, array_slice(func_get_args(), 2));
 
-        $ev_arr =& $this->events[$ev_name];
+        $ev_arr =& $this->_events[$ev_name];
         foreach ($ev_arr as $ev_link)
             call_user_func_array($ev_link, $args);
         return true;

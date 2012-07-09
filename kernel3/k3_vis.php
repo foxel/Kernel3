@@ -287,8 +287,8 @@ class FVISInterface extends FEventDispatcher
     protected $auto_loads = Array();
 
     protected $cPrefix = '';
-    protected $force_compact = true;  // forces to compact CSS/JS data
-    protected $root_node = 0;
+    protected $_forceCompact = true;  // forces to compact CSS/JS data
+    protected $_rootNodeId = 0;
 
     protected $env = null;
 
@@ -342,7 +342,7 @@ class FVISInterface extends FEventDispatcher
 
             array_splice($this->nodes, 1);
             $this->named = Array('PAGE' => 0, 'MAIN' => 0);
-            $this->root_node = 0;
+            $this->_rootNodeId = 0;
         }
 
         return $this;
@@ -356,9 +356,14 @@ class FVISInterface extends FEventDispatcher
         if (!isset($this->nodes[$node]))
             trigger_error('VIS: trying to set a fake node', E_USER_WARNING);
         else
-            $this->root_node = $node;
+            $this->_rootNodeId = $node;
 
         return $this;
+    }
+
+    public function getRootNode()
+    {
+        return $this->nodes[$this->_rootNodeId];
     }
 
     public function setVConsts(array $consts, $no_replace = false)
@@ -581,7 +586,7 @@ class FVISInterface extends FEventDispatcher
             'JS'  => Array(&$this->JS_data,  &$this->VJS_data),
             );
 
-        return $this->nodes[$this->root_node]->parse($force_reparse, $vars);
+        return $this->nodes[$this->_rootNodeId]->parse($force_reparse, $vars);
     }
 
     public function makeCSS()
@@ -791,7 +796,7 @@ class FVISInterface extends FEventDispatcher
 
         $text = trim($text);
 
-        if ($this->force_compact)
+        if ($this->_forceCompact)
             $text = $this->compactHTML($text);
 
         $text = $this->templLang($text);
@@ -1128,7 +1133,7 @@ class FVISInterface extends FEventDispatcher
 
         $Cdata = preg_replace($vars_block, '', $indata);
 
-        if ($this->force_compact || $force_compact)
+        if ($this->_forceCompact || $force_compact)
             $Cdata = $this->compactCSS($Cdata);
 
         $Cdata = preg_replace('#\{(?>(\w+))\}#e', '(isset(\$CSSVars[strtoupper("\1")])) ? \$CSSVars[strtoupper("\1")] : ""', $Cdata);
@@ -1141,7 +1146,7 @@ class FVISInterface extends FEventDispatcher
         if (is_array($constants))
             foreach ($constants as $name=>$val)
                 $Jdata = str_replace('{'.$name.'}', $val, $Jdata);
-        if ($this->force_compact || $force_compact)
+        if ($this->_forceCompact || $force_compact)
             $Jdata = $this->compactJS($Jdata);
         return $Jdata;
     }
