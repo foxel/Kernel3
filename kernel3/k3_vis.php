@@ -82,8 +82,7 @@ class FVISNode extends FBaseClass // FEventDispatcher
 
         $this->VIS->checkVIS($this->type);
 
-        if ($this->flags && self::VISNODE_ARRAY)
-        {
+        if ($this->flags && self::VISNODE_ARRAY) {
             $parts = Array();
             $delimiter = (isset($this->vars['_DELIM'])) ? $this->vars['_DELIM'] : '';
             $i = 0;
@@ -91,9 +90,7 @@ class FVISNode extends FBaseClass // FEventDispatcher
                 if (is_array($data))
                     $parts[] = $this->VIS->parseVIS($this->type, $data + Array('NODE_INDEX' => ++$i));
             $text = implode($delimiter, $parts);
-        }
-        else
-        {
+        } else {
             $vars = $this->vars; // needed not to store duplicates of subnode data while forced reparsing
             $data = Array();
 
@@ -130,17 +127,34 @@ class FVISNode extends FBaseClass // FEventDispatcher
 
     public function addData($varname, $data, $replace = false)
     {
-        if (!$varname)
+        if (!$varname) {
             trigger_error('VIS: no varname given to add data', E_USER_WARNING);
-        else
-        {
-            $varname = strtoupper($varname);
+        } elseif ($data instanceof FVISNode) {
+            return $this->appendChild($varname, $data, $replace);
+        } else { $varname = strtoupper($varname);
             if (is_array($data))
                 $data = FStr::implodeRecursive($data, ' ');
-            if (!isset($this->vars[$varname]) || $replace)
-                $this->vars[$varname] = Array($data);
-            else
-                $this->vars[$varname][] = $data;
+
+            if ($this->flags && self::VISNODE_ARRAY)
+            {
+                foreach ($this->vars as &$varSet) {
+                    if (is_array($varSet)) {
+                        if ($replace || !isset($varSet[$varname]))
+                            $varSet[$varname] = Array($data);
+                        else
+                            $varSet[$varname][] = $data;
+                    }
+                }
+            } else {
+                if ($replace || !isset($this->vars[$varname]))
+                    $this->vars[$varname] = Array($data);
+                else
+                    $this->vars[$varname][] = $data;
+
+                if ($replace && isset($this->subs[$varname])) {
+                    unset($this->subs[$varname]);
+                }
+            }
         }
 
         return $this;
@@ -154,7 +168,7 @@ class FVISNode extends FBaseClass // FEventDispatcher
         {
             if ($this->flags && self::VISNODE_ARRAY)
             {
-                if (is_array($data_arr) && count($data_arr))
+                if (count($data_arr))
                 {
                     $this->vars = Array();
                     $in = 0;
@@ -217,7 +231,7 @@ class FVISNode extends FBaseClass // FEventDispatcher
         return null;
     }
 
-    public function appendChild($varname, FVISNode $node)
+    public function appendChild($varname, FVISNode $node, $replace = false)
     {
         if (!$node || !$varname)
             trigger_error('VIS: no data to add', E_USER_WARNING);
@@ -225,7 +239,14 @@ class FVISNode extends FBaseClass // FEventDispatcher
         {
             $varname = strtoupper($varname);
             // TODO: loops checking
-            $this->subs[$varname][] = $node;
+            if ($replace || !isset($this->subs[$varname]))
+                $this->subs[$varname] = Array($node);
+            else
+                $this->subs[$varname][] = $node;
+
+            if ($replace && isset($this->vars[$varname])) {
+                unset($this->vars[$varname]);
+            }
         }
 
         return $this;
@@ -302,6 +323,7 @@ class FVISInterface extends FEventDispatcher
             'FULLURL'   => array('FStr', 'fullUrl'),
             'HTMLQUOTE' => 'htmlspecialchars',
             'SMARTHTMLQUOTE' => array('FStr', 'smartHTMLSchars'),
+            'URLENCODE' => array('FStr', 'urlencode'),
             'URLEN'     => array('FStr', 'urlencode'),
             'JS_DEF'    => array('FStr', 'JSDefine'),
             'PHP_DEF'   => array('FStr', 'PHPDefine'),
