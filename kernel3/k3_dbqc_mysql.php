@@ -671,16 +671,17 @@ class FDBaseQCmysql
                 if (!is_null($tblPref))
                 {
                     $field = '`'.$field.'`';
-                    if ($tblPref)
+                    if ($tblPref) {
                         $field = '`'.$tblPref.'`.'.$field;
+                    }
                 }
 
-                if (($flags & FDataBase::SQL_USEFUNCS) && ($part = $this->_parseFieldFunc($field, $val, true)))
-                    $string = $string 
+                if (($flags & FDataBase::SQL_USEFUNCS) && ($part = $this->_parseFieldFunc($field, $val, true))) {
+
+                    $string = $string
                         ? '('.$string.')'.$delim.'('.$part.')'
                         : (string) $part;
-                elseif (is_scalar($val))
-                {
+                } elseif (is_scalar($val)) {
                     if (is_bool($val))
                         $val = (int) $val;
                     elseif (is_string($val))
@@ -698,9 +699,7 @@ class FDBaseQCmysql
                     $string = $string 
                         ? '('.$string.')'.$delim.'('.$part.')'
                         : $part;
-                }
-                elseif (is_array($val) && count($val))
-                {
+                } elseif (is_array($val) && count($val)) {
                     /*$val = array_unique($val);
                     sort($val);*/
                     $nvals = array();
@@ -730,9 +729,16 @@ class FDBaseQCmysql
                             ? '('.$string.')'.$delim.'('.$part.')'
                             : $part;
                     }
-                }
-                elseif (is_null($val) && !is_null($tblPref))
-                {
+                } elseif ($val instanceof FDBSelect) {
+                    /** @var $val FDBSelect */
+                    $value = $val->toString();
+                    $part = (is_null($tblPref))
+                        ? preg_replace('#(?<!\w|\\\\)\?#', $value, $field)
+                        : $field.' IN ('.$value.')';
+                    $string = $string
+                        ? '('.$string.')'.$delim.'('.$part.')'
+                        : $part;
+                } elseif (is_null($val) && !is_null($tblPref)) {
                     $part = $field.' IS NULL';
                     $string = $string 
                         ? '('.$string.')'.$delim.'('.$part.')'
