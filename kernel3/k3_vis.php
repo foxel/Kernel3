@@ -73,22 +73,24 @@ class FVISNode extends FBaseClass // FEventDispatcher
         return $this;
     }
 
-    public function parse($force_reparse = false, Array $add_vars = Array())
+    public function parse($force = false, Array $addVars = Array())
     {
         $text = null;
 
-        if ($this->isParsed && !$force_reparse)
+        if ($this->isParsed && !$force)
             return $this->parsed;
 
         $this->VIS->checkVIS($this->type);
 
-        if ($this->flags && self::VISNODE_ARRAY) {
+        if ($this->flags & self::VISNODE_ARRAY) {
             $parts = Array();
             $delimiter = (isset($this->vars['_DELIM'])) ? $this->vars['_DELIM'] : '';
             $i = 0;
-            foreach ($this->vars as $data)
-                if (is_array($data))
+            foreach ($this->vars as $data) {
+                if (is_array($data)) {
                     $parts[] = $this->VIS->parseVIS($this->type, $data + Array('NODE_INDEX' => ++$i));
+                }
+            }
             $text = implode($delimiter, $parts);
         } else {
             $vars = $this->vars; // needed not to store duplicates of subnode data while forced reparsing
@@ -97,16 +99,21 @@ class FVISNode extends FBaseClass // FEventDispatcher
             foreach ($this->subs as $var => $subnodes) {
                 foreach ($subnodes as $subnode) {
                     /* @var FVISNode $subnode */
-                    $vars[$var][] = $subnode->parse($force_reparse);
+                    $vars[$var][] = $subnode->parse($force);
                 }
             }
 
-            foreach ($vars as $var => $vals)
-                $data[$var] = implode(FStr::ENDL, $vals);
+            foreach ($vars as $var => $val) {
+                $data[$var] = implode(FStr::ENDL, $val);
+            }
 
-            if ($add_vars)
-                foreach ($add_vars as $var => $vals)
-                    $data[$var] = implode(FStr::ENDL, $vals);
+            if ($addVars) {
+                foreach ($addVars as $var => $val) {
+                    $data[$var] = is_array($val)
+                        ? FStr::implodeRecursive($val, FStr::ENDL)
+                        : $val;
+                }
+            }
 
             $text = $this->VIS->parseVIS($this->type, $data);
         }
@@ -117,10 +124,11 @@ class FVISNode extends FBaseClass // FEventDispatcher
         return $text;
     }
 
-    public function sort($varname, $rsort = false) // sorting. For array nodes only
+    public function sort($varname, $rsort = false, $flags = SORT_REGULAR) // sorting. For array nodes only
     {
-        if ($this->flags && self::VISNODE_ARRAY)
-            F2DArray::sort($this->vars, $varname, $rsort);
+        if ($this->flags & self::VISNODE_ARRAY) {
+            F2DArray::sort($this->vars, strtoupper($varname), $rsort, $flags);
+        }
 
         return $this;
     }
@@ -131,11 +139,12 @@ class FVISNode extends FBaseClass // FEventDispatcher
             trigger_error('VIS: no varname given to add data', E_USER_WARNING);
         } elseif ($data instanceof FVISNode) {
             return $this->appendChild($varname, $data, $replace);
-        } else { $varname = strtoupper($varname);
+        } else {
+            $varname = strtoupper($varname);
             if (is_array($data))
                 $data = FStr::implodeRecursive($data, ' ');
 
-            if ($this->flags && self::VISNODE_ARRAY)
+            if ($this->flags & self::VISNODE_ARRAY)
             {
                 foreach ($this->vars as &$varSet) {
                     if (is_array($varSet)) {
@@ -162,25 +171,21 @@ class FVISNode extends FBaseClass // FEventDispatcher
 
     public function addDataArray(array $data_arr, $prefix = '', $delimiter = '')
     {
-        if (empty($data_arr) || !is_string($prefix))
-            trigger_error('VIS: no data to add', E_USER_WARNING);
-        else
-        {
-            if ($this->flags && self::VISNODE_ARRAY)
-            {
-                if (count($data_arr))
-                {
+        if (empty($data_arr) || !is_string($prefix)) {
+           trigger_error('VIS: no data to add', E_USER_WARNING);
+        } else { if ($this->flags & self::VISNODE_ARRAY) {
+                if (count($data_arr)) {
                     $this->vars = Array();
                     $in = 0;
-                    foreach ($data_arr as $arr)
-                        if (is_array($arr))
-                        {
+
+                    foreach ($data_arr as $arr) {
+                        if (is_array($arr)) {
                             $this->vars[$in] = Array();
-                            foreach ($arr as $key => $var)
-                            {
+                            foreach ($arr as $key => $var) {
                                 $key = strtoupper($prefix.$key);
-                                if (is_array($var))
+                                if (is_array($var)) {
                                     $var = FStr::implodeRecursive($var, ' ');
+                                }
                                 $this->vars[$in][$key] = $var;
                             }
 
@@ -188,17 +193,17 @@ class FVISNode extends FBaseClass // FEventDispatcher
 
                             $in++;
                         }
+                    }
 
                     $this->vars[0]['_IS_FIRST'] = '1';
                     $this->vars[$in-1]['_IS_LAST'] = '1';
                 }
 
-                if (strlen($delimiter))
+                if (strlen($delimiter)) {
                     $this->vars['_DELIM'] = (string) $delimiter;
-            }
-            else
-                foreach ($data_arr as $key => $var)
-                {
+                }
+            } else {
+                foreach ($data_arr as $key => $var) {
                     $key = strtoupper($prefix.$key);
                     if (is_array($var))
                         $var = FStr::implodeRecursive($var, ' ');
@@ -207,6 +212,7 @@ class FVISNode extends FBaseClass // FEventDispatcher
                     else
                         $this->vars[$key][] = $var;
                 }
+            }
         }
 
         return $this;
@@ -224,20 +230,20 @@ class FVISNode extends FBaseClass // FEventDispatcher
         if (!$varname)
             return null;
 
-        if ($node = $this->VIS->createNode($template, $data_arr, $globname))
-            if ($this->appendChild($varname, $node))
+        if ($node = $this->VIS->createNode($template, $data_arr, $globname)) {
+            if ($this->appendChild($varname, $node)) {
                 return $node;
+            }
+        }
 
         return null;
     }
 
     public function appendChild($varname, FVISNode $node, $replace = false)
     {
-        if (!$node || !$varname)
+        if (!$node || !$varname) {
             trigger_error('VIS: no data to add', E_USER_WARNING);
-        else
-        {
-            $varname = strtoupper($varname);
+        } else { $varname = strtoupper($varname);
             // TODO: loops checking
             if ($replace || !isset($this->subs[$varname]))
                 $this->subs[$varname] = Array($node);
