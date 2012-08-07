@@ -194,6 +194,7 @@ unset($kernel_codecache_dir, $base_modules_files, $base_modules_stats, $base_mod
  * @property FCaptcha $Captcha
  * @property FParser $Parser
  * @property FMetaFileFactory $MetaFile
+ * @property K3_Mime $Mime
  */
 class F extends FEventDispatcher
 {
@@ -251,8 +252,10 @@ class F extends FEventDispatcher
 
             foreach ($CL_Config as $mod => $cfg)
             {
-                $this->classes[$mod] = ($cfg[1]) ? array_shift($cfg) : 'F'.$mod;
-                $this->Autoloader->registerClassFile($this->classes[$mod], array_shift($cfg));
+                $this->classes[$mod] = $class = array_shift($cfg);
+                if ($file = array_shift($cfg)) {
+                    $this->Autoloader->registerClassFile($class, $file);
+                }
             }
         }
     }

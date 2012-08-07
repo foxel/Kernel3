@@ -25,6 +25,7 @@ Captcha  => FCaptcha|k3_captcha.php
 Mail     => FMail|k3_mailer.php
 FlexyStore => FFlexyStoreFactory|k3_flexystore.php
 MPC      => FMPCFactory|k3_mpc.php
+Mime     => K3_Mime
 # compatibility failback
 GPC       => FGPC|k3_request.php
 HTTP      => FHTTPInterface|k3_http.php
