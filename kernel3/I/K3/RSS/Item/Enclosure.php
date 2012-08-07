@@ -19,22 +19,18 @@
  * along with Kernel 3. If not, see <http://www.gnu.org/licenses/>.
  */
 
-interface I_K3_RSS_Item
+/**
+ * @link http://www.rssboard.org/rss-profile#element-channel-item-enclosure
+ */
+interface I_K3_RSS_Item_Enclosure
 {
+    /**
+     * return 0 for unknown length
+     * @return int
+     */
+    public function getLength();
     /** @return string */
-    public function getTitle();
+    public function getType();
     /** @return string */
-    public function getLink();
-    /** @return string */
-    public function getDescription();
-    /** @return string */
-    public function getAuthor();
-    /** @return string */
-    public function getGUID();
-    /** @return string */
-    public function getPubDate();
-    /** @return string[] */
-    public function getCategories();
-    /** @return I_K3_RSS_Item_Enclosure[] */
-    public function getEnclosures();
+    public function getUrl();
 }

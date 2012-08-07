@@ -35,6 +35,8 @@ class K3_RSS_Item implements I_K3_RSS_Item
     protected $_pubDate = null;
     /** @var string[] */
     protected $_categories = array();
+    /** @var I_K3_RSS_Item_Enclosure[] */
+    protected $_enclosures = array();
 
     /**
      * @param array|object $data
@@ -124,5 +126,19 @@ class K3_RSS_Item implements I_K3_RSS_Item
         return $this->_categories;
     }
 
+    /**
+     * @return I_K3_RSS_Item_Enclosure|null
+     */
+    public function getEnclosures()
+    {
+        return $this->_enclosures;
+    }
 
+    /**
+     * @param I_K3_RSS_Item_Enclosure $enclosure
+     */
+    public function addEnclosure(I_K3_RSS_Item_Enclosure $enclosure)
+    {
+        $this->_enclosures[] = $enclosure;
+    }
 }

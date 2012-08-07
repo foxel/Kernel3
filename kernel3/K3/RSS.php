@@ -86,6 +86,14 @@ class K3_RSS
         foreach ($itemData->getCategories() as $category) {
             $item->addChild('category', $category);
         }
+        $enclosuresData = $itemData->getEnclosures();
+        foreach ($enclosuresData as $enclosureData) {
+            /** @var $enclosureData I_K3_RSS_Item_Enclosure */
+            $enclosure = $item->addChild('enclosure');
+            $enclosure->addAttribute('url', $enclosureData->getUrl());
+            $enclosure->addAttribute('type', $enclosureData->getType());
+            $enclosure->addAttribute('length', $enclosureData->getLength());
+        }
 
         return $this;
     }
