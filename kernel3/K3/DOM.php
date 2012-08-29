@@ -38,8 +38,9 @@ class K3_DOM extends DOMDocument
             $item->parentNode->removeChild($item);
         }
 
+        // TODO: improve this list or move to allowed tags and attributes
         $forbiddenAttributes = array(
-            'onload', 'onunload', 'onabort',
+            'onload', 'onunload', 'onabort', 'onerror',
             'onblur', 'onchange', 'onfocus', 'onreset', 'onselect', 'onsubmit',
             'onkeydown', 'onkeypress', 'onkeyup',
             'onclick', 'ondblclick', 'onmousedown', 'onmouseup', 'onmousemove', 'onmouseout', 'onmouseover',
