@@ -327,6 +327,7 @@ class FVISInterface extends FEventDispatcher
         $this->named = Array('PAGE' => 0, 'MAIN' => 0);
         $this->func_parsers = Array(
             'FULLURL'   => array('FStr', 'fullUrl'),
+            'CAST'      => array('FStr', 'cast'),
             'HTMLQUOTE' => 'htmlspecialchars',
             'SMARTHTMLQUOTE' => array('FStr', 'smartHTMLSchars'),
             'URLENCODE' => array('FStr', 'urlencode'),
@@ -359,6 +360,10 @@ class FVISInterface extends FEventDispatcher
             'NULL'    => null,
             'TIME'    => F()->Timer->qTime(),
             'ROOTURL' => $this->env->server->rootUrl,
+            'CAST_HEX'  => FStr::HEX,
+            'CAST_HTML' => FStr::HTML,
+            'CAST_WORD' => FStr::WORD,
+            'CAST_PATH' => FStr::UNIXPATH, // unix always
         );
 
         if (!$keep_nodes)
