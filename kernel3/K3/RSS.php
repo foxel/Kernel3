@@ -80,7 +80,7 @@ class K3_RSS
         $item->addChild('title', $itemData->getTitle());
         $item->addChild('link', $itemData->getLink());
         $item->addChild('description', $itemData->getDescription());
-        $item->addChild('giud', $itemData->getGUID());
+        $item->addChild('guid', $itemData->getGUID());
         $item->addChild('pubDate', $itemData->getPubDate());
         $item->addChild('author', $itemData->getAuthor());
         foreach ($itemData->getCategories() as $category) {
