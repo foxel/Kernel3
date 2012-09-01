@@ -21,9 +21,9 @@
 
 class K3_RSS
 {
-    /** @var SimpleXMLElement */
+    /** @var DOMDocument */
     protected $_xml;
-    /** @var SimpleXMLElement */
+    /** @var DOMElement */
     protected $_channel;
 
     protected static $_channelAttributes = array(
@@ -40,11 +40,20 @@ class K3_RSS
      */
     public function __construct(array $params, array $items = array())
     {
-        $this->_xml = new SimpleXMLElement('<?xml version="1.0" encoding="'.F::INTERNAL_ENCODING.'"?><rss version="2.0" />');
-        $this->_channel = $this->_xml->addChild('channel');
+        $this->_xml = new K3_DOM('1.0', F::INTERNAL_ENCODING);
+        $this->_xml->appendChild($rssNode = $this->_xml->createElement('rss'));
+        $rssNode->setAttribute('version', '2.0');
+        $rssNode->appendChild($this->_channel = $this->_xml->createElement('channel'));
 
         foreach (self::$_channelAttributes as $attribute => $defaultValue) {
-            $this->_channel->addChild($attribute, isset($params[$attribute]) ? $params[$attribute] : $defaultValue);
+            $this->_channel->appendChild($this->_xml->createElement($attribute, isset($params[$attribute]) ? $params[$attribute] : $defaultValue));
+        }
+
+        if (isset($params['feedLink']) && $feedLink = $params['feedLink']) {
+            $this->_channel->appendChild($linkNode = $this->_xml->createElementNS('http://www.w3.org/2005/Atom', 'atom:link'));
+            $linkNode->setAttribute('href', $feedLink);
+            $linkNode->setAttribute('rel', 'self');
+            $linkNode->setAttribute('type', 'application/rss+xml');
         }
 
         if (!empty($items)) {
@@ -75,24 +84,32 @@ class K3_RSS
             $itemData = new K3_RSS_Item($itemData);
         }
 
-        $item = $this->_channel->addChild('item');
+        $item = $this->_channel->appendChild($this->_xml->createElement('item'));
 
-        $item->addChild('title', $itemData->getTitle());
-        $item->addChild('link', $itemData->getLink());
-        $item->addChild('description', $itemData->getDescription());
-        $item->addChild('guid', $itemData->getGUID());
-        $item->addChild('pubDate', $itemData->getPubDate());
-        $item->addChild('author', $itemData->getAuthor());
-        foreach ($itemData->getCategories() as $category) {
-            $item->addChild('category', $category);
+        $item->appendChild($this->_xml->createElement('title', $itemData->getTitle()));
+        $item->appendChild($this->_xml->createElement('link', $itemData->getLink()));
+        $item->appendChild($description = $this->_xml->createElement('description'));
+        $description->appendChild($this->_xml->createCDATASection($itemData->getDescription()));
+        $item->appendChild($this->_xml->createElement('pubDate', $itemData->getPubDate()));
+        $item->appendChild($this->_xml->createElement('author', $itemData->getAuthor()));
+
+        $guid = $itemData->getGUID();
+        $item->appendChild($guidNode = $this->_xml->createElement('guid', $guid));
+        if (FStr::isUrl($guid) !== 1) {
+            $guidNode->setAttribute('isPermaLink', 'false');
         }
+
+        foreach ($itemData->getCategories() as $category) {
+            $item->appendChild($this->_xml->createElement('category', $category));
+        }
+
         $enclosuresData = $itemData->getEnclosures();
         foreach ($enclosuresData as $enclosureData) {
             /** @var $enclosureData I_K3_RSS_Item_Enclosure */
-            $enclosure = $item->addChild('enclosure');
-            $enclosure->addAttribute('url', $enclosureData->getUrl());
-            $enclosure->addAttribute('type', $enclosureData->getType());
-            $enclosure->addAttribute('length', $enclosureData->getLength());
+            $item->appendChild($enclosure = $this->_xml->createElement('enclosure'));
+            $enclosure->setAttribute('url', $enclosureData->getUrl());
+            $enclosure->setAttribute('type', $enclosureData->getType());
+            $enclosure->setAttribute('length', $enclosureData->getLength());
         }
 
         return $this;
@@ -103,7 +120,7 @@ class K3_RSS
      */
     public function toXML()
     {
-        return $this->_xml->asXML();
+        return $this->_xml->saveXML();
     }
 
     /**
