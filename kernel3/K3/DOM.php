@@ -63,4 +63,31 @@ class K3_DOM extends DOMDocument
 
         return $this;
     }
+
+    /**
+     * sets all HTML url attributes to contain full urls
+     *
+     * @return K3_DOM
+     */
+    public function fixFullUrls()
+    {
+        $attributes = array('href', 'action', 'src');
+        $xpathSelector = array();
+        foreach ($attributes as $attributeName) {
+            $xpathSelector[] = "//*[@$attributeName]";
+        }
+        $xpath = new DOMXPath($this);
+
+        $nodes = $xpath->query(implode('|', $xpathSelector));
+        foreach ($nodes as $node) {
+            /** @var $node DOMElement */
+            foreach ($attributes as $attributeName) {
+                if ($url = $node->getAttribute($attributeName)) {
+                    $node->setAttribute($attributeName, FStr::fullUrl($url));
+                }
+            }
+        }
+
+        return $this;
+    }
 }
