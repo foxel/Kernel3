@@ -25,6 +25,8 @@ class K3_RSS
     protected $_xml;
     /** @var DOMElement */
     protected $_channel;
+    /** @var K3_Environment */
+    protected $_env;
 
     protected static $_channelAttributes = array(
         'title'       => 'K3 RSS',
@@ -37,13 +39,22 @@ class K3_RSS
     /**
      * @param array $params
      * @param array[]|object[] $items
+     * @param K3_Environment $env
      */
-    public function __construct(array $params, array $items = array())
+    public function __construct(array $params, array $items = array(), K3_Environment $env = null)
     {
+        $this->_env = $env
+            ? $env
+            : F()->appEnv;
+
         $this->_xml = new K3_DOM('1.0', F::INTERNAL_ENCODING);
         $this->_xml->appendChild($rssNode = $this->_xml->createElement('rss'));
         $rssNode->setAttribute('version', '2.0');
         $rssNode->appendChild($this->_channel = $this->_xml->createElement('channel'));
+
+        if (isset($params['link'])) {
+            $params['link'] = FStr::fullUrl($params['link'], false, '', $this->_env);
+        }
 
         foreach (self::$_channelAttributes as $attribute => $defaultValue) {
             $this->_channel->appendChild($this->_xml->createElement($attribute, isset($params[$attribute]) ? $params[$attribute] : $defaultValue));
@@ -51,7 +62,7 @@ class K3_RSS
 
         if (isset($params['feedLink']) && $feedLink = $params['feedLink']) {
             $this->_channel->appendChild($linkNode = $this->_xml->createElementNS('http://www.w3.org/2005/Atom', 'atom:link'));
-            $linkNode->setAttribute('href', $feedLink);
+            $linkNode->setAttribute('href', FStr::fullUrl($feedLink, false, '', $this->_env));
             $linkNode->setAttribute('rel', 'self');
             $linkNode->setAttribute('type', 'application/rss+xml');
         }
@@ -87,7 +98,7 @@ class K3_RSS
         $item = $this->_channel->appendChild($this->_xml->createElement('item'));
 
         $item->appendChild($this->_xml->createElement('title', $itemData->getTitle()));
-        $item->appendChild($this->_xml->createElement('link', $itemData->getLink()));
+        $item->appendChild($this->_xml->createElement('link', FStr::fullUrl($itemData->getLink(), false, '', $this->_env)));
         $item->appendChild($description = $this->_xml->createElement('description'));
         $description->appendChild($this->_xml->createCDATASection($itemData->getDescription()));
         $item->appendChild($this->_xml->createElement('pubDate', $itemData->getPubDate()));
@@ -107,7 +118,7 @@ class K3_RSS
         foreach ($enclosuresData as $enclosureData) {
             /** @var $enclosureData I_K3_RSS_Item_Enclosure */
             $item->appendChild($enclosure = $this->_xml->createElement('enclosure'));
-            $enclosure->setAttribute('url', $enclosureData->getUrl());
+            $enclosure->setAttribute('url', FStr::fullUrl($enclosureData->getUrl(), false, '', $this->_env));
             $enclosure->setAttribute('type', $enclosureData->getType());
             $enclosure->setAttribute('length', $enclosureData->getLength());
         }

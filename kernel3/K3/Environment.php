@@ -71,12 +71,15 @@ class K3_Environment extends FEventDispatcher
 
     /**
      * @param  string $name
-     * @param  mixed $element
+     * @param  K3_Environment_Element|mixed $element
      * @return K3_Environment
      */
     public function put($name, $element)
     {
         $this->_elements[$name] = $element;
+        if ($element instanceof K3_Environment_Element) {
+            $element->setEnvironment($this);
+        }
 
         return $this;
     }
