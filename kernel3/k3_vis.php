@@ -399,6 +399,11 @@ class FVISInterface extends FEventDispatcher
         return $this->nodes[$this->_rootNodeId];
     }
 
+    /**
+     * @param array $consts
+     * @param bool $no_replace
+     * @return FVISInterface
+     */
     public function setVConsts(array $consts, $no_replace = false)
     {
         $this->vis_consts = ($no_replace)
@@ -408,6 +413,11 @@ class FVISInterface extends FEventDispatcher
         return $this;
     }
 
+    /**
+     * @param string $name
+     * @param callable $callback
+     * @return FVISInterface
+     */
     public function addFuncParser($name, $callback)
     {
         if (!$name || !is_callable($callback))
@@ -423,7 +433,12 @@ class FVISInterface extends FEventDispatcher
         return $this;
     }
 
-    public function addAutoLoadDir($directory, $file_suff = '.vis')
+    /**
+     * @param $directory
+     * @param string $fileSuffix
+     * @return FVISInterface
+     */
+    public function addAutoLoadDir($directory, $fileSuffix = '.vis')
     {
         $directory = FStr::path($directory);
         $hash = FStr::pathHash($directory);
@@ -442,7 +457,7 @@ class FVISInterface extends FEventDispatcher
             if ($dir = opendir($directory))
             {
                 $aldata = Array(0 => $directory);
-                $preg_pattern = '#'.preg_quote($file_suff, '#').'$#';
+                $preg_pattern = '#'.preg_quote($fileSuffix, '#').'$#';
                 while ($entry = readdir($dir))
                 {
                     $filename = $directory.DIRECTORY_SEPARATOR.$entry;

@@ -137,7 +137,7 @@ class FParser extends FEventDispatcher
     /**
      * @param string $mask
      * @param string $data
-     * @param callback|null $func
+     * @param callable|null $func
      * @return bool
      */
     public function addPreg($mask, $data, $func = null)

@@ -44,7 +44,7 @@ abstract class K3_Request extends K3_Environment_Element implements I_K3_Request
     const UPLOAD_MOVED         = 0x20; // this means that file already moved
 
     /**
-     * @var callback $stringRecodeFunc
+     * @var callable $stringRecodeFunc
      */
     protected $stringRecodeFunc = null;
 

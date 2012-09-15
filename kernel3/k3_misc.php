@@ -118,6 +118,11 @@ abstract class FEventDispatcher extends FBaseClass
 {
     protected $_events = Array();
 
+    /**
+     * @param string $ev_name
+     * @param callable $func_link
+     * @return bool
+     */
     public function addEventHandler($ev_name, $func_link)
     {
         $ev_name = strtolower($ev_name);
@@ -336,69 +341,94 @@ final class FMisc
 
     static public function initCore()
     {
-        if (self::$inited)
+        if (self::$inited) {
             return;
-            
+        }
+
         self::$cbCode = rand();
         register_shutdown_function(Array(__CLASS__, 'phpShutdownCallback'), self::$cbCode);
         self::$inited = true;
     }
-    
+
     static public function phpShutdownCallback($code)
     {
-        if ($code != self::$cbCode)
+        if ($code != self::$cbCode) {
             return;
+        }
 
         while (!is_null($cBack = array_pop(self::$sdCBacks)))
         {
             $func = array_shift($cBack);
-            if (is_callable($func))
+            if (is_callable($func)) {
                 call_user_func_array($func, $cBack);
+            }
         }
     }
-    
+
     // system functions
     static public function obFree()
     {
         $i = ob_get_level();
-        while ($i--)
+        while ($i--) {
             ob_end_clean();
+        }
+
         return (ob_get_level() == 0);
     }
- 
-    static public function addShutdownCallback()
+
+    /**
+     * @param callable $callback
+     * @param mixed $_ [optional]
+     */
+    static public function addShutdownCallback($callback, $_ = null)
     {
         $cBack = func_get_args();
-        
+
         array_push(self::$sdCBacks, $cBack);
     }
 
+    /**
+     * @param string $path
+     * @param int|string $chmod
+     * @return bool
+     */
     static public function mkdirRecursive($path, $chmod = null)
     {
-        if (is_dir($path))
+        if (is_dir($path)) {
             return true;
-        elseif (is_file($path))
+        } elseif (is_file($path)) {
             return false;
+        }
 
-        if (!is_int($chmod))
+        if (!is_int($chmod)) {
             $chmod = 0755;
+        }
 
         $pdir = dirname($path);
 
-        if (!is_dir($pdir))
+        if (!is_dir($pdir)) {
             self::mkdirRecursive($pdir, $chmod);
+        }
 
         return mkdir($path, $chmod);
     }
 
+    /**
+     * @param string $datasource
+     * @param int $format
+     * @param bool $force_upcase
+     * @param string $explode_by
+     * @return mixed
+     */
     static public function loadDatafile($datasource, $format = self::DF_PLAIN, $force_upcase = false, $explode_by = '')
     {
         $indata = ($format & self::DF_FROMSTR)
             ? $datasource
             : (file_exists($datasource) ? file_get_contents($datasource) : false);
 
-        if ($indata == false)
+        if ($indata == false) {
             return false;
+        }
 
         $format &= 0xf;
 
@@ -529,8 +559,14 @@ final class FMisc
         return $res;
     }
 
-    // recursive iterator based on 'linearize'
-    // $do_change sets a changing parse mode
+    /**
+     * recursive iterator based on 'linearize'
+     *
+     * @param mixed $data
+     * @param callable $func_link
+     * @param bool $do_change sets a changing parse mode
+     * @return bool
+     */
     static public function iterate(&$data, $func_link, $do_change = false)
     {
         if (!is_callable($func_link))
@@ -643,7 +679,7 @@ class F2DArray
 
         return $result;
     }
-    
+
     static public function toVector($array, $keycol, $valcol)
     {
         if (!is_array($array))
