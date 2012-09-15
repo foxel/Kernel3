@@ -132,7 +132,7 @@ abstract class K3_Request extends K3_Environment_Element implements I_K3_Request
      */
     public function getURLParams()
     {
-        $res = Array();
+        $res = array();
         parse_str(parse_url($this->url, PHP_URL_QUERY), $res);
         return $res;
     }

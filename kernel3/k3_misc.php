@@ -33,7 +33,7 @@ if (!defined('F_STARTED'))
 /** base kernel class */
 abstract class FBaseClass
 {
-    protected $pool = Array();
+    protected $pool = array();
 
     public function __get($name)
     {
@@ -79,7 +79,7 @@ abstract class FBaseClass
 /** data pool class for quick storing read-only data */
 class FDataPool extends FBaseClass implements ArrayAccess
 {
-    public function __construct(Array &$data, $byLink = false)
+    public function __construct(array &$data, $byLink = false)
     {
         if ($byLink)
             $this->pool = &$data;
@@ -116,7 +116,7 @@ class FDataPool extends FBaseClass implements ArrayAccess
 /** basic event dispatcher class */
 abstract class FEventDispatcher extends FBaseClass
 {
-    protected $_events = Array();
+    protected $_events = array();
 
     /**
      * @param string $ev_name
@@ -145,7 +145,7 @@ abstract class FEventDispatcher extends FBaseClass
 
         $args = (func_num_args() > 1)
             ? array_slice(func_get_args(), 1)
-            : Array();
+            : array();
 
         $ev_arr =& $this->_events[$ev_name];
         foreach ($ev_arr as $ev_link)
@@ -154,7 +154,7 @@ abstract class FEventDispatcher extends FBaseClass
     }
 
     // variant with arrayed args (references inside array may be used)
-    protected function throwEventArr($ev_name, $args = Array())
+    protected function throwEventArr($ev_name, $args = array())
     {
         $ev_name = strtolower($ev_name);
 
@@ -162,7 +162,7 @@ abstract class FEventDispatcher extends FBaseClass
             return false;
 
         if (!is_array($args))
-            $args = Array();
+            $args = array();
 
         $ev_arr =& $this->_events[$ev_name];
         foreach ($ev_arr as $ev_link)
@@ -178,7 +178,7 @@ abstract class FEventDispatcher extends FBaseClass
         if (!isset($this->_events[$ev_name]))
             return false;
 
-        $args = Array(&$var);
+        $args = array(&$var);
         if (func_num_args() > 2)
             $args = array_merge($args, array_slice(func_get_args(), 2));
 
@@ -286,7 +286,7 @@ class StaticInstance
     public function __call($m, $data)
     {
         if ($this->c && method_exists($this->c, $m))
-            return call_user_func_array(Array($this->c, $m), $data);
+            return call_user_func_array(array($this->c, $m), $data);
         return null;
     }
 
@@ -294,7 +294,7 @@ class StaticInstance
     {
         if ($this->c) {
             return method_exists($this->c, 'get')
-                ? call_user_func(Array($this->c, 'get'), $p)
+                ? call_user_func(array($this->c, 'get'), $p)
                 : @constant($this->c.'::'.$p);
         }
 
@@ -331,9 +331,9 @@ final class FMisc
     const DF_BLOCK = 4;
     const DF_FROMSTR = 16; //flag
 
-    private static $dfMasks  = Array('', '', '#^\s*([\w\-\.\/]+)\s*=>(.*)$#m', '#^((?>\w+)):(.*?)\r?\n---#sm', '#<<\+ \'(?>(\w+))\'>>(.*?)<<- \'\\1\'>>#s');
+    private static $dfMasks  = array('', '', '#^\s*([\w\-\.\/]+)\s*=>(.*)$#m', '#^((?>\w+)):(.*?)\r?\n---#sm', '#<<\+ \'(?>(\w+))\'>>(.*?)<<- \'\\1\'>>#s');
     private static $cbCode   = false;
-    private static $sdCBacks = Array();
+    private static $sdCBacks = array();
     private static $inited   = false;
 
     // system private functions
@@ -346,7 +346,7 @@ final class FMisc
         }
 
         self::$cbCode = rand();
-        register_shutdown_function(Array(__CLASS__, 'phpShutdownCallback'), self::$cbCode);
+        register_shutdown_function(array(__CLASS__, 'phpShutdownCallback'), self::$cbCode);
         self::$inited = true;
     }
 
@@ -439,8 +439,8 @@ final class FMisc
             case self::DF_SLINE:
             case self::DF_MLINE:
             case self::DF_BLOCK:
-                $matches = Array();
-                $arr = Array();
+                $matches = array();
+                $arr = array();
                 preg_match_all(self::$dfMasks[$format], $indata, $matches);
                 if (is_array($matches[1]))
                 {
@@ -466,9 +466,9 @@ final class FMisc
     // checks if given timestamp is in DST period
     static public function timeDST($time, $tz = 0, $style = '')
     {
-        static $styles = Array(
-            'eur' => Array('+m' => 3, '+d' => 25, '+wd' => 0, '+h' => 2, '-m' => 10, '-d' => 25, '-wd' => 0, '-h' => 2),
-            'usa' => Array('+m' => 3, '+d' =>  8, '+wd' => 0, '+h' => 2, '-m' => 11, '-d' =>  1, '-wd' => 0, '-h' => 2),
+        static $styles = array(
+            'eur' => array('+m' => 3, '+d' => 25, '+wd' => 0, '+h' => 2, '-m' => 10, '-d' => 25, '-wd' => 0, '-h' => 2),
+            'usa' => array('+m' => 3, '+d' =>  8, '+wd' => 0, '+h' => 2, '-m' => 11, '-d' =>  1, '-wd' => 0, '-h' => 2),
             );
         static $defstyle = 'eur';
 
@@ -547,7 +547,7 @@ final class FMisc
     // usefull for iterating complex data trees
     static public function linearize(&$data)
     {
-        $res = Array();
+        $res = array();
         if (is_scalar($data))
             $res[] =& $data;
         if (is_array($data) || is_object($data))
@@ -575,7 +575,7 @@ final class FMisc
         $linear = FMisc::linearize($data);
         $args = (func_num_args() > 3)
             ? array_slice(func_get_args(), 3)
-            : Array();
+            : array();
         array_unshift($args, 0);
 
         if ($do_change) // selecting iteration mode here (optimization)
@@ -607,7 +607,7 @@ class F2DArray
     {
         if (!is_array($array))
             return $array;
-        $resorter = Array();
+        $resorter = array();
         foreach ($array as $key=>$val)
         {
             if (!is_array($val) || !isset($val[$field]))
@@ -616,14 +616,14 @@ class F2DArray
                 $skey = $val[$field];
 
             if (!isset($resorter[$skey]))
-                $resorter[$skey] = Array();
+                $resorter[$skey] = array();
             $resorter[$skey][$key] = $val;
         }
         if ($rsort)
             krsort($resorter, $sort_flags);
         else
             ksort($resorter, $sort_flags);
-        $array = Array();
+        $array = array();
         foreach ($resorter as $valblock)
             $array+= $valblock;
 
@@ -634,7 +634,7 @@ class F2DArray
     {
         if (!is_array($array))
             return $array;
-        $narray = Array();
+        $narray = array();
         foreach ($array as $val)
         {
             if (!is_array($val) || !isset($val[$field]))
@@ -663,10 +663,10 @@ class F2DArray
         if (!is_array($fields))
         {
             $get_one = true;
-            $fields = Array(0 => $fields);
+            $fields = array(0 => $fields);
         }
 
-        $result = Array();
+        $result = array();
 
         foreach ($array as $key => $row)
             foreach($fields as $fkey => $field)
@@ -684,7 +684,7 @@ class F2DArray
     {
         if (!is_array($array))
             return $array;
-        $narray = Array();
+        $narray = array();
         foreach ($array as $val)
         {
             if (!is_array($val))
@@ -708,7 +708,7 @@ class F2DArray
 
     static public function tree($array, $by_id = 'id', $by_par = 'parent', $root_id = 0, $by_lvl = 't_level')
     {
-        $itm_pars = $itm_tmps = Array();
+        $itm_pars = $itm_tmps = array();
 
         foreach ($array as $item) // temporary data dividing
         {
@@ -717,9 +717,9 @@ class F2DArray
         }
         unset ($array);
 
-        $out_tree = Array();
+        $out_tree = array();
         $cur_itm = $root_id;
-        $cstack = Array();
+        $cstack = array();
         while (count($itm_pars)) // tree resorting
         {
             if ($childs = array_keys($itm_pars, $cur_itm))

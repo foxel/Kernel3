@@ -39,9 +39,9 @@ class FCache
     //const LIFETIME = 300; // 5 mins cache lifetime - debus needs
     const TEMPPREF = 'TEMP.';
 
-    static private $chdata = Array();
-    static private $got_cache = Array();
-    static private $upd_cache = Array();
+    static private $chdata = array();
+    static private $got_cache = array();
+    static private $upd_cache = array();
     static private $cache_folder = '';
     static private $qTime = 0;
 
@@ -62,7 +62,7 @@ class FCache
         self::$qTime = time();
         if (!is_dir(self::$cache_folder))
             FMisc::mkdirRecursive(self::$cache_folder);
-        FMisc::addShutdownCallback(Array(__CLASS__, 'close'));
+        FMisc::addShutdownCallback(array(__CLASS__, 'close'));
     }
 
     // cache control functiond
@@ -129,14 +129,14 @@ class FCache
             }
         }
 
-        self::$upd_cache = Array();
+        self::$upd_cache = array();
         return true;
     }
 
     static public function clear()
     {
-        self::$chdata = Array();
-        self::$upd_cache = Array();
+        self::$chdata = array();
+        self::$upd_cache = array();
 
         self::CFS_Clear();
 
@@ -168,7 +168,7 @@ class FCache
         $folder = rtrim($folder, '/');
 
         $folder = (strpos($folder, self::$cache_folder.'/') === 0) ? $folder : self::$cache_folder;
-        $stack = Array();
+        $stack = array();
         if (is_dir($folder) && $dir = opendir($folder)) {
             do {
                 $dirNotEmpty = true;
@@ -182,7 +182,7 @@ class FCache
                             }
                         } elseif (is_dir($entry)) {
                             if ($ndir = opendir($entry)) {
-                                array_push($stack, Array($dir, $folder));
+                                array_push($stack, array($dir, $folder));
                                 $dir = $ndir;
                                 $folder = $entry;
                             }

@@ -107,11 +107,11 @@ class K3_Session extends K3_Environment_Element
 
             if (!($this->mode & self::MODE_NOURLS) && ($this->mode & self::MODE_URLS)) // TODO: allowing from config
             {
-                $this->env->response->addEventHandler('HTML_parse', Array($this, 'HTMLURLsAddSID') );
-                $this->env->response->addEventHandler('URL_Parse', Array($this, 'addSID') );
+                $this->env->response->addEventHandler('HTML_parse', array($this, 'HTMLURLsAddSID') );
+                $this->env->response->addEventHandler('URL_Parse', array($this, 'addSID') );
             }
 
-            FMisc::addShutdownCallback(Array(&$this, 'close'));
+            FMisc::addShutdownCallback(array(&$this, 'close'));
 
             return true;
         }
@@ -127,7 +127,7 @@ class K3_Session extends K3_Environment_Element
         $this->tried = true;
 
         $sess = ($this->mode & self::MODE_DBASE)
-                ? $this->dbObject->doSelect($this->dbTableName, '*', Array('sid' => $this->SID) )
+                ? $this->dbObject->doSelect($this->dbTableName, '*', array('sid' => $this->SID) )
                 : FCache::get(self::CACHEPREFIX.$this->SID);
 
         if (!is_array($sess) || !$sess)
@@ -150,7 +150,7 @@ class K3_Session extends K3_Environment_Element
 
         $this->pool = is_array($vars)
             ? $vars
-            : Array();
+            : array();
 
         F()->Timer->logEvent('Session data loaded');
 
@@ -163,14 +163,14 @@ class K3_Session extends K3_Environment_Element
         $this->clicks = 1;
 
 
-        $vars = Array();
+        $vars = array();
 
         $this->mode |= (self::MODE_STARTED | self::MODE_URLS); // TODO: MODEURLS only if it's allowed by config
         $this->throwEventRef('created', $vars, $this->mode);
 
         $this->pool = is_array($vars)
             ? $vars
-            : Array();
+            : array();
 
         F()->Timer->logEvent('Session data created');
 
@@ -187,7 +187,7 @@ class K3_Session extends K3_Environment_Element
 
         $this->throwEventRef('presave', $this->pool);
 
-        $dataArray = Array(
+        $dataArray = array(
             'ip'       => $this->env->client->IPInteger,
             'clsign'   => $this->env->client->getSignature($this->securityLevel),
             'vars'     => serialize($this->pool),
@@ -203,7 +203,7 @@ class K3_Session extends K3_Environment_Element
 
         // if using database
         if ($this->mode & self::MODE_LOADED)
-            $this->dbObject->doUpdate($this->dbTableName, $dataArray, Array('sid' => $this->SID) );
+            $this->dbObject->doUpdate($this->dbTableName, $dataArray, array('sid' => $this->SID) );
         else
         {
             $dataArray['sid'] = $this->SID;
@@ -212,7 +212,7 @@ class K3_Session extends K3_Environment_Element
         }
 
         // delete old session data
-        $this->dbObject->doDelete($this->dbTableName, Array('lastused' => '< '.(F()->Timer->qTime() - self::LIFETIME)), FDataBase::SQL_USEFUNCS );
+        $this->dbObject->doDelete($this->dbTableName, array('lastused' => '< '.(F()->Timer->qTime() - self::LIFETIME)), FDataBase::SQL_USEFUNCS );
 
         return true;
     }
@@ -239,7 +239,7 @@ class K3_Session extends K3_Environment_Element
         $names = explode(' ', $query);
         if (count($names)>1)
         {
-            $out = Array();
+            $out = array();
             foreach ($names as $name)
                 $out[$name] = (isset($this->pool[$name])) ? $this->pool[$name] : null;
 
@@ -291,7 +291,7 @@ class K3_Session extends K3_Environment_Element
         if (!($this->mode & self::MODE_STARTED) && ($this->tried || !$this->open(self::MODE_TRY)))
             return false;
 
-        $this->pool = Array();
+        $this->pool = array();
 
         return true;
     }
@@ -314,7 +314,7 @@ class K3_Session extends K3_Environment_Element
             return $buffer;
         }
 
-        $buffer = preg_replace_callback('#(<(a|form)\s+[^>]*)(href|action)\s*=\s*(\"([^\"<>\(\)]*)\"|\'([^\'<>\(\)]*)\'|[^\s<>\(\)]+)#i', Array(&$this, 'SIDParseCallback'), $buffer);
+        $buffer = preg_replace_callback('#(<(a|form)\s+[^>]*)(href|action)\s*=\s*(\"([^\"<>\(\)]*)\"|\'([^\'<>\(\)]*)\'|[^\s<>\(\)]+)#i', array(&$this, 'SIDParseCallback'), $buffer);
         //$buffer = preg_replace('#(<form [^>]*>)#i', "\\1\n".'<input type="hidden" name="'.self::SID_NAME.'" value="'.$this->SID.'" />', $buffer);
 
         return $buffer;

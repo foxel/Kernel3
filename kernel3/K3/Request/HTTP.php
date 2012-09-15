@@ -196,27 +196,27 @@ class K3_Request_HTTP extends K3_Request
     // inner funtions
     private function recheckFiles()
     {
-        static $emptyFile = Array('name' => '', 'type' => '', 'tmp_name' => '', 'error' => 0, 'size' => 0);
+        static $emptyFile = array('name' => '', 'type' => '', 'tmp_name' => '', 'error' => 0, 'size' => 0);
 
-        $fgroups = Array();
+        $fgroups = array();
         $this->UPLOADS = $_FILES;
         // reparsing arrays
         do
         {
             $needLoop = false;
-            $files = Array();
+            $files = array();
             foreach($this->UPLOADS as $varname=>$fileinfo)
             {
                 $tmpFile = $fileinfo['tmp_name'];
                 if (is_array($tmpFile))
                 {
-                    $fgroup = Array('is_group' => true);
+                    $fgroup = array('is_group' => true);
                     $needLoop = true;
                     foreach($tmpFile as $id=>$data)
                     {
                         $subVar = $varname.'['.$id.']';
                         $fgroup[] = $subVar;
-                        $subInfo = Array();
+                        $subInfo = array();
                         foreach ($fileinfo as $var=>$val)
                             $subInfo[$var] = $val[$id];
                         $files[$subVar] = $subInfo;

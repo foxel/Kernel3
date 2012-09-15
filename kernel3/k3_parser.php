@@ -52,12 +52,12 @@ class FParser extends FEventDispatcher
     const XMLTAG_XHEADER  = 2;
 
     protected $mode = 0;
-    protected $tags = Array();
-    protected $pregs = Array();
+    protected $tags = array();
+    protected $pregs = array();
     protected $noparse_tag = 'no_bb';    // contetns of this tag will not be parsed (lower case)
     protected $tagbreaker  = '*';
     protected $parabreaker = '%';
-    protected $tag_stack = Array();
+    protected $tag_stack = array();
 
     protected $last_time = 0;
     protected $cur_mode = 0;
@@ -80,19 +80,19 @@ class FParser extends FEventDispatcher
         $this->addBBTag('h2', 'h2', self::BBTAG_BLLEV);
         $this->addBBTag('h3', 'h3', self::BBTAG_BLLEV);
 
-        $this->addBBTag('align', '<div style="text-align: {param};">{data}</div>', self::BBTAG_FHTML | self::BBTAG_BLLEV, Array('param_mask' => 'left|right|center|justify') );
+        $this->addBBTag('align', '<div style="text-align: {param};">{data}</div>', self::BBTAG_FHTML | self::BBTAG_BLLEV, array('param_mask' => 'left|right|center|justify') );
         $this->addBBTag('center', '<div style="text-align: center;">{data}</div>', self::BBTAG_FHTML | self::BBTAG_BLLEV);
-        $this->addBBTag('float', '<div style="float: {param};">{data}</div>', self::BBTAG_FHTML | self::BBTAG_BLLEV, Array('param_mask' => 'left|right') );
+        $this->addBBTag('float', '<div style="float: {param};">{data}</div>', self::BBTAG_FHTML | self::BBTAG_BLLEV, array('param_mask' => 'left|right') );
 
-        $this->addBBTag('color', '<span style="color: {param};">{data}</span>', self::BBTAG_FHTML, Array('param_mask' => '\#[0-9A-Fa-f]{6}|[A-z\-]+') );
-        $this->addBBTag('background', '<span style="background-color: {param};">{data}</span>', self::BBTAG_FHTML, Array('param_mask' => '\#[0-9a-f]{6}|[a-z\-]+') );
-        $this->addBBTag('font', '<span style="font-family: {param};">{data}</span>', self::BBTAG_FHTML, Array('param_mask' => '[0-9A-z\x20]+') );
-        $this->addBBTag('size', '<span style="font-size: {param}px;">{data}</span>', self::BBTAG_FHTML, Array('param_mask' => '[1-2]?[0-9]') );
-        $this->addBBTag('email', '<a href="mailto:{data}">{data}</a>', self::BBTAG_FHTML, Array('data_mask' => FStr::EMAIL_MASK));
-        $this->addBBTag('img', '', self::BBTAG_NOSUB, Array('func' => Array( &$this, 'BBCodeStdUrlImg') ) );
-        $this->addBBTag('url', '', false, Array('func' => Array( &$this, 'BBCodeStdUrlImg') ) );
-        $this->addBBTag('table', '', self::BBTAG_BLLEV | self::BBTAG_USEBRK, Array('func' => Array( &$this, 'BBCodeStdTable') ) );
-        $this->addBBTag('list', '', self::BBTAG_BLLEV | self::BBTAG_USEBRK, Array('func' => Array( &$this, 'BBCodeStdList') ) );
+        $this->addBBTag('color', '<span style="color: {param};">{data}</span>', self::BBTAG_FHTML, array('param_mask' => '\#[0-9A-Fa-f]{6}|[A-z\-]+') );
+        $this->addBBTag('background', '<span style="background-color: {param};">{data}</span>', self::BBTAG_FHTML, array('param_mask' => '\#[0-9a-f]{6}|[a-z\-]+') );
+        $this->addBBTag('font', '<span style="font-family: {param};">{data}</span>', self::BBTAG_FHTML, array('param_mask' => '[0-9A-z\x20]+') );
+        $this->addBBTag('size', '<span style="font-size: {param}px;">{data}</span>', self::BBTAG_FHTML, array('param_mask' => '[1-2]?[0-9]') );
+        $this->addBBTag('email', '<a href="mailto:{data}">{data}</a>', self::BBTAG_FHTML, array('data_mask' => FStr::EMAIL_MASK));
+        $this->addBBTag('img', '', self::BBTAG_NOSUB, array('func' => array( &$this, 'BBCodeStdUrlImg') ) );
+        $this->addBBTag('url', '', false, array('func' => array( &$this, 'BBCodeStdUrlImg') ) );
+        $this->addBBTag('table', '', self::BBTAG_BLLEV | self::BBTAG_USEBRK, array('func' => array( &$this, 'BBCodeStdTable') ) );
+        $this->addBBTag('list', '', self::BBTAG_BLLEV | self::BBTAG_USEBRK, array('func' => array( &$this, 'BBCodeStdList') ) );
 
         $this->addPreg(FStr::URL_MASK_F, '[url]{data}[/url]');
         //$this->addPreg(FStr::EMAIL_MASK, '[email]{data}[/email]');
@@ -100,13 +100,13 @@ class FParser extends FEventDispatcher
 
     public function addBBTag($bbtag, $html, $tag_mode=0, $extra = null)
     {
-        static $extras = Array( 'param', 'param_mask', 'func', 'data_mask' );
+        static $extras = array( 'param', 'param_mask', 'func', 'data_mask' );
 
         $bbtag = strtolower($bbtag);
         if (!$bbtag)
             return false;
 
-        $newtag = Array(
+        $newtag = array(
             'html'       => $html,
             'mode'       => (int) $tag_mode,
             );
@@ -144,16 +144,16 @@ class FParser extends FEventDispatcher
     {
         $id = count($this->pregs);
         $mask = '#(?<=\s|^)'.$mask.'(?=\s|$)#';
-        $data = strtr($data, Array('\\' => '\\\\', '$' => '\\$'));
-        $data = strtr($data, Array('{data}' => '${0}'));
-        $new_preg = Array(
+        $data = strtr($data, array('\\' => '\\\\', '$' => '\\$'));
+        $data = strtr($data, array('{data}' => '${0}'));
+        $new_preg = array(
             'mask' => $mask,
             'data' => $data,
             );
         if ($func && is_callable($func)) // some trick with functioned replaces
         {
             $gen_tag = 'preg_trigger_'.$id;
-            $this->addBBTag($gen_tag, '', self::BBTAG_NOSUB, Array('func' => $func ) );
+            $this->addBBTag($gen_tag, '', self::BBTAG_NOSUB, array('func' => $func ) );
             $new_preg['data'] = '['.$gen_tag.']$0[/'.$gen_tag.']';
         }
         $this->pregs[$id] = $new_preg;
@@ -205,10 +205,10 @@ class FParser extends FEventDispatcher
         $state_nobb  = false;
         $state_strip = false;
         $state_breakers = 0;
-        $used_tags   = Array();
+        $used_tags   = array();
         $cur_tag     = null;
         $buffer      = '';
-        $struct      = Array();
+        $struct      = array();
 
         $input  = preg_replace('#[\r\n]+#', '['.$this->parabreaker.']', $input);
         if ($this->cur_mode == self::BBPARSE_CHECK)
@@ -482,7 +482,7 @@ class FParser extends FEventDispatcher
             } elseif ($tmode & self::BBTAG_FHTML) {
                 if ($tmode & self::BBTAG_BLLEV)
                     $buffer = $popen.$buffer.$pclose;
-                $out = strtr($tag['html'], Array('{param}' => $param, '{data}' => $buffer));
+                $out = strtr($tag['html'], array('{param}' => $param, '{data}' => $buffer));
                 return $out;
             } else {
                 if ($tmode & self::BBTAG_BLLEV)
@@ -501,21 +501,21 @@ class FParser extends FEventDispatcher
         $start_time=$stime[1]+$stime[0];
 
         $state_strip = false;
-        $used_tags   = Array();
-        $struct      = Array();
-        $t_flags     = Array('?xml' => self::XMLTAG_XHEADER); // flags to control behaviour
-        $t_pars      = Array(); // some tags may be only clids of some parents
-        $t_clilds    = Array(); // some tags may include only some clilds (not implemented yet)
+        $used_tags   = array();
+        $struct      = array();
+        $t_flags     = array('?xml' => self::XMLTAG_XHEADER); // flags to control behaviour
+        $t_pars      = array(); // some tags may be only clids of some parents
+        $t_clilds    = array(); // some tags may include only some clilds (not implemented yet)
 
         if ($use_html_specs)
         {
-            $t_pars = Array(
+            $t_pars = array(
                 'tr' => 'table|tbody',
                 'td' => 'tr',
                 'th' => 'tr',
                 );
 
-            $t_flags = Array(
+            $t_flags = array(
                 '?xml'  => self::XMLTAG_XHEADER,
                 '!DOCTYPE' => self::XMLTAG_XHEADER,
                 'hr'    => self::XMLTAG_ACLOSE,
@@ -630,7 +630,7 @@ class FParser extends FEventDispatcher
     private function XMLCheckParams($tag, $param_str)
     {
         preg_match_all('#([\w\-]+)(\s*=\s*(?:\"([^\"]*)\"|\'([^\']*)\'|([^\s]+)))?#', $param_str, $struct, PREG_SET_ORDER);
-        $params = Array();
+        $params = array();
         foreach ($struct as $part)
         {
             $val = $par = strtolower($part[1]);
@@ -651,13 +651,13 @@ class FParser extends FEventDispatcher
 
     private function TStackClear()
     {
-        $this->tag_stack = Array();
+        $this->tag_stack = array();
     }
 
     private function TStackAdd($name, $param='')
     {
         $pos = count($this->tag_stack);
-        $new = Array('name' => $name, 'param' => $param, 'buffer' => '');
+        $new = array('name' => $name, 'param' => $param, 'buffer' => '');
         $this->tag_stack[$pos] =& $new;
     }
 
@@ -718,7 +718,7 @@ class FParser extends FEventDispatcher
             if (!preg_match('#\.(jpg|jpeg|png|gif|swf|bmp|tif|tiff)$#i', $url))
                 $html = '<a href="{url}" title="{url}" >{capt} [Image blocked]</a>';
 
-        return strtr($html, Array('{url}' => $url, '{capt}' => $capt));
+        return strtr($html, array('{url}' => $url, '{capt}' => $capt));
     }
 
     private function BBCodeStdTable($name, $buffer, $param = false)
@@ -790,11 +790,11 @@ class FParser extends FEventDispatcher
 
     private function BBCodeStdList($name, $buffer, $param = false)
     {
-        static $styles = Array(
+        static $styles = array(
             '' => 'disc', 'd' => 'disc', 'c' => 'circle', 's' => 'square', '1' => 'decimal',
             'a' => 'lower-alpha', 'A' => 'upper-alpha', 'i' => 'lower-roman', 'I' => 'upper-roman',
             );
-        static $ols = Array('1', 'a', 'A', 'i', 'I');
+        static $ols = array('1', 'a', 'A', 'i', 'I');
 
         $useborder = false;
         $parr = explode('|', $param);

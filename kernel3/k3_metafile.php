@@ -61,7 +61,7 @@ class FMetaFilePart
 
 class FMetaFile extends FDataStream
 {
-    private $parts = Array();
+    private $parts = array();
     private $sel_part = -1;
     private $pos = 0;
     private $fsize = 0;
@@ -196,12 +196,12 @@ class FMetaFile extends FDataStream
 
 class FMetaTar extends FMetaFile
 {
-    private $conts = Array();
+    private $conts = array();
     private $root_link = '';
     public function __construct($root_link = false)
     {
         parent::__construct(512, "\0");
-        $this->conts = Array();
+        $this->conts = array();
         $this->root_link = preg_replace('#^(\\\\|/)#', '', FStr::cast($root_link ? $root_link : F_SITE_ROOT, FStr::UNIXPATH)).DIRECTORY_SEPARATOR;
     }
 
@@ -238,7 +238,7 @@ class FMetaTar extends FMetaFile
                 $this->makeDir($dir, $dir_perms);
             }
 
-        $header = Array(
+        $header = array(
             'name'  => $pack_to,
             'mode'  => decoct(fileperms($filename)),
             'uid'   => fileowner($filename),
@@ -297,7 +297,7 @@ class FMetaTar extends FMetaFile
             if (!in_array($dir, $this->conts))
                 $this->makeDir($dir);
 
-        $header = Array(
+        $header = array(
             'name'  => $pack_to,
             'mode'  => '644',
             'uid'   => fileowner(__FILE__),
@@ -335,7 +335,7 @@ class FMetaTar extends FMetaFile
             if (!in_array($dir, $this->conts))
                 $this->makeDir($dir, $force_mode);
 
-        $header = Array(
+        $header = array(
             'name'  => $dirname,
             'mode'  => '755',
             'uid'   => fileowner(__FILE__),
@@ -358,7 +358,7 @@ class FMetaTar extends FMetaFile
 
     private function makeRawHeader($header)
     {
-        static $h_fields = Array(
+        static $h_fields = array(
             'name' => '', 'mode' => '', 'uid'   => '', 'gid'  => '',
             'size' => '', 'time' => '', 'chsum' => '', 'type' => '',
             'linkname' => '', 'magic' => 'ustar  ');

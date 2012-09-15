@@ -113,7 +113,7 @@ if (F_PROFILE && extension_loaded('xhprof')) {
  * @internal this will build a list of base includes to include in one file
  * @ignore
  */
-$base_modules_files = Array(
+$base_modules_files = array(
     F_KERNEL_DIR.DIRECTORY_SEPARATOR.'K3/Autoloader.php',    // kernel 3 autoloader
     F_KERNEL_DIR.DIRECTORY_SEPARATOR.'k3_misc.php',          // kernel 3 classes and functions library
     F_KERNEL_DIR.DIRECTORY_SEPARATOR.'k3_timer.php',         // kernel 3 basic classes
@@ -128,7 +128,7 @@ if (F_DEBUG) {
         require_once($fname);
     }
 } else {
-    $base_modules_stats = Array();
+    $base_modules_stats = array();
     foreach ($base_modules_files as $fname)
         $base_modules_stats[] = filemtime($fname).'|'.filesize($fname);
     $kernel_codecache_dir = is_writable(F_KERNEL_DIR) ? F_KERNEL_DIR : F_CODECACHE_DIR;
@@ -203,7 +203,7 @@ class F extends FEventDispatcher
     /** kernel files directory */
     const KERNEL_DIR = F_KERNEL_DIR;
 
-    static private $ERR_TYPES = Array(
+    static private $ERR_TYPES = array(
         E_ERROR             => 'PHP ERROR',
         E_WARNING           => 'PHP WARNING',
         E_NOTICE            => 'PHP NOTICE',
@@ -220,13 +220,13 @@ class F extends FEventDispatcher
      * @var F
      */
     static private $self = null;
-    private $classes = Array();
-    private $clclose = Array();
+    private $classes = array();
+    private $clclose = array();
 
     private function __construct()
     {
-        set_exception_handler(Array($this, 'handleException'));
-        set_error_handler(Array($this, 'logError'), F_DEBUG ? E_ALL : E_ALL & ~(E_NOTICE | E_USER_NOTICE | E_STRICT));
+        set_exception_handler(array($this, 'handleException'));
+        set_error_handler(array($this, 'logError'), F_DEBUG ? E_ALL : E_ALL & ~(E_NOTICE | E_USER_NOTICE | E_STRICT));
 
         $this->pool['Autoloader'] = new K3_Autoloader();
         $this->pool['Timer']      = new FTimer();
@@ -322,7 +322,7 @@ class F extends FEventDispatcher
         if (class_exists($mod_class, true))
         {
             $res = method_exists($mod_class, 'getInstance')
-                ? ($this->pool[$mod_name] = call_user_func(Array($mod_class, 'getInstance')))
+                ? ($this->pool[$mod_name] = call_user_func(array($mod_class, 'getInstance')))
                 : ($this->pool[$mod_name] = new $mod_class());
 
             if ($res)
@@ -330,7 +330,7 @@ class F extends FEventDispatcher
                 if (method_exists($mod_class, '_Start'))
                     $this->pool[$mod_name]->_Start();
                 if (method_exists($mod_class, '_Close'))
-                    $this->clclose[] = Array(&$this->pool[$mod_name], '_Close');
+                    $this->clclose[] = array(&$this->pool[$mod_name], '_Close');
                 $this->throwEvent('moduleStart', $mod_name);
                 return true;
             }
@@ -424,7 +424,7 @@ class F extends FEventDispatcher
 
         if (isset($this->pool[$name]) || $this->runModule($name))
             if (method_exists($mod_class, '_Call'))
-                return call_user_func_array(Array(&$this->pool[$name],  '_Call'), $arguments);
+                return call_user_func_array(array(&$this->pool[$name],  '_Call'), $arguments);
                 
         return null;
     }

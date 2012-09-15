@@ -79,10 +79,10 @@ class K3_Environment_Client_HTTP extends K3_Environment_Client
      */
     public function getSignature($securityLevel = 0)
     {
-        static $signParts = Array('HTTP_USER_AGENT'); //, 'HTTP_ACCEPT_CHARSET', 'HTTP_ACCEPT_ENCODING'
-        static $psignParts = Array('HTTP_VIA', 'HTTP_X_FORWARDED_FOR', 'HTTP_X_REAL_IP');
+        static $signParts = array('HTTP_USER_AGENT'); //, 'HTTP_ACCEPT_CHARSET', 'HTTP_ACCEPT_ENCODING'
+        static $psignParts = array('HTTP_VIA', 'HTTP_X_FORWARDED_FOR', 'HTTP_X_REAL_IP');
 
-        $sign = Array();
+        $sign = array();
         foreach ($signParts as $key)
             if (isset($_SERVER[$key]))
                 $sign[] = $_SERVER[$key];

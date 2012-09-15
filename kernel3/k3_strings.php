@@ -51,8 +51,8 @@ class FStr
 
     const ENDL = PHP_EOL;
 
-    private static $ltts = Array(); // alphabetic chars data array
-    private static $chrs = Array(); // Charconv tables
+    private static $ltts = array(); // alphabetic chars data array
+    private static $chrs = array(); // Charconv tables
     private static $useMB = false;
 
     private function __construct() {}
@@ -140,7 +140,7 @@ class FStr
             if (!($table1 = self::_getCharTable($from_enc)) || !($table2 = self::_getCharTable($to_enc)))
                 return false;
 
-            $table = Array();
+            $table = array();
             foreach($table1 as $ut=>$cp)
                 $table[ord($cp)] = $table2[$ut];
 
@@ -326,7 +326,7 @@ class FStr
 
     static public function addslashesHeredoc($text, $heredoc_id = false)
     {
-        $text = str_replace(Array('\\', '$'), Array('\\\\', '\\$'), $text);
+        $text = str_replace(array('\\', '$'), array('\\\\', '\\$'), $text);
         if ($heredoc_id)
             $text = str_replace('([\r\n])'.$heredoc_id, '$1 '.$heredoc_id, $text);
         return $text;
@@ -365,7 +365,7 @@ class FStr
         }
         elseif (is_array($data) || is_object($data))
         {
-            $odata = Array();
+            $odata = array();
             foreach ($data as $key=>$val)
                 $odata[] = $key.': '.self::JSDefine($val);
             $odata = '{ '.implode(', ', $odata).' }';
@@ -388,8 +388,8 @@ class FStr
             $def = 'null';
         elseif (is_array($data) || is_object($data))
         {
-            $def = 'Array ('.PHP_EOL;
-            $fields = Array();
+            $def = 'array ('.PHP_EOL;
+            $fields = array();
             foreach( $data as $key => $val ) {
                 $field = (is_numeric($key)) ? $key." => " : '\''.addslashes($key).'\' => ';
                 $field.= self::PHPDefine($val, $tabs+1);
@@ -719,7 +719,7 @@ class FStr
         if (!($table0 = self::_getCharTable($from_enc)))
             return false;
 
-        $table = Array();
+        $table = array();
         foreach ($table0 as $ut=>$cp)
             $table[ord($cp)] = $ut;
         unset($table0);
@@ -766,7 +766,7 @@ class FStr
         }
         elseif ($data = file_get_contents(F_KERNEL_DIR.DIRECTORY_SEPARATOR.'chars'.DIRECTORY_SEPARATOR.$encoding.'.ltt')) // we'll try to load chars data
         {
-            $table = Array();
+            $table = array();
             preg_match_all('#0x([0-9a-fA-F]{1,6})\[0x([0-9a-fA-F]{1,6})\]#', $data, $matches, PREG_SET_ORDER);
             if ($is_utf)
                 foreach ($matches as $part)
@@ -781,7 +781,7 @@ class FStr
         else
         {
             trigger_error('UString: There is no letter table for '.$encoding, E_USER_NOTICE);
-            return Array();
+            return array();
         }
     }
 
@@ -804,7 +804,7 @@ class FStr
         }
         elseif ($data = file_get_contents(F_KERNEL_DIR.DIRECTORY_SEPARATOR.'chars'.DIRECTORY_SEPARATOR.$encoding.'.chr')) // we'll try to load chars data
         {
-            $table = Array();
+            $table = array();
             preg_match_all('#0x([0-9a-fA-F]{1,6})\[0x([0-9a-fA-F]{1,6})\]#', $data, $matches, PREG_SET_ORDER);
             foreach ($matches as $part)
             {
@@ -843,11 +843,11 @@ class FStr
 
     static private function _utfExplode($string)
     {
-        $letters = Array();
+        $letters = array();
         if (preg_match_all('#[\x00-\x7F]|[\xC0-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF7][\x80-\xBF]{3}#', $string, $letters))
             $letters = $letters[0];
         else
-            $letters = Array();
+            $letters = array();
         return $letters;
     }
 

@@ -61,7 +61,7 @@ class K3_Registry
     // real working functgions
     public function __construct()
     {
-        FMisc::addShutdownCallback(Array($this, 'close'));
+        FMisc::addShutdownCallback(array($this, 'close'));
     }
 
     public function get($name)

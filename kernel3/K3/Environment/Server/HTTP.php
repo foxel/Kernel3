@@ -37,7 +37,7 @@ class K3_Environment_Server_HTTP extends K3_Environment_Server
             $this->pool['rootUrl'] .= $this->pool['rootPath'].'/';
         }
 
-        $this->pool['rootRealPath'] = preg_replace(Array('#\/|\\\\+#', '#(\/|\\\\)*$#'), Array(DIRECTORY_SEPARATOR, ''), $_SERVER['DOCUMENT_ROOT']).'/'.$this->pool['rootPath'];
+        $this->pool['rootRealPath'] = preg_replace(array('#\/|\\\\+#', '#(\/|\\\\)*$#'), array(DIRECTORY_SEPARATOR, ''), $_SERVER['DOCUMENT_ROOT']).'/'.$this->pool['rootPath'];
     }
 
 }

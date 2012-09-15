@@ -193,7 +193,7 @@ abstract class K3_Response extends K3_Environment_Element implements I_K3_Respon
     {
         $url = FStr::fullUrl($url);
         $this->throwEventRef('URL_Parse', $url );
-        $hurl = strtr($url, Array('&' => '&amp;'));
+        $hurl = strtr($url, array('&' => '&amp;'));
 
         if ($useHTTP1) {
             $this->setHeader('Refresh', '0; URL='.$url);

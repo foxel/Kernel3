@@ -31,14 +31,14 @@ if (!defined('F_STARTED'))
 class FMail
 {
     const BR = "\n";
-    private $send_to = Array();
-    private $copy_to = Array();
-    private $bcc_to  = Array();
-    private $from    = Array();
+    private $send_to = array();
+    private $copy_to = array();
+    private $bcc_to  = array();
+    private $from    = array();
     private $subject = '';
     private $is_html = false;
     private $text    = '';
-    private $parts   = Array();
+    private $parts   = array();
 
     public function __construct($subject = false, $from_name = false, $from_addr = false, K3_Environment $env = null)
     {
@@ -49,14 +49,14 @@ class FMail
         if (!FStr::isEmail($from_addr))
             $from_addr = 'no-reply@'.$env->server->domain;
 
-        $this->send_to = Array();
-        $this->copy_to = Array();
-        $this->bcc_to  = Array();
-        $this->from    = Array($from_addr, $from_name);
+        $this->send_to = array();
+        $this->copy_to = array();
+        $this->bcc_to  = array();
+        $this->from    = array($from_addr, $from_name);
         $this->subject = ($subject) ? (string) $subject : 'no-subject';
         $this->is_html = false;
         $this->text    = '';
-        $this->parts   = Array();
+        $this->parts   = array();
     }
 
     public function setSubject($subject)
@@ -159,7 +159,7 @@ class FMail
     {
         $m_from = FStr::strToMime($this->from[1], $recode_to).' <'.$this->from[0].'>';
         $m_subject = FStr::strToMime($this->subject, $recode_to);
-        $m_to = $m_cc = $m_bcc = Array();
+        $m_to = $m_cc = $m_bcc = array();
         foreach ($this->send_to as $mail=>$name)
             $m_to[]  = FStr::strToMime($name, $recode_to).' <'.$mail.'>';
         foreach ($this->copy_to as $mail=>$name)
@@ -167,7 +167,7 @@ class FMail
         foreach ($this->bcc_to  as $mail=>$name)
             $m_bcc[] = FStr::strToMime($name, $recode_to).' <'.$mail.'>';
 
-        $m_headers = Array(
+        $m_headers = array(
             'From: '.$m_from,
             'Message-ID: <'.md5(uniqid(time())).'@'.F()->appEnv->server->domain.'>',
             'MIME-Version: 1.0',
@@ -202,7 +202,7 @@ class FMail
 
         if (count($this->parts)) //multipart message
         {
-            $t_headers = Array(
+            $t_headers = array(
                 'Content-Type: '.$m_type.'; charset='.$m_encoding,
                 'Content-Transfer-Encoding: 8bit',
                 );
@@ -220,7 +220,7 @@ class FMail
         }
         else
         {
-            $m_headers = Array(
+            $m_headers = array(
                 'Content-Type: '.$m_type.'; charset='.$m_encoding,
                 'Content-Transfer-Encoding: 8bit',
                 );

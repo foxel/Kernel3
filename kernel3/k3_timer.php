@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2010 - 2011 Andrey F. Kupreychik (Foxel)
+ * Copyright (C) 2010 - 2012 Andrey F. Kupreychik (Foxel)
  *
  * This file is part of QuickFox Kernel 3.
  * See https://github.com/foxel/Kernel3/ for more details.
@@ -34,8 +34,8 @@ class FTimer
 {
     private $qTime;
     private $sTime;
-    private $timePoints = Array();
-    private $timeLog = Array();
+    private $timePoints = array();
+    private $timeLog = array();
 
     public function __construct()
     {
@@ -72,7 +72,7 @@ class FTimer
 
     public function logEvent($event = 'unknown')
     {
-        $this->timeLog[] = Array(
+        $this->timeLog[] = array(
             'time' => $this->timeSpent(),
             'name' => $event );
     }

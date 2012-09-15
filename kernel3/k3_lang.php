@@ -38,14 +38,14 @@ class FLNGData // extends FEventDispatcher
 
     private static $self = null;
 
-    private $lang       = Array();
+    private $lang       = array();
     private $klang      = null;
     private $lang_name  = 'en';
-    private $LNG_loaded = Array();
+    private $LNG_loaded = array();
     private $time_tr    = null;
     private $bsize_tr   = null;
 
-    private $auto_loads = Array();
+    private $auto_loads = array();
     public  $timeZone = 0;
 
     /**
@@ -61,7 +61,7 @@ class FLNGData // extends FEventDispatcher
 
     private function __construct()
     {
-        $this->pool = Array(
+        $this->pool = array(
             'language' => &$this->lang_name,
             'name' => &$this->lang_name,
             );
@@ -113,7 +113,7 @@ class FLNGData // extends FEventDispatcher
         {
             if ($dir = opendir($directory))
             {
-                $aldata = Array(0 => $directory);
+                $aldata = array(0 => $directory);
                 $preg_pattern = '#'.preg_quote($file_suff, '#').'$#';
                 while ($entry = readdir($dir))
                 {
@@ -209,7 +209,7 @@ class FLNGData // extends FEventDispatcher
             return '['.$key.']';
 
         if ($params) {
-            $params = is_array($params) ? array_values($params) : Array($params);
+            $params = is_array($params) ? array_values($params) : array($params);
             $out = FStr::smartSprintf($out, $params);
         }
         return $out;
@@ -246,13 +246,13 @@ class FLNGData // extends FEventDispatcher
 
         if (!is_array($this->time_tr))
         {
-            $keys = Array(
-                1 => Array('Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'),
-                2 => Array('Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'),
-                3 => Array('January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'),
-                4 => Array('Jan', 'Feb', 'Mar', 'Apr', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'),
+            $keys = array(
+                1 => array('Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'),
+                2 => array('Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'),
+                3 => array('January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'),
+                4 => array('Jan', 'Feb', 'Mar', 'Apr', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'),
                 );
-            $lnames = Array(
+            $lnames = array(
                 1 => 'DATETIME_TR_DAYS',
                 2 => 'DATETIME_TR_DAYS_SHORT',
                 3 => 'DATETIME_TR_MONTHS',
@@ -262,7 +262,7 @@ class FLNGData // extends FEventDispatcher
             if (!isset($this->lang[$lnames[1]]))
                 $this->tryAutoLoad($lnames[1]);
 
-            $translate = Array();
+            $translate = array();
             for ($i = 1; $i<=4; ++$i)
             {
                 $lname = $lnames[$i];
@@ -342,17 +342,17 @@ class FLNGData // extends FEventDispatcher
 
         if (!is_array($this->bsize_tr))
         {
-            $bnames = Array(0 => 'BSIZE_FORM_BYTES', 1 => 'BSIZE_FORM_BITS');
+            $bnames = array(0 => 'BSIZE_FORM_BYTES', 1 => 'BSIZE_FORM_BITS');
             if (!isset($this->lang[$bnames[0]]))
                 $this->tryAutoLoad($bnames[0]);
 
-            $this->bsize_tr = Array(0 => Array(1 => 'B'), 1 => Array(1 => 'b'));
+            $this->bsize_tr = array(0 => array(1 => 'B'), 1 => array(1 => 'b'));
             foreach ($bnames as $class => $cl_lang)
                 if ($lang_data = $this->privateLang($cl_lang))
                 {
                     $parts = explode('|', $lang_data);
                     $i = 1;
-                    $this->bsize_tr[$class] = Array();
+                    $this->bsize_tr[$class] = array();
                     foreach ($parts as $part)
                     {
                         if (!$i)
@@ -416,7 +416,7 @@ class FLNGData // extends FEventDispatcher
 
     public function getAcceptLang($acc_str = '')
     {
-        static $cache = Array();
+        static $cache = array();
         if (!$acc_str)
             $acc_str = $_SERVER['HTTP_ACCEPT_LANGUAGE'];
         $hash = FStr::shortHash($acc_str);
@@ -425,8 +425,8 @@ class FLNGData // extends FEventDispatcher
             return $cache[$hash];
             
         $acc_str = str_replace(' ', '', $acc_str);
-        $pairs = Array();
-        $res = Array();
+        $pairs = array();
+        $res = array();
         
         preg_match_all('#(\w{2,3})(?:\-\w{2,3})?(?:;q=([\d\.]+))?\,*#', $acc_str, $pairs, PREG_SET_ORDER);
         foreach($pairs as $pair)

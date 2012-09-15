@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2011 Andrey F. Kupreychik (Foxel)
+ * Copyright (C) 2011 - 2012 Andrey F. Kupreychik (Foxel)
  *
  * This file is part of QuickFox Kernel 3.
  * See https://github.com/foxel/Kernel3/ for more details.
@@ -67,7 +67,7 @@ class FFlexyStore extends FBaseClass
     public function loadClassesFromDB($tableName, $classNames = null)
     {
         $newClasses = array();
-        $rows = $this->dbo->doSelectAll($tableName, '*', $classNames ? Array('class_id' => $classNames) : false);
+        $rows = $this->dbo->doSelectAll($tableName, '*', $classNames ? array('class_id' => $classNames) : false);
         foreach ($rows as &$row)
         {
             if (!isset($newClasses[$row['class_id']]))

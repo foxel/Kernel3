@@ -77,7 +77,7 @@ class K3_Response_HTTP extends K3_Response
     protected function sendHeadersData()
     {
         // sending HTTP status
-        header(implode(' ', Array($_SERVER['SERVER_PROTOCOL'], $this->statusCode, self::$statusCodes[$this->statusCode])), true, $this->statusCode);
+        header(implode(' ', array($_SERVER['SERVER_PROTOCOL'], $this->statusCode, self::$statusCodes[$this->statusCode])), true, $this->statusCode);
 
         foreach ($this->headers as $name => &$values) {
             $replace = true;
@@ -97,7 +97,7 @@ class K3_Response_HTTP extends K3_Response
         echo $data;
     }
 
-    protected static $statusCodes = Array(
+    protected static $statusCodes = array(
         200 => 'OK',
         300 => 'Multiple Choices',
         301 => 'Moved Permanently',
