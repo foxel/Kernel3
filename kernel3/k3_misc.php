@@ -722,10 +722,10 @@ class F2DArray
         $cstack = array();
         while (count($itm_pars)) // tree resorting
         {
-            if ($childs = array_keys($itm_pars, $cur_itm))
+            if ($children = array_keys($itm_pars, $cur_itm))
             {
                 array_push($cstack, $cur_itm);
-                $cur_itm = $childs[0];
+                $cur_itm = $children[0];
                 $child = $itm_tmps[$cur_itm];
                 $child[$by_lvl] = count($cstack); // level
                 $out_tree[$cur_itm] = $child;
