@@ -148,10 +148,7 @@ class FVISNode extends FBaseClass // FEventDispatcher
             {
                 foreach ($this->vars as &$varSet) {
                     if (is_array($varSet)) {
-                        if ($replace || !isset($varSet[$varname]))
-                            $varSet[$varname] = array($data);
-                        else
-                            $varSet[$varname][] = $data;
+                        $varSet[$varname] = $data;
                     }
                 }
             } else {

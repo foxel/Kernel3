@@ -199,13 +199,16 @@ class FDBaseQCmysql
             $order = array();
             foreach($parts as $part) {
                 if (is_array($part)) {
-                    $field = '`'.$part[1].'`';
+                    $field = (string)$part[1];
+                    if (FStr::isWord($field)) {
+                        $field = '`'.$field.'`';
+                    }
                     if ($part[0]) {
                         $field = '`'.$part[0].'`.'.$field;
                     }
                     $order[] = $field.($part[2] ? ' DESC' : ' ASC');
                 } else {
-                    $order[] = $part;
+                    $order[] = '('.strval($part).')';
                 }
             }
 

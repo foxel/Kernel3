@@ -704,15 +704,16 @@ class FDBSelect
             return $this;
         }
 
+        $columnGiven = FStr::isWord($where);
         $this->_determineTableAliasWithColumn($where, $tableAlias);
 
-        if (FStr::isWord($where)) {
+        if ($columnGiven || FStr::isWord($where)) { // column given
             $this->where[] = array($tableAlias, $where, $value, (boolean) $whereOr);
-        }
-        elseif (preg_match('#(?<!\w|\\\\)\?#', $where))
+        } elseif (preg_match('#(?<!\w|\\\\)\?#', $where)) {
             $this->where[] = array($where, $value, (boolean) $whereOr);
-        else
+        } else{
             $this->where[] = array((string) $where, (boolean) $whereOr);
+        }
 
         return $this;
     }
@@ -736,12 +737,14 @@ class FDBSelect
      */
     public function order($order, $desc = false, $tableAlias = false)
     {
+        $columnGiven = FStr::isWord($order);
         $this->_determineTableAliasWithColumn($order, $tableAlias);
 
-        if (FStr::isWord($order)) // column given
+        if ($columnGiven || FStr::isWord($order)) {// column given
             $this->order[] = array($tableAlias, $order, (boolean) $desc);
-        else
+        } else {
             $this->order[] = (string) $order;
+        }
 
         return $this;
     }
@@ -878,9 +881,14 @@ class FDBSelect
         elseif (is_null($tableAlias)) {
             return ($tableAlias = null);
         }
-        elseif (!$tableAlias && isset($this->fields[$field]) && is_array($this->fields[$field])) {
-            list($tableAlias, $field) = $this->fields[$field];
-            return $tableAlias;
+        elseif (!$tableAlias && isset($this->fields[$field])) {
+            if (is_array($this->fields[$field])) {
+                list($tableAlias, $field) = $this->fields[$field];
+                return $tableAlias;
+            } elseif (is_string($this->fields[$field])) {
+                $field = $this->fields[$field];
+                return $tableAlias;
+            }
         }
 
         if (!$tableAlias) {
