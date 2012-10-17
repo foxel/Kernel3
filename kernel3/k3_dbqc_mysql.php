@@ -132,7 +132,9 @@ class FDBaseQCmysql
         // FROM
         $tables = '';
         foreach ($selectInfo['tables'] as $tableAlias => $tableName) {
-            if (!($flags & FDataBase::SQL_NOPREFIX)) {
+            if ($tableName instanceof FDBSelect) {
+                $tableName = $tableName->toString();
+            } elseif (!($flags & FDataBase::SQL_NOPREFIX) && FStr::isWord($tableName)) {
                 $tableName = $this->db->tbPrefix.$tableName;
             }
 

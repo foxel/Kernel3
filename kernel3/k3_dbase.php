@@ -536,21 +536,26 @@ class FDBSelect
     protected $dbo    = null;
 
     /**
-     * @param $tableName
+     * @param string|FDBSelect $tableName
      * @param string|bool $tableAlias - false for auto
      * @param array|null $fields
      * @param FDataBase|null $dbo
      */
     public function __construct($tableName, $tableAlias = false, array $fields = null, FDataBase $dbo = null)
     {
-        if (!$tableAlias || !is_string($tableAlias))
-            $tableAlias = $tableName;
+        if (!$tableAlias || !is_string($tableAlias)) {
+            $tableAlias = is_string($tableName) && FStr::isWord($tableName)
+                ? $tableName
+                : 't0';
+        }
 
         $this->dbo = (!is_null($dbo))
             ? $dbo
             : F()->DBase;
         
-        $this->tables[$tableAlias] = (string) $tableName;
+        $this->tables[$tableAlias] = $tableName instanceof FDBSelect
+            ? $tableName
+            : (string) $tableName;
 
         if (!is_null($fields))
             $this->columns($fields, $tableAlias);
