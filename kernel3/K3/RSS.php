@@ -25,6 +25,8 @@ class K3_RSS
     protected $_xml;
     /** @var DOMElement */
     protected $_channel;
+    /** @var DOMElement */
+    protected $_currentItem;
     /** @var K3_Environment */
     protected $_env;
 
@@ -95,7 +97,7 @@ class K3_RSS
             $itemData = new K3_RSS_Item($itemData);
         }
 
-        $item = $this->_channel->appendChild($this->_xml->createElement('item'));
+        $this->_currentItem = $item = $this->_channel->appendChild($this->_xml->createElement('item'));
 
         $item->appendChild($this->_xml->createElement('title', $itemData->getTitle()));
         $item->appendChild($this->_xml->createElement('link', FStr::fullUrl($itemData->getLink(), false, '', $this->_env)));
