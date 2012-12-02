@@ -306,6 +306,7 @@ class FVISInterface extends FEventDispatcher
     protected $JS_loaded  = array();
 
     protected $vis_consts = array();
+    /** @var callable[] */
     protected $func_parsers = array();
 
     protected $auto_loads = array();
@@ -1104,7 +1105,7 @@ class FVISInterface extends FEventDispatcher
         }
 
         $text = preg_replace('#\$\w+\.\=\s*\<\<\<FTEXT\s+FTEXT;#', '', $text);
-        $text = preg_replace('#\r?\nFTEXT\s*.\s*\<\<\<FTEXT\r?\n#', '', $text);
+        $text = preg_replace('#\r?\nFTEXT\s*\.\s*\<\<\<FTEXT\r?\n#', '', $text);
         $jstext = preg_replace('#\w+\+\=\s*"\s+";#', '', $jstext);
         $out = array('T' => $text, 'V' => $vars, 'J' => $jstext);
         if ($store_to && is_string($store_to))
@@ -1304,16 +1305,18 @@ class FVISInterface extends FEventDispatcher
                     : '$'.$val;
                 $dyn_pars_js[$id] = ($this_static) ? FStr::JSDefine($val) : 'v.'.$val;
             }
-            elseif (is_numeric($val) && $val[0] != '0')
-                $st_pars[$id] = $dyn_pars[$id] = $dyn_pars_js[$id] = intval($val);
             elseif ($val[0] == '"')
             {
                 $val = substr($val, 1, -1);
                 $st_pars[$id]  = $val;
                 $dyn_pars[$id] = FStr::heredocDefine($val, 'FTEXT');
                 $dyn_pars_js[$id] = FStr::JSDefine($val);
+            } else {
+                if (is_numeric($val) && $val[0] != '0') {
+                    $val = intval($val);
+                }
+                $st_pars[$id] = $dyn_pars[$id] = $dyn_pars_js[$id] = $val;
             }
-
         }
 
         if ($static)
