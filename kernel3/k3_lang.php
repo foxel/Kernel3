@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2010 - 2012 Andrey F. Kupreychik (Foxel)
+ * Copyright (C) 2010 - 2013 Andrey F. Kupreychik (Foxel)
  *
  * This file is part of QuickFox Kernel 3.
  * See https://github.com/foxel/Kernel3/ for more details.
