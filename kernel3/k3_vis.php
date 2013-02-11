@@ -848,7 +848,7 @@ class FVISInterface extends FEventDispatcher
         $text = $this->templLang($text);
 
         $text = preg_replace('#(?<=\})\r?\n\s*?(?=\{\w)#', '', $text);
-        preg_match_all('#\{([\!\/]?)((?>\w+))(?:\:((?:(?>-?[0-9]+|\w+|\"[^\"]*\")(?:[\!=\>\<]{1,2}(?:-?[0-9]+|\w+|\"[^\"]*\"))?|\||)*))?\}|[^\{]+|\{#', $text, $struct, PREG_SET_ORDER);
+        preg_match_all('#\{([\!\/]?)((?>\w+))(?:\:((?:(?>-?[0-9]+|\w+|\"[^\"]*\")(?:[\!=\>\<]{1,2}(?:-?[0-9]+|\w+|\"[^\"]*\"))?|\|)*))?\}|[^\{]+|\{#', $text, $struct, PREG_SET_ORDER);
 
         $writes_to = 'OUT';
         $text = '$'.$writes_to.' = <<<FTEXT'.FStr::ENDL;
