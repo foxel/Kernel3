@@ -38,15 +38,15 @@ class FLNGData // extends FEventDispatcher
 
     private static $self = null;
 
-    private $lang       = array();
-    private $klang      = null;
-    private $lang_name  = 'en';
-    private $LNG_loaded = array();
-    private $time_tr    = null;
-    private $bsize_tr   = null;
+    private $lang          = array();
+    private $klang         = null;
+    private $lang_name     = 'en';
+    private $LNG_loaded    = array();
+    private $timeTranslate = null;
+    private $bsize_tr      = null;
 
     private $auto_loads = array();
-    public  $timeZone = 0;
+    public  $timeZone   = 0;
 
     /**
      * @static
@@ -232,106 +232,120 @@ class FLNGData // extends FEventDispatcher
         return $data;
     }
 
-    public function timeFormat($timestamp = false, $format = '', $tz = false, $force_no_rels = false)
+    public function timeFormat($timestamp = false, $format = '', $timeZone = false, $forceNoRelativeFormat = false)
     {
-        static $now, $correct, $today, $yesterday, $time_f, $last_tz = null, $no_rels;
+        static $now, $correction, $today, $yesterday, $timeFormat, $lastTimeZone = null, $relativeFormat;
 
-        if (!$now)
-        {
+        if (!$now) {
             $now = F()->Timer->qTime();
-            $correct = 0;     //(int) F()->Config->Get('time_correction', 'common', 0);
-            $time_f  = 'H:i'; //F()->Config->Get('def_time_format', 'visual', 'H:i');
-            $no_rels = false; //(bool) F()->Config->Get('force_no_rel_time', 'common', false);
+            $correction = 0;        //(int) F()->Config->Get('time_correction', 'common', 0);
+            $timeFormat = 'H:i';    //F()->Config->Get('def_time_format', 'visual', 'H:i');
+            $relativeFormat = true; //(bool) F()->Config->Get('force_no_rel_time', 'common', false);
         }
 
-        if (!is_array($this->time_tr))
-        {
+        if (!is_array($this->timeTranslate)) {
             $keys = array(
                 1 => array('Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'),
                 2 => array('Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'),
                 3 => array('January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'),
                 4 => array('Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'),
-                );
-            $lnames = array(
+            );
+            $langNames = array(
                 1 => 'DATETIME_TR_DAYS',
                 2 => 'DATETIME_TR_DAYS_SHORT',
                 3 => 'DATETIME_TR_MONTHS',
                 4 => 'DATETIME_TR_MONTHS_SHORT',
-                );
+            );
 
-            if (!isset($this->lang[$lnames[1]]))
-                $this->tryAutoLoad($lnames[1]);
+            if (!isset($this->lang[$langNames[1]])) {
+                $this->tryAutoLoad($langNames[1]);
+            }
 
             $translate = array();
-            for ($i = 1; $i<=4; ++$i)
-            {
-                $lname = $lnames[$i];
-                if ($this->privateLang($lname))
-                {
-                    $part = explode('|', $this->privateLang($lname));
+            for ($i = 1; $i<=4; ++$i) {
+                $langName = $langNames[$i];
+                if ($this->privateLang($langName)) {
+                    $part = explode('|', $this->privateLang($langName));
                     $pkeys = $keys[$i];
-                    if (count($part) == count($pkeys))
-                        foreach ($pkeys as $id => $key)
+                    if (count($part) == count($pkeys)) {
+                        foreach ($pkeys as $id => $key) {
                             $translate[$key] = $part[$id];
+                        }
+                    }
                 }
             }
-            $this->time_tr = $translate;
+            $this->timeTranslate = $translate;
+        } else {
+            $translate = $this->timeTranslate;
         }
-        else
-            $translate = $this->time_tr;
 
-        if (!is_numeric($timestamp))
-            $timestamp = $now;
+        if ($timeZone === false) {
+            $timeZone = $this->timeZone;
+        }
 
-        if (!is_numeric($tz))
-            $tz = intval($this->timeZone); //(int) F()->Config->Get('time_zone', 'common', 0);
-        else
-            $tz = intval($tz);
-
-        $tzc = (3600 * $tz + 60 * $correct); // correction of GMT
-
-        if ($last_tz !== $tz) {
-            $today = $now + $tzc;
-            if (FMisc::timeDST($now, $tz))
-                $today+= 3600;
+        if ($lastTimeZone !== $timeZone) {
+            $today += 60*$correction;
             $today = floor($today/86400)*86400;
             $yesterday = $today - 86400;
-            $last_tz = $tz;
+            $lastTimeZone = $timeZone;
         }
 
-        if (!$format)
+        if (!$format) {
             $format = 'd M Y H:i'; //F()->Config->Get('def_date_format', 'visual', 'd M Y H:i');
+        }
 
-        $timetodraw = $timestamp + $tzc;
-        if (FMisc::timeDST($timestamp, $tz))
-            $timetodraw+= 3600;
+        if (!is_numeric($timestamp)) {
+            $timestamp = $now;
+        }
+        $timestamp += 60*$correction;
 
-        if ($no_rels || $force_no_rels || $timestamp == $now)
-            $out = gmdate($format, $timetodraw);
-        elseif ($timestamp > $now) {
+        $timeToDraw = new DateTime();
+        $timeToDraw->setTimestamp($timestamp);
+
+        if (is_numeric($timeZone)) {
+            // compatibility
+            $zones = DateTimeZone::listIdentifiers();
+            while (!empty($zones)) {
+                $temp = new DateTimeZone(array_shift($zones));
+                if ($temp->getOffset($timeToDraw) == $timeZone*3600) {
+                    $timeZone = $temp;
+                    break;
+                }
+            }
+            if (!$timeZone instanceof DateTimeZone) {
+                throw new FException('Time Zone with given offset not found');
+            }
+        } elseif (!$timeZone instanceof DateTimeZone) {
+            $timeZone= new DateTimeZone($timeZone);
+        }
+        $timeToDraw->setTimezone($timeZone);
+
+        if (!$relativeFormat || $forceNoRelativeFormat || $timestamp == $now) {
+            $out = $timeToDraw->format($format);
+        } elseif ($timestamp > $now) {
             if ($timestamp < $now + 60)
                 $out = sprintf($this->privateLang('DATETIME_FUTURE_SECS'), ($timestamp - $now));
             elseif ($timestamp < $now + 3600)
                 $out = sprintf($this->privateLang('DATETIME_FUTURE_MINS'), round(($timestamp - $now)/60));
             else
-                $out = gmdate($format, $timetodraw);
-        }
-        elseif ($timestamp > ($now - 60))
+                $out = $timeToDraw->format($format);
+        } elseif ($timestamp > ($now - 60)) {
             $out = sprintf($this->privateLang('DATETIME_PAST_SECS'), ($now - $timestamp));
-        elseif ($timestamp > ($now - 3600))
+        } elseif ($timestamp > ($now - 3600)) {
             $out = sprintf($this->privateLang('DATETIME_PAST_MINS'), round(($now - $timestamp)/60));
-        elseif ($timetodraw >= $today) {
+        } elseif ($timestamp >= $today) {
             $out = ($timestamp > ($now - 3*3600))
                 ? sprintf($this->privateLang('DATETIME_PAST_HOURS'), round(($now - $timestamp)/3600))
-                : sprintf($this->privateLang('DATETIME_TODAY'), gmdate($time_f, $timetodraw));
+                : sprintf($this->privateLang('DATETIME_TODAY'), $timeToDraw->format($timeFormat));
+        } elseif ($timestamp >= $yesterday) {
+            $out = sprintf($this->privateLang('DATETIME_YESTERDAY'), $timeToDraw->format($timeFormat));
+        } else {
+            $out = $timeToDraw->format($format);
         }
-        elseif ($timetodraw >= $yesterday)
-            $out = sprintf($this->privateLang('DATETIME_YESTERDAY'), gmdate($time_f, $timetodraw));
-        else
-            $out = gmdate($format, $timetodraw);
 
-        if (count($translate))
+        if (count($translate)) {
             $out = strtr($out, $translate);
+        }
 
         return $out;
     }

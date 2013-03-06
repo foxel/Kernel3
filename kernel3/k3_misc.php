@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2010 - 2012 Andrey F. Kupreychik (Foxel)
+ * Copyright (C) 2010 - 2013 Andrey F. Kupreychik (Foxel)
  *
  * This file is part of QuickFox Kernel 3.
  * See https://github.com/foxel/Kernel3/ for more details.
@@ -463,84 +463,35 @@ final class FMisc
         }
     }
 
-    // checks if given timestamp is in DST period
-    static public function timeDST($time, $tz = 0, $style = '')
+    /**
+     * checks if given timestamp is in DST period
+     * @param $timestamp
+     * @param int $timeZone
+     * @return bool
+     * @throws FException
+     */
+    static public function timeDST($timestamp, $timeZone = 0)
     {
-        static $styles = array(
-            'eur' => array('+m' => 3, '+d' => 25, '+wd' => 0, '+h' => 2, '-m' => 10, '-d' => 25, '-wd' => 0, '-h' => 2),
-            'usa' => array('+m' => 3, '+d' =>  8, '+wd' => 0, '+h' => 2, '-m' => 11, '-d' =>  1, '-wd' => 0, '-h' => 2),
-            );
-        static $defstyle = 'eur';
-
-        $style = strtolower($style);
-
-        $DST = (isset($styles[$style]))
-            ? $styles[$style]
-            : $styles[$defstyle];
-
-        if (!isset($DST['gmt']))
-            $time += (int) $tz*3600;
-
-        if ($data = gmdate('n|j|w|G', $time))
-        {
-            $data = explode('|', $data);
-            $cm = $data[0];
-            if ($cm < $DST['+m'] || $cm > $DST['-m'])
-                return false;
-            elseif ($cm > $DST['+m'] && $cm < $DST['-m'])
-                return true;
-            else
-            {
-                if ($cm == $DST['+m'])
-                {
-                    $dd = $DST['+d'];
-                    if (isset($DST['+wd']))
-                        $dwd = $DST['+wd'];
-                    $dh = $DST['+h'];
-                    $bres = false;
-                }
-                else
-                {
-                    $dd = $DST['-d'];
-                    if (isset($DST['-wd']))
-                        $dwd = $DST['-wd'];
-                    $dh = $DST['-h'];
-                    $bres = true;
-                }
-                $cd = $data[1];
-
-
-                if ($cd < $dd)
-                    return $bres;
-                elseif (!isset($dwd))
-                {
-                    if ($cd > $dd)
-                        return !$bres;
-                    else
-                        return ($data[3] >= $dh) ? !$bres : $bres;
-                }
-                else
-                {
-                    $cvwd = $cd - $dd;
-                    if ($cvwd >= 7)
-                        return !$bres;
-
-                    $cwd = $data[2];
-                    $dvwd = ($dwd - $cwd + $cvwd) % 7;
-                    if ($dvwd < 0)
-                        $dvwd += 7;
-
-                    if ($cvwd < $dvwd)
-                        return $bres;
-                    elseif ($cvwd > $dvwd)
-                        return !$bres;
-                    else
-                        return ($data[3] >= $dh) ? !$bres : $bres;
+        if (is_numeric($timeZone)) {
+            // compatibility
+            $zones = DateTimeZone::listIdentifiers();
+            while (!empty($zones)) {
+                $temp = new DateTimeZone(array_shift($zones));
+                if ($temp->getOffset($timestamp) == $timeZone*3600) {
+                    $timeZone = $temp;
+                    break;
                 }
             }
+            if (!$timeZone instanceof DateTimeZone) {
+                throw new FException('Time Zone with given offset not found');
+            }
+        } elseif (!$timeZone instanceof DateTimeZone) {
+            $timeZone= new DateTimeZone($timeZone);
         }
-        else
-            return false;
+
+        $info = $timeZone->getTransitions($timestamp, $timestamp);
+
+        return (bool) $info['isdst'];
     }
 
     // recursively builds a linear array of references to all the scalar elements of array or object based tree

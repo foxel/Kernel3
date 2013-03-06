@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2010 - 2012 Andrey F. Kupreychik (Foxel)
+ * Copyright (C) 2010 - 2013 Andrey F. Kupreychik (Foxel)
  *
  * This file is part of QuickFox Kernel 3.
  * See https://github.com/foxel/Kernel3/ for more details.
@@ -21,7 +21,7 @@
 
 /**
  * QuickFox kernel 3 'SlyFox' main file
- * Requires PHP >= 5.1.0
+ * Requires PHP >= 5.2.0
  * @package kernel3
  * @subpackage core
  */
@@ -44,8 +44,8 @@ if (!defined('F_PROFILE'))
     define('F_PROFILE', F_DEBUG);
 
 // let's check the kernel requirements
-if (version_compare(PHP_VERSION, '5.1.0', '<'))
-    die('PHP 5.1.0 required');
+if (version_compare(PHP_VERSION, '5.2.0', '<'))
+    die('PHP 5.2.0 required');
 
 /** kernel files directory */
 define('F_KERNEL_DIR', dirname(__FILE__));
