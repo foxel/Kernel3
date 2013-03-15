@@ -1140,6 +1140,7 @@ class FVISInterface extends FEventDispatcher
                 'if (extract($_v, EXTR_SKIP)) {
                 extract($_in, EXTR_REFS | EXTR_OVERWRITE | EXTR_PREFIX_ALL, \'IN\');
                 extract($_c, EXTR_REFS | EXTR_OVERWRITE | EXTR_PREFIX_ALL, \'C\'); }
+                $UNIQID = dechex(mt_rand(0x1FFF, getrandmax()));
                 $OUT = \'\';
                 '.$this->templates[$vis]['T'].' return $OUT;');
 
