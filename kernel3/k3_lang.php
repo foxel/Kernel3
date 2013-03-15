@@ -284,7 +284,7 @@ class FLNGData // extends FEventDispatcher
         }
 
         if ($lastTimeZone !== $timeZone) {
-            $today += 60*$correction;
+            $today = $now + 60*$correction;
             $today = floor($today/86400)*86400;
             $yesterday = $today - 86400;
             $lastTimeZone = $timeZone;
