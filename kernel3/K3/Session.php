@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2012 Andrey F. Kupreychik (Foxel)
+ * Copyright (C) 2012 - 2013 Andrey F. Kupreychik (Foxel)
  *
  * This file is part of QuickFox Kernel 3.
  * See https://github.com/foxel/Kernel3/ for more details.
@@ -19,6 +19,11 @@
  * along with Kernel 3. If not, see <http://www.gnu.org/licenses/>.
  */
 
+/**
+ * Class K3_Session
+ *
+ * @author Foxel
+ */
 class K3_Session extends K3_Environment_Element
 {
     protected $SID       = '';           // Session ID
@@ -28,7 +33,7 @@ class K3_Session extends K3_Environment_Element
     protected $mode      = 0;            // status
     protected $tried     = false;        // if the session loading try was performed
 
-    protected $securityLevel  = 3;            // security level for client signature used
+    protected $securityLevel = 3;        // security level for client signature used
 
     /**
      * @var FDataBase
@@ -38,7 +43,7 @@ class K3_Session extends K3_Environment_Element
 
     const SID_NAME     = 'FSID';
     const LIFETIME     = 3600;
-    const CACHEPREFIX  = 'F_SESSIONS.';
+    const CACHE_PREFIX = 'F_SESSIONS.';
 
     const MODE_FIXED   = 1;
     const MODE_URLS    = 2;
@@ -53,15 +58,18 @@ class K3_Session extends K3_Environment_Element
 
     public function setDBase(FDataBase $dbo = null, $tbname = false)
     {
-        if (is_null($dbo))
+        if (is_null($dbo)) {
             $dbo = F()->DBase;
+        }
 
-        if (!$dbo || !$dbo->check() || ($this->mode & self::MODE_STARTED))
+        if (!$dbo || !$dbo->check() || ($this->mode & self::MODE_STARTED)) {
             return false;
+        }
 
         $this->dbObject = $dbo;
-        if (is_string($tbname) && $tbname)
+        if (is_string($tbname) && $tbname) {
             $this->dbTableName = $tbname;
+        }
 
         $this->mode |= self::MODE_DBASE;
 
@@ -70,53 +78,54 @@ class K3_Session extends K3_Environment_Element
 
     public function open($mode = 0)
     {
-        if ($this->mode & self::MODE_STARTED)
+        if ($this->mode & self::MODE_STARTED) {
             return true;
+        }
 
         $oldMode = $this->mode;
 
         $this->mode |= $mode & (self::MODES_ALLOW);
 
         $this->SID = $this->env->client->getCookie(self::SID_NAME);
-        if ($ForceSID = $this->env->request->getString('ForceFSID', K3_Request::POST, FStr::HEX))
+        if ($ForceSID = $this->env->request->getString('ForceFSID', K3_Request::POST, FStr::HEX)) {
             $this->SID = $ForceSID;
+        }
 
-        if (!$this->SID)
-        {
+        if (!$this->SID) {
             $this->mode |= self::MODE_URLS;
             $this->SID = $this->env->request->getString(self::SID_NAME, K3_Request::ALL, FStr::HEX);
         }
 
-        if (!$this->SID || $this->tried || !$this->load())
-        {
-            if (!($this->mode & self::MODE_TRY))
+        if (!$this->SID || $this->tried || !$this->load()) {
+            if (!($this->mode & self::MODE_TRY)) {
                 $this->create();
+            }
         }
 
 
-        if ($this->mode & self::MODE_STARTED)
-        {
+        if ($this->mode & self::MODE_STARTED) {
             // allows mode changes and any special reactions
             $this->throwEventRef('preopen', $this->mode, $this->SID);
 
-            if (!($this->mode & self::MODE_FIXED))
+            if (!($this->mode & self::MODE_FIXED)) {
                 $this->env->client->setCookie(self::SID_NAME, $this->SID);
+            }
 
             // allows mode changes and any special reactions
             $this->throwEventRef('opened', $this->mode, $this->SID);
 
-            if (!($this->mode & self::MODE_NOURLS) && ($this->mode & self::MODE_URLS)) // TODO: allowing from config
-            {
-                $this->env->response->addEventHandler('HTML_parse', array($this, 'HTMLURLsAddSID') );
-                $this->env->response->addEventHandler('URL_Parse', array($this, 'addSID') );
+            // TODO: allowing from config
+            if (!($this->mode & self::MODE_NOURLS) && ($this->mode & self::MODE_URLS)) {
+                $this->env->response->addEventHandler('HTML_parse', array($this, 'HTMLURLsAddSID'));
+                $this->env->response->addEventHandler('URL_Parse', array($this, 'addSID'));
             }
 
             FMisc::addShutdownCallback(array(&$this, 'close'));
 
             return true;
-        }
-        else
+        } else {
             $this->env->client->setCookie(self::SID_NAME);
+        }
 
         $this->mode = $oldMode;
         return false;
@@ -127,17 +136,18 @@ class K3_Session extends K3_Environment_Element
         $this->tried = true;
 
         $sess = ($this->mode & self::MODE_DBASE)
-                ? $this->dbObject->doSelect($this->dbTableName, '*', array('sid' => $this->SID) )
-                : FCache::get(self::CACHEPREFIX.$this->SID);
+            ? $this->dbObject->doSelect($this->dbTableName, '*', array('sid' => $this->SID))
+            : FCache::get(self::CACHE_PREFIX.$this->SID);
 
-        if (!is_array($sess) || !$sess)
+        if (!is_array($sess) || !$sess) {
             return false;
+        }
 
         if ($sess['ip'] != $this->env->client->IPInteger
             || $sess['lastused'] < (F()->Timer->qTime() - self::LIFETIME)
-            || $sess['clsign'] != $this->env->client->getSignature($this->securityLevel))
-        {
-            FCache::drop(self::CACHEPREFIX.$this->SID);
+            || $sess['clsign'] != $this->env->client->getSignature($this->securityLevel)
+        ) {
+            FCache::drop(self::CACHE_PREFIX.$this->SID);
             return false;
         }
 
@@ -179,11 +189,13 @@ class K3_Session extends K3_Environment_Element
 
     public function save()
     {
-        if (!($this->mode & self::MODE_STARTED))
+        if (!($this->mode & self::MODE_STARTED)) {
             return false;
+        }
 
-        if ($this->mode & self::MODE_FIXED)
+        if ($this->mode & self::MODE_FIXED) {
             return true;
+        }
 
         $this->throwEventRef('presave', $this->pool);
 
@@ -195,24 +207,22 @@ class K3_Session extends K3_Environment_Element
             'clicks'   => $this->clicks,
         );
 
-        if (!($this->mode & self::MODE_DBASE))
-        {
+        if (!($this->mode & self::MODE_DBASE)) {
             $dataArray['sid'] = $this->SID;
-            return FCache::set(self::CACHEPREFIX.$this->SID, $dataArray);
+            return FCache::set(self::CACHE_PREFIX.$this->SID, $dataArray);
         }
 
         // if using database
-        if ($this->mode & self::MODE_LOADED)
-            $this->dbObject->doUpdate($this->dbTableName, $dataArray, array('sid' => $this->SID) );
-        else
-        {
-            $dataArray['sid'] = $this->SID;
+        if ($this->mode & self::MODE_LOADED) {
+            $this->dbObject->doUpdate($this->dbTableName, $dataArray, array('sid' => $this->SID));
+        } else {
+            $dataArray['sid']       = $this->SID;
             $dataArray['starttime'] = F()->Timer->qTime();
             $this->dbObject->doInsert($this->dbTableName, $dataArray, true);
         }
 
         // delete old session data
-        $this->dbObject->doDelete($this->dbTableName, array('lastused' => '< '.(F()->Timer->qTime() - self::LIFETIME)), FDataBase::SQL_USEFUNCS );
+        $this->dbObject->doDelete($this->dbTableName, array('lastused' => '< '.(F()->Timer->qTime() - self::LIFETIME)), FDataBase::SQL_USEFUNCS);
 
         return true;
     }
@@ -224,8 +234,9 @@ class K3_Session extends K3_Environment_Element
 
     public function getSID()
     {
-        if (!($this->mode & self::MODE_STARTED) && ($this->tried || !$this->open(self::MODE_TRY)))
+        if (!($this->mode & self::MODE_STARTED) && ($this->tried || !$this->open(self::MODE_TRY))) {
             return null;
+        }
 
         return $this->SID;
     }
@@ -233,39 +244,44 @@ class K3_Session extends K3_Environment_Element
     // session variables control
     public function get($query)
     {
-        if (!($this->mode & self::MODE_STARTED) && ($this->tried || !$this->open(self::MODE_TRY)))
+        if (!($this->mode & self::MODE_STARTED) && ($this->tried || !$this->open(self::MODE_TRY))) {
             return null;
+        }
 
         $names = explode(' ', $query);
-        if (count($names)>1)
-        {
+        if (count($names) > 1) {
             $out = array();
-            foreach ($names as $name)
+            foreach ($names as $name) {
                 $out[$name] = (isset($this->pool[$name])) ? $this->pool[$name] : null;
+            }
 
             return $out;
-        }
-        else
+        } else {
             return (isset($this->pool[$query])) ? $this->pool[$query] : null;
+        }
     }
 
     public function set($name, $val)
     {
-        if (!($this->mode & self::MODE_STARTED) && !$this->open())
+        if (!($this->mode & self::MODE_STARTED) && !$this->open()) {
             return false;
+        }
 
         return ($this->pool[$name] = $val);
     }
 
     public function drop($query)
     {
-        if (!($this->mode & self::MODE_STARTED) && ($this->tried || !$this->open(self::MODE_TRY)))
+        if (!($this->mode & self::MODE_STARTED) && ($this->tried || !$this->open(self::MODE_TRY))) {
             return false;
+        }
 
         $names = explode(' ', $query);
-        if (count($names))
-            foreach ($names as $name)
+        if (count($names)) {
+            foreach ($names as $name) {
                 unset ($this->pool[$name]);
+            }
+        }
 
         return true;
     }
@@ -288,8 +304,9 @@ class K3_Session extends K3_Environment_Element
     // totally clears session data
     public function clear()
     {
-        if (!($this->mode & self::MODE_STARTED) && ($this->tried || !$this->open(self::MODE_TRY)))
+        if (!($this->mode & self::MODE_STARTED) && ($this->tried || !$this->open(self::MODE_TRY))) {
             return false;
+        }
 
         $this->pool = array();
 
@@ -300,8 +317,9 @@ class K3_Session extends K3_Environment_Element
     {
         $url = trim($url);
 
-        if (!($this->mode & self::MODE_STARTED) && ($this->tried || !$this->open(self::MODE_TRY)))
+        if (!($this->mode & self::MODE_STARTED) && ($this->tried || !$this->open(self::MODE_TRY))) {
             return $url;
+        }
 
         $url = FStr::urlAddParam($url, self::SID_NAME, $this->SID, $ampersand);
 
@@ -322,28 +340,26 @@ class K3_Session extends K3_Environment_Element
 
     public function SIDParseCallback($vars)
     {
-        if (!is_array($vars))
+        if (!is_array($vars)) {
             return false;
+        }
 
-        if (isset($vars[6]))
-        {
-            $url = $vars[6];
+        if (isset($vars[6])) {
+            $url    = $vars[6];
             $bounds = '\'';
-        }
-        elseif (isset($vars[5]))
-        {
-            $url = $vars[5];
+        } elseif (isset($vars[5])) {
+            $url    = $vars[5];
             $bounds = '"';
-        }
-        else
-        {
-            $url = $vars[4];
+        } else {
+            $url    = $vars[4];
             $bounds = '';
         }
 
-        if (preg_match('#^\w+:#', $url))
-            if (strpos($url, F()->appEnv->server->rootUrl) !== 0)
+        if (preg_match('#^\w+:#', $url)) {
+            if (strpos($url, F()->appEnv->server->rootUrl) !== 0) {
                 return $vars[1].$vars[3].' = '.$bounds.$url.$bounds;
+            }
+        }
 
         $url = FStr::urlAddParam($url, self::SID_NAME, $this->SID, true);
 
@@ -353,8 +369,9 @@ class K3_Session extends K3_Environment_Element
 
     public function close()
     {
-        if (!($this->mode & self::MODE_STARTED))
+        if (!($this->mode & self::MODE_STARTED)) {
             return true;
+        }
 
         return $this->save();
     }
