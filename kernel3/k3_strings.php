@@ -29,6 +29,26 @@
 if (!defined('F_STARTED'))
     die('Hacking attempt');
 
+define('_STR_URL_ESCAPED', '%[[:xdigit:]]{2}');
+define('_STR_URL_CHAR_ALNUM', 'A-Za-z0-9');
+define('_STR_URL_CHAR_MARK', '-_.!~*\'()\[\]');
+define('_STR_URL_CHAR_RESERVED', ';\/?:@&=+$,');
+define('_STR_URL_CHAR_SEGMENT', ':@&=+$,;');
+define('_STR_URL_CHAR_UNWISE', '{}|\\\\^`');
+
+// Segment can use escaped, unreserved or a set of additional chars
+define('_STR_URL_SEGMENT', '(?:'._STR_URL_ESCAPED.'|['._STR_URL_CHAR_ALNUM._STR_URL_CHAR_MARK._STR_URL_CHAR_SEGMENT.'])*');
+
+// Path can be a series of segmets char strings seperated by '/'
+define('_STR_URL_PATH', '(?:\/(?:'._STR_URL_SEGMENT.')?)+');
+
+// URI characters can be escaped, alphanumeric, mark or reserved chars
+define('_STR_URL_URIC', '(?:'._STR_URL_ESCAPED.'|['._STR_URL_CHAR_ALNUM._STR_URL_CHAR_MARK._STR_URL_CHAR_RESERVED.'])');
+
+define('_STR_URL_RELATIVE', '('._STR_URL_PATH.')?(\?'._STR_URL_URIC.')?(\#'._STR_URL_SEGMENT.')?');
+define('_STR_URL_ABSOLUTE', '(?>[0-9A-z]+://(?:[0-9A-z_\-\.]+\.[A-z]{2,4}|\d{1-3}\.\d{1-3}\.\d{1-3}\.\d{1-3}))'._STR_URL_RELATIVE);
+
+
 class FStr
 {
     const COMM = 0;
@@ -40,8 +60,12 @@ class FStr
 
     const LINE = 8; // flag
 
-    const URL_MASK_R = '[\w\#$%&~/\\\.\-;:=,?@+\(\)\[\]\|]+';
-    const URL_MASK_F = '(?>[0-9A-z]+://[0-9A-z_\-\.]+\.[A-z]{2,4})(?:\/[\w\#$%&~/\.\-;:=,?@+\(\)\[\]\|]+)?';
+    const URL_MASK_R = _STR_URL_RELATIVE;
+    const URL_MASK_F = _STR_URL_ABSOLUTE;
+    const URL_CHAR_ALNUM    = _STR_URL_CHAR_ALNUM;
+    const URL_CHAR_MARK     = _STR_URL_CHAR_MARK;
+    const URL_CHAR_RESERVED = _STR_URL_CHAR_RESERVED;
+    const URL_CHAR_SEGMENT  = _STR_URL_CHAR_SEGMENT;
     const EMAIL_MASK = '[0-9A-z_\-\.]+@[0-9A-z_\-\.]+\.[A-z]{2,4}';
     const PHPWORD_MASK = '[A-z_]\w*';
 
@@ -477,10 +501,12 @@ class FStr
 
     static public function isUrl($string)
     {
-        if (preg_match('#^'.self::URL_MASK_F.'$#D', $string))
+        if (preg_match('#^'.self::URL_MASK_F.'$#D', $string)) {
             return 1;
-        if (preg_match('#^'.self::URL_MASK_R.'$#D', $string))
+        }
+        if (preg_match('#^'.self::URL_MASK_R.'$#D', $string)) {
             return 2;
+        }
         return 0;
     }
 
