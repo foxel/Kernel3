@@ -32,7 +32,7 @@ if (!defined('F_STARTED'))
 define('_STR_URL_ESCAPED', '%[[:xdigit:]]{2}');
 define('_STR_URL_CHAR_ALNUM', 'A-Za-z0-9');
 define('_STR_URL_CHAR_MARK', '-_.!~*\'()\[\]');
-define('_STR_URL_CHAR_RESERVED', ';\/?:@&=+$,');
+define('_STR_URL_CHAR_RESERVED', ';/?:@&=+$,');
 define('_STR_URL_CHAR_SEGMENT', ':@&=+$,;');
 define('_STR_URL_CHAR_UNWISE', '{}|\\\\^`');
 
@@ -40,13 +40,13 @@ define('_STR_URL_CHAR_UNWISE', '{}|\\\\^`');
 define('_STR_URL_SEGMENT', '(?:'._STR_URL_ESCAPED.'|['._STR_URL_CHAR_ALNUM._STR_URL_CHAR_MARK._STR_URL_CHAR_SEGMENT.'])*');
 
 // Path can be a series of segmets char strings seperated by '/'
-define('_STR_URL_PATH', '(?:\/(?:'._STR_URL_SEGMENT.')?)+');
+define('_STR_URL_PATH', '(?:/|'._STR_URL_SEGMENT.')+');
 
 // URI characters can be escaped, alphanumeric, mark or reserved chars
 define('_STR_URL_URIC', '(?:'._STR_URL_ESCAPED.'|['._STR_URL_CHAR_ALNUM._STR_URL_CHAR_MARK._STR_URL_CHAR_RESERVED.'])');
 
 define('_STR_URL_RELATIVE', '('._STR_URL_PATH.')?(\?'._STR_URL_URIC.')?(\#'._STR_URL_SEGMENT.')?');
-define('_STR_URL_ABSOLUTE', '(?>[0-9A-z]+://(?:[0-9A-z_\-\.]+\.[A-z]{2,4}|\d{1-3}\.\d{1-3}\.\d{1-3}\.\d{1-3}))'._STR_URL_RELATIVE);
+define('_STR_URL_ABSOLUTE', '(?>[0-9A-z]+://(?:[0-9A-z_\-\.]+\.[A-z]{2,4}|\d{1-3}\.\d{1-3}\.\d{1-3}\.\d{1-3}))/'._STR_URL_RELATIVE);
 
 
 class FStr
