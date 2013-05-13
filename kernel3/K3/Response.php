@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2012 Andrey F. Kupreychik (Foxel)
+ * Copyright (C) 2012 - 2013 Andrey F. Kupreychik (Foxel)
  *
  * This file is part of QuickFox Kernel 3.
  * See https://github.com/foxel/Kernel3/ for more details.
@@ -36,6 +36,9 @@ abstract class K3_Response extends K3_Environment_Element implements I_K3_Respon
     protected $buffer  = '';
     protected $headers = array();
 
+    /**
+     * @param K3_Environment $env
+     */
     public function __construct(K3_Environment $env = null)
     {
         $this->pool = array(
@@ -46,6 +49,42 @@ abstract class K3_Response extends K3_Environment_Element implements I_K3_Respon
         parent::__construct($env);
     }
 
+    /**
+     * @return bool
+     */
+    public function startObHandling()
+    {
+        return ob_start(array($this, 'obOutputHanlder'));
+    }
+
+    /**
+     * @param string $text
+     * @return bool|string
+     */
+    public function obOutputHanlder($text)
+    {
+        //return $text;
+        // if the buffer is empty then we get a direct writing without using FHTTP
+        if ($this->isEmpty()) {
+            $cType = preg_match('#\<(\w+)\>.*\</\1\>#', $text)
+                ? 'text/html'
+                : 'text/plain';
+            $this->setDefaultHeaders(array(
+                'contentLength' => strlen($text),
+                'contentType'   => 'Content-Type: '.$cType.'; charset='.F::INTERNAL_ENCODING,
+            ));
+            $this->sendHeadersData();
+            return false;
+        } else {
+            return 'Output conflict. Sorry :(';
+        }
+    }
+
+    /**
+     * @param string $text
+     * @param bool $noNewLine
+     * @return $this
+     */
     public function write($text, $noNewLine = false)
     {
         if (is_scalar($text))
@@ -57,6 +96,9 @@ abstract class K3_Response extends K3_Environment_Element implements I_K3_Respon
         return $this;
     }
 
+    /**
+     * @return $this
+     */
     public function clearBuffer()
     {
         $this->buffer = '';
@@ -64,16 +106,28 @@ abstract class K3_Response extends K3_Environment_Element implements I_K3_Respon
         return $this;
     }
 
+    /**
+     * @return string
+     */
     public function getBuffer()
     {
         return $this->buffer;
     }
 
+    /**
+     * @return bool
+     */
     public function isEmpty()
     {
         return !strlen($this->buffer);
     }
 
+    /**
+     * @param FDataStream $stream
+     * @param array $params
+     * @param int $flags
+     * @return bool
+     */
     public function sendDataStream(FDataStream $stream, array $params = array(), $flags = 0)
     {
         ignore_user_abort(false);
@@ -122,6 +176,12 @@ abstract class K3_Response extends K3_Environment_Element implements I_K3_Respon
         return false;
     }
 
+    /**
+     * @param string $file
+     * @param array $params
+     * @param int $flags
+     * @return bool
+     */
     public function sendFile($file, array $params = array(), $flags = 0)
     {
         if (!file_exists($file))
@@ -134,6 +194,11 @@ abstract class K3_Response extends K3_Environment_Element implements I_K3_Respon
         return $this->sendDataStream(new FFileStream($file), $params, $flags);
     }
 
+    /**
+     * @param string $encoding
+     * @param array $params
+     * @param int $flags
+     */
     public function sendBuffer($encoding = '', array $params = array(), $flags = 0)
     {
         if (!$this->isEmpty()) {
@@ -189,6 +254,10 @@ abstract class K3_Response extends K3_Environment_Element implements I_K3_Respon
         $this->closeAndExit();
     }
 
+    /**
+     * @param string $url
+     * @param bool $useHTTP1
+     */
     public function sendRedirect($url, $useHTTP1 = false)
     {
         $url = FStr::fullUrl($url);
@@ -207,6 +276,11 @@ abstract class K3_Response extends K3_Environment_Element implements I_K3_Respon
         $this->closeAndExit();
     }
 
+    /**
+     * @param array $params
+     * @param int $flags
+     * @return $this
+     */
     protected function setDefaultHeaders(array $params, $flags = 0)
     {
         // content length 
@@ -282,24 +356,42 @@ abstract class K3_Response extends K3_Environment_Element implements I_K3_Respon
     }
 
     // setters
+    /**
+     * @param int $statusCode
+     * @return $this
+     */
     public function setStatusCode($statusCode)
     {
         $this->pool['statusCode'] = (int) $statusCode;
         return $this;
     }
 
+    /**
+     * @param bool $doHTMLParse
+     * @return $this
+     */
     public function setDoHTMLParse($doHTMLParse)
     {
         $this->pool['doHTMLParse'] = (boolean) $doHTMLParse;
         return $this;
     }
 
+    /**
+     * @param bool $useGZIP
+     * @return $this
+     */
     public function setUseGZIP($useGZIP)
     {
         $this->pool['useGZIP'] = (boolean) $useGZIP;
         return $this;
     }
 
+    /**
+     * @param $headerName
+     * @param $value
+     * @param bool $replace
+     * @return $this
+     */
     public function setHeader($headerName, $value, $replace = true)
     {
         if ($replace || !isset($this->headers[$headerName])) {
@@ -322,8 +414,18 @@ abstract class K3_Response extends K3_Environment_Element implements I_K3_Respon
     }
 
     abstract protected function sendHeadersData();
+
+    /**
+     * @param string|null $data
+     * @return void
+     */
     abstract protected function sendResponseData($data = null);
 
+    /**
+     * @param string $data
+     * @param int $level
+     * @return bool
+     */
     protected function tryGZIPEncode(&$data, $level = 9)
     {
         if (!extension_loaded('zlib'))
@@ -342,6 +444,9 @@ abstract class K3_Response extends K3_Environment_Element implements I_K3_Respon
         return false;
     }
 
+    /**
+     * @return void
+     */
     protected function closeAndExit()
     {
         $this->throwEvent('closeAndExit');

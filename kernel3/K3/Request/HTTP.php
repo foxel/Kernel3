@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2012 Andrey F. Kupreychik (Foxel)
+ * Copyright (C) 2012 - 2013 Andrey F. Kupreychik (Foxel)
  *
  * This file is part of QuickFox Kernel 3.
  * See https://github.com/foxel/Kernel3/ for more details.
@@ -22,19 +22,10 @@
 class K3_Request_HTTP extends K3_Request
 {
     /**
-     * @var array
-     */
-    protected $raw = array();
-
-    /**
      * @var array|null
      */
-    protected $UPLOADS = null;
+    protected $_UPLOADS = null;
 
-    /**
-     * @var bool
-     */
-    protected $doGPCStrip = false;
 
     /**
      * @param K3_Environment|null $env
@@ -47,6 +38,10 @@ class K3_Request_HTTP extends K3_Request
         $this->pool['isSecure'] = (!empty($_SERVER['HTTPS']) && ($_SERVER['HTTPS'] != 'off'));
         $this->pool['isAjax']   = (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && ($_SERVER['HTTP_X_REQUESTED_WITH'] == 'XMLHttpRequest'));
         $this->pool['isPost']   = !empty($_POST);
+
+        $this->_GET     = &$_GET;
+        $this->_POST    = &$_POST;
+        $this->_REQUEST = &$_REQUEST;
     }
 
     /**
@@ -74,73 +69,6 @@ class K3_Request_HTTP extends K3_Request
         return $this;
     }
 
-    /**
-     * useful for special inpur parsings
-     * @param array $datas
-     * @param int $set
-     * @return bool
-     */
-    public function setRaws(array $datas, $set = self::GET)
-    {
-        $raw =& $this->raw;
-        foreach ($datas as $key => $data)
-            $raw[$set][$key] = $data;
-
-        return $this;
-    }
-
-    /**
-     * @param string $varName
-     * @param int $source
-     * @param mixed $default
-     * @return mixed|null
-     */
-    public function get($varName, $source = self::ALL, $default = null)
-    {
-        $raw = $this->raw;
-
-        if (isset($raw[$source][$varName])) {
-            return $raw[$source][$varName];
-        }
-
-        // cookie requests are redirected
-        if ($source == self::COOKIE) {
-            $val = $this->env->client->getCookie($varName);
-            return !is_null($val)
-                ? $val
-                : $default;
-        }
-
-        // determining data source
-        $svarName = $varName;
-        switch ($source) 
-        {
-            case self::GET:
-                $dataSource =& $_GET;
-                break;
-            case self::POST:
-                $dataSource =& $_POST;
-                break;
-            default:
-                $dataSource =& $_REQUEST;
-        }
-
-        // if the item is not set return default (NULL)
-        if (!isset($dataSource[$svarName])) {
-            return $default;
-        }
-
-        $val = $dataSource[$svarName];
-
-        if ($this->doGPCStrip) {
-            $val = FStr::unslash($val);
-        }
-
-        // setting for future use
-        $raw[$source][$varName] = $val;
-
-        return $val;
-    }
 
     /**
      * @param string $varName
@@ -148,11 +76,11 @@ class K3_Request_HTTP extends K3_Request
      */
     public function getFile($varName)
     {
-        if (is_null($this->UPLOADS))
-            $this->recheckFiles();
+        if (is_null($this->_UPLOADS))
+            $this->_recheckFiles();
 
-        if (isset($this->UPLOADS[$varName]))
-            return $this->UPLOADS[$varName];
+        if (isset($this->_UPLOADS[$varName]))
+            return $this->_UPLOADS[$varName];
         else
             return null;
     }
@@ -165,13 +93,13 @@ class K3_Request_HTTP extends K3_Request
      */
     public function moveFile($varName, $toFile, $forceReplace = false)
     {
-        if (is_null($this->UPLOADS))
-            $this->recheckFiles();
+        if (is_null($this->_UPLOADS))
+            $this->_recheckFiles();
 
-        if (!isset($this->UPLOADS[$varName]))
+        if (!isset($this->_UPLOADS[$varName]))
             return false;
 
-        $file =&$this->UPLOADS[$varName];
+        $file =&$this->_UPLOADS[$varName];
         if (isset($file['is_group']))
             return false;
         elseif ($file['error'])
@@ -194,18 +122,18 @@ class K3_Request_HTTP extends K3_Request
     }
 
     // inner funtions
-    private function recheckFiles()
+    protected function _recheckFiles()
     {
         static $emptyFile = array('name' => '', 'type' => '', 'tmp_name' => '', 'error' => 0, 'size' => 0);
 
         $fgroups = array();
-        $this->UPLOADS = $_FILES;
+        $this->_UPLOADS = $_FILES;
         // reparsing arrays
         do
         {
             $needLoop = false;
             $files = array();
-            foreach($this->UPLOADS as $varname=>$fileinfo)
+            foreach($this->_UPLOADS as $varname=>$fileinfo)
             {
                 $tmpFile = $fileinfo['tmp_name'];
                 if (is_array($tmpFile))
@@ -226,13 +154,13 @@ class K3_Request_HTTP extends K3_Request
                 else
                     $files[$varname] = $fileinfo;
             }
-            $this->UPLOADS = $files;
+            $this->_UPLOADS = $files;
         } while ($needLoop);
 
         // checking files
-        foreach($this->UPLOADS as $varname=>$upload)
+        foreach($this->_UPLOADS as $varname=>$upload)
         {
-            $upload = $this->UPLOADS[$varname] + $emptyFile;
+            $upload = $this->_UPLOADS[$varname] + $emptyFile;
             if ($this->doGPCStrip)
                 $upload = FStr::unslash($upload);
 
@@ -263,11 +191,11 @@ class K3_Request_HTTP extends K3_Request
                 trigger_error('GPC: uploaded file is not totally uploaded: filename="'.$upload['name'].'"; tmp="'.$tmpFile.'"; size='.$upload['size'].'; realsize='.$fsize, E_USER_WARNING);
                 $upload['error'] = self::UPLOAD_ERR_PARTIAL;
             }
-            $this->UPLOADS[$varname] = $upload;
+            $this->_UPLOADS[$varname] = $upload;
         }
 
 
-        $this->UPLOADS+= $fgroups;
+        $this->_UPLOADS+= $fgroups;
     }
 
 }

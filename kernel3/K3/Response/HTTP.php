@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2012 Andrey F. Kupreychik (Foxel)
+ * Copyright (C) 2012 - 2013 Andrey F. Kupreychik (Foxel)
  *
  * This file is part of QuickFox Kernel 3.
  * See https://github.com/foxel/Kernel3/ for more details.
@@ -21,6 +21,9 @@
 
 class K3_Response_HTTP extends K3_Response
 {
+    /**
+     * @param K3_Environment $env
+     */
     public function __construct(K3_Environment $env = null)
     {
         parent::__construct($env);
@@ -31,30 +34,12 @@ class K3_Response_HTTP extends K3_Response
         ini_set ('default_charset', '');
     }
 
-    public function startObHandling()
-    {
-        return ob_start(array($this, 'obOutputHanlder'));
-    }
-
-    public function obOutputHanlder($text)
-    {
-        //return $text;
-        // if the buffer is empty then we get a direct writing without using FHTTP
-        if ($this->isEmpty()) {
-            $cType = preg_match('#\<(\w+)\>.*\</\1\>#', $text)
-                    ? 'text/html'
-                    : 'text/plain';
-            $this->setDefaultHeaders(array(
-                'contentLength' => strlen($text),
-                'contentType'   => 'Content-Type: '.$cType.'; charset='.F::INTERNAL_ENCODING,
-            ));
-            $this->sendHeadersData();
-            return false;
-        } else {
-            return 'Output conflict. Sorry :(';
-        }
-    }
-
+    /**
+     * @param string $file
+     * @param array $params
+     * @param int $flags
+     * @return bool|void
+     */
     public function sendFile($file, array $params = array(), $flags = 0)
     {
         // TODO:: move to request headers
@@ -66,6 +51,10 @@ class K3_Response_HTTP extends K3_Response
         parent::sendFile($file, $params, $flags);
     }
 
+    /**
+     * @param $statusCode
+     * @return $this
+     */
     public function setStatusCode($statusCode)
     {
         if (isset(self::$statusCodes[$statusCode])) {
@@ -74,6 +63,9 @@ class K3_Response_HTTP extends K3_Response
         return $this;
     }
 
+    /**
+     * @return $this
+     */
     protected function sendHeadersData()
     {
         // sending HTTP status
@@ -89,6 +81,9 @@ class K3_Response_HTTP extends K3_Response
         return $this;
     }
 
+    /**
+     * @param null $data
+     */
     protected function sendResponseData($data = null)
     {
         if (is_null($data)) {

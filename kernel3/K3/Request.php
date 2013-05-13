@@ -1,7 +1,6 @@
 <?php
 /**
- * Copyright (C) 2012 Andrey F. Kupreychik (Foxel)
- *
+ * Copyright (C) 2012 - 2013 Andrey F. Kupreychik (Foxel)
  * This file is part of QuickFox Kernel 3.
  * See https://github.com/foxel/Kernel3/ for more details.
  *
@@ -29,6 +28,11 @@
  */
 abstract class K3_Request extends K3_Environment_Element implements I_K3_Request
 {
+    /**
+     * @var array
+     */
+    protected $raw = array();
+
     // GPC source types
     const ALL    = 0;
     const GET    = 1;
@@ -48,6 +52,15 @@ abstract class K3_Request extends K3_Environment_Element implements I_K3_Request
      */
     protected $stringRecodeFunc = null;
 
+    /** @var bool */
+    protected $doGPCStrip = false;
+    /** @var array */
+    protected $_GET = array();
+    /** @var array */
+    protected $_POST = array();
+    /** @var array */
+    protected $_REQUEST = array();
+
     /**
      * @param K3_Environment|null $env
      */
@@ -66,13 +79,73 @@ abstract class K3_Request extends K3_Environment_Element implements I_K3_Request
     }
 
     /**
-     * must be implemented in extending class
-     * @param  string $varName
-     * @param  integer $source
-     * @param  mixed $default
-     * @return mixed
+     * useful for special inpur parsings
+     *
+     * @param array $datas
+     * @param int $set
+     * @return bool
      */
-    public function get($varName, $source = self::ALL, $default = null) {}
+    public function setRaws(array $datas, $set = self::GET)
+    {
+        $raw =& $this->raw;
+        foreach ($datas as $key => $data) {
+            $raw[$set][$key] = $data;
+        }
+
+        return $this;
+    }
+
+    /**
+     * @param string $varName
+     * @param int $source
+     * @param mixed $default
+     * @return mixed|null
+     */
+    public function get($varName, $source = self::ALL, $default = null)
+    {
+        $raw = $this->raw;
+
+        if (isset($raw[$source][$varName])) {
+            return $raw[$source][$varName];
+        }
+
+        // cookie requests are redirected
+        if ($source == self::COOKIE) {
+            $val = $this->env->client->getCookie($varName);
+            return !is_null($val)
+                ? $val
+                : $default;
+        }
+
+        // determining data source
+        $svarName = $varName;
+        switch ($source) {
+            case self::GET:
+                $dataSource =& $this->_GET;
+                break;
+            case self::POST:
+                $dataSource =& $this->_POST;
+                break;
+            default:
+                $dataSource =& $this->_REQUEST;
+        }
+
+        // if the item is not set return default (NULL)
+        if (!isset($dataSource[$svarName])) {
+            return $default;
+        }
+
+        $val = $dataSource[$svarName];
+
+        if ($this->doGPCStrip) {
+            $val = FStr::unslash($val);
+        }
+
+        // setting for future use
+        $raw[$source][$varName] = $val;
+
+        return $val;
+    }
 
     /**
      * @param  string $varName
@@ -83,10 +156,12 @@ abstract class K3_Request extends K3_Environment_Element implements I_K3_Request
     public function getBinary($varName, $source = self::ALL, $getFlags = true)
     {
         $val = $this->get($varName, $source);
-        if ($val === null)
+        if ($val === null) {
             return null;
-        if ($getFlags && is_string($val) && !strlen($val))
+        }
+        if ($getFlags && is_string($val) && !strlen($val)) {
             $val = true;
+        }
         return ($val) ? true : false;
     }
 
@@ -96,11 +171,12 @@ abstract class K3_Request extends K3_Environment_Element implements I_K3_Request
      * @param  boolean $getFloat
      * @return int|float|null
      */
-    public function getNumber($varName, $source = self::ALL, $getFloat = false )
+    public function getNumber($varName, $source = self::ALL, $getFloat = false)
     {
         $val = $this->get($varName, $source);
-        if ($val === null)
+        if ($val === null) {
             return null;
+        }
         return ($getFloat) ? floatval($val) : intval($val);
     }
 
@@ -110,15 +186,17 @@ abstract class K3_Request extends K3_Environment_Element implements I_K3_Request
      * @param  integer $stringCastType
      * @return string|null
      */
-    public function getString($varName, $source = self::ALL, $stringCastType = null )
+    public function getString($varName, $source = self::ALL, $stringCastType = null)
     {
         $val = $this->get($varName, $source);
-        if ($val === null)
+        if ($val === null) {
             return null;
+        }
         $val = trim(strval($val));
 
-        if (is_callable($this->stringRecodeFunc))
+        if (is_callable($this->stringRecodeFunc)) {
             $val = call_user_func($this->stringRecodeFunc, $val);
+        }
 
         if ($stringCastType) {
             $val = FStr::cast($val, $stringCastType);
