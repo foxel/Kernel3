@@ -204,8 +204,8 @@ class K3_Image extends FBaseClass
         $box = imagettfbbox($fontSize, 0, $fontFile, $text);
         $x   = imagesx($this->_resource) - 10 - $box[2];
         $y   = imagesy($this->_resource) - 10 - $box[3];
-        imagettftext($this->_resource, $fontSize, 0, $x + 1, $y + 1, $this->_imageColorAllocate($this->_resource, 0, 0, 0), $fontFile, $text);
-        imagettftext($this->_resource, $fontSize, 0, $x, $y, $this->_imageColorAllocate($this->_resource, 255, 255, 255), $fontFile, $text);
+        imagettftext($this->_resource, $fontSize, 0, $x + 1, $y + 1, $this->_imageColorAllocate(0, 0, 0), $fontFile, $text);
+        imagettftext($this->_resource, $fontSize, 0, $x, $y, $this->_imageColorAllocate(255, 255, 255), $fontFile, $text);
 
         return $this;
     }
