@@ -299,7 +299,7 @@ abstract class K3_Response extends K3_Environment_Element implements I_K3_Respon
         // expires time
         if (isset($params['contentCacheTime'])) {
             $this->setHeader('Expires', date('r', F()->Timer->qTime() + (int) $params['contentCacheTime']), true);
-        } else {
+        } elseif (!isset($params['contentTime'])) {
             $this->setHeader('Cache-Control', 'no-cache');
         }
         // disposition

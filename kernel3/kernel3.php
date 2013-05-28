@@ -394,7 +394,7 @@ class F extends FEventDispatcher
             header('Content-Type: text/html; charset='.self::INTERNAL_ENCODING);
         }
         if (F_DEBUG) {
-            print $eName.': '.$e->getMessage().'. File: '.$e->getFile().'. Line: '.$e->getLine().'.'.PHP_EOL;
+            print $eName.': '.$e->getMessage().'. File: '.$e->getFile().'. Line: '.$e->getLine().'.'.PHP_EOL.'Trace: '.$e->getTraceAsString().PHP_EOL;
         } else {
             print '<html><head><title>'.$this->LNG->lang('ERR_CRIT_PAGE', false, true).'</title></head><body><h1>'.$this->LNG->lang('ERR_CRIT_PAGE', false, true).'</h1>'.$this->LNG->lang('ERR_CRIT_MESS', false, true).'</body></html>';
         }
