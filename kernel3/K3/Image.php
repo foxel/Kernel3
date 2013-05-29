@@ -21,7 +21,6 @@
 
 /**
  * Class K3_Image
- * @property-read int $format
  * @method int width
  * @method int height
  */
