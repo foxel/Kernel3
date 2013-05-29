@@ -103,6 +103,7 @@ class K3_Image extends FBaseClass
      * @param int $newWidth
      * @param int $newHeight
      * @param int $mode
+     * @throws FException
      * @return $this
      */
     public function resize($newWidth, $newHeight = 0, $mode = self::RESIZE_SCALE)
@@ -113,20 +114,17 @@ class K3_Image extends FBaseClass
         $dstH = $newHeight;
         $dstX = $dstY = $srcX = $srcY = 0;
 
-        $scaleX = $newWidth/$srcW;
-        $scaleY = $newHeight/$srcH;
-
-        if ($scaleX && $scaleY) {
+        if ($newWidth && $newHeight) {
             switch ($mode) {
                 case self::RESIZE_COVER:
-                    $scale = max($scaleX, $scaleY);
+                    $scale = max($newWidth/$srcW, $newHeight/$srcH);
                     $srcW = $newWidth/$scale;
                     $srcH = $newHeight/$scale;
                     $srcX = ($this->width() - $srcW)/2;
                     $srcY = ($this->height() - $srcH)/2;
                     break;
                 case self::RESIZE_FIT:
-                    $scale = min($scaleX, $scaleY);
+                    $scale = min($newWidth/$srcW, $newHeight/$srcH);
                     $dstW = $srcW*$scale;
                     $dstH = $srcH*$scale;
                     $dstX = ($newWidth - $dstW)/2;
@@ -148,10 +146,12 @@ class K3_Image extends FBaseClass
                     // do nothing
             }
 
+        } elseif ($newWidth) {
+            $dstH = $newHeight = (int) round($srcH*$newWidth/$srcW);
+        } elseif ($newHeight) {
+            $dstW = $newWidth  = (int) round($srcW*$newHeight/$srcH);
         } else {
-            $scale = max($scaleX, $scaleY);
-            $dstW  = $newWidth  = (int) ($scale*$this->width());
-            $dstH  = $newHeight = (int) ($scale*$this->height());
+            throw new FException('Image size can to be set to zero');
         }
 
         if (imageistruecolor($this->_resource)) {
@@ -171,10 +171,10 @@ class K3_Image extends FBaseClass
 
         imagecopyresampled(
             $newImg, $this->_resource,
-            (int) $dstX, (int) $dstY,
-            (int) $srcX, (int) $srcY,
-            (int) $dstW, (int) $dstH,
-            (int) $srcW, (int) $srcH
+            (int) round($dstX), (int) round($dstY),
+            (int) round($srcX), (int) round($srcY),
+            (int) round($dstW), (int) round($dstH),
+            (int) round($srcW), (int) round($srcH)
         );
 
         imagedestroy($this->_resource);
