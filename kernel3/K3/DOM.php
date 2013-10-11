@@ -22,9 +22,10 @@
 class K3_DOM extends DOMDocument
 {
     /**
+     * @param string[] $allowedIFrameSources
      * @return K3_DOM
      */
-    public function stripXSSVulnerableCode()
+    public function stripXSSVulnerableCode(array $allowedIFrameSources = array())
     {
         $xpath = new DOMXPath($this);
         // Register the php: namespace
@@ -32,10 +33,24 @@ class K3_DOM extends DOMDocument
         // Register PHP function
         $xpath->registerPHPFunctions('stripos');
 
-        $forbiddenNodes = $xpath->query('//script|//iframe|//frame');
+        $forbiddenNodes = $xpath->query('//script|//frame');
         foreach ($forbiddenNodes as $item) {
             /** @var $item DOMElement */
             $item->parentNode->removeChild($item);
+        }
+
+        $allowedIFrameSources = (array)$allowedIFrameSources;
+        foreach ($allowedIFrameSources as &$src) {
+            $src = preg_quote($src, '#');
+        }
+
+        $allowedIFrameRegExp = '#^https?://(www\.)?('.implode('|', $allowedIFrameSources).')/#';
+        $iFrames = $xpath->query('//iframe');
+        foreach ($iFrames as $item) {
+            /** @var $item DOMElement */
+            if (empty($allowedIFrameSources) || !preg_match($allowedIFrameRegExp, $item->getAttribute('src'))) {
+                $item->parentNode->removeChild($item);
+            }
         }
 
         // TODO: improve this list or move to allowed tags and attributes
