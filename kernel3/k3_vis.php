@@ -581,7 +581,7 @@ class FVISInterface extends FEventDispatcher
                     foreach ($indata as $name => $templ)
                     {
                         if ($name == 'CSS')
-                            $VCSS.= $this->prepareECSS($templ);
+                            $VCSS.= $this->prepareECSS($templ, $this->vis_consts);
                         elseif ($name == 'JS')
                             $VJS.= $templ; // EJS can contain {V_ links
                                            // so we need to store it first and parse after VIS loading
@@ -591,7 +591,7 @@ class FVISInterface extends FEventDispatcher
 
                     $this->templates += $Tdata;
                     $this->VCSS_data .= FStr::ENDL.$VCSS;
-                    $VJS = $this->prepareEJS($VJS); // and here we actually parse EJS
+                    $VJS = $this->prepareEJS($VJS, $this->vis_consts); // and here we actually parse EJS
                     $this->VJS_data  .= FStr::ENDL.$VJS;
 
                     FCache::set($cachename, array($Tdata, $VCSS, $VJS) );
