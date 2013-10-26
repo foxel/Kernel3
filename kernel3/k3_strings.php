@@ -68,7 +68,7 @@ class FStr
 //    const URL_CHAR_SEGMENT  = _STR_URL_CHAR_SEGMENT;
 
     const URL_MASK_R = '[\w\#$%&~/\\\.\-;:=,?@+\(\)\[\]\|]+';
-    const URL_MASK_F = '(?>[0-9A-z]+://[0-9A-z_\-\.]+\.[A-z]{2,4})(?:\/[\w\#$%&~/\.\-;:=,?@+\(\)\[\]\|]+)?';
+    const URL_MASK_F = '(?>(?:[0-9A-z]+:)?//[0-9A-z_\-\.]+\.[A-z]{2,4})(?:\/[\w\#$%&~/\.\-;:=,?@+\(\)\[\]\|]+)?';
 
     const EMAIL_MASK = '[0-9A-z_\-\.]+@[0-9A-z_\-\.]+\.[A-z]{2,4}';
     const PHPWORD_MASK = '[A-z_]\w*';
