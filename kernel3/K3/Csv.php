@@ -84,7 +84,7 @@ class K3_Csv
                     strpos($field, "\t")!==false ||
                     strpos($field, ' ')!==false )
             ) {
-                $line[] = '"'.strtr($field, array('"' => '""'));
+                $line[] = '"'.strtr($field, array('"' => '""')).'"';
             } else {
                 $line[] = (string) $field;
             }
@@ -132,11 +132,14 @@ class K3_Csv
      */
     public function close()
     {
-        return fclose($this->_stream);
+        if ($res = fclose($this->_stream)) {
+            $this->_stream = null;
+        }
+        return $res;
     }
 
     public function __destruct()
     {
-        $this->close();
+        $this->_stream && $this->close();
     }
 }
