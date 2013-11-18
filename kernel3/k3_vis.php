@@ -30,6 +30,11 @@
 if (!defined('F_STARTED'))
     die('Hacking attempt');
 
+define('K3_VIS_TEMPLATE_REGEXP_PARAM_VALUE', '-?[0-9]+|\w+|\"(?:\"\"|[^\"])*\"');
+define('K3_VIS_TEMPLATE_REGEXP_PARAM', '((?>'.K3_VIS_TEMPLATE_REGEXP_PARAM_VALUE.'))(?:([\!=\>\<]{1,2})('.K3_VIS_TEMPLATE_REGEXP_PARAM_VALUE.'))?');
+define('K3_VIS_TEMPLATE_REGEXP_CALL', '\{([\!\/]?)((?>\w+))(?:\:((?:'.K3_VIS_TEMPLATE_REGEXP_PARAM.'|\|)*))?\}');
+define('K3_VIS_TEMPLATE_REGEXP', K3_VIS_TEMPLATE_REGEXP_CALL.'|[^\{]+|\{');
+
 // VIS node class
 class FVISNode extends FBaseClass // FEventDispatcher
 {
@@ -830,14 +835,13 @@ class FVISInterface extends FEventDispatcher
     }
 
     // parsing functions
+    const TEMPLATE_REGEXP_PARAM_VALUE = K3_VIS_TEMPLATE_REGEXP_PARAM_VALUE;
+    const TEMPLATE_REGEXP_PARAM       = K3_VIS_TEMPLATE_REGEXP_PARAM;
+    const TEMPLATE_REGEXP_CALL        = K3_VIS_TEMPLATE_REGEXP_CALL;
+    const TEMPLATE_REGEXP             = K3_VIS_TEMPLATE_REGEXP;
 
     public function prepareVIS($text, $store_to = false)
     {
-        /*static $consts = array(
-            'F_MARK'  => 'Powered by<br />Kernel 3<br />&copy; Foxel aka LION<br /> 2006 - 2009',
-            'F_INDEX' => F_SITE_INDEX,
-            );*/
-
         $consts = $this->vis_consts;
 
         $text = trim($text);
@@ -848,7 +852,7 @@ class FVISInterface extends FEventDispatcher
         $text = $this->templLang($text);
 
         $text = preg_replace('#(?<=\})\r?\n\s*?(?=\{\w)#', '', $text);
-        preg_match_all('#\{([\!\/]?)((?>\w+))(?:\:((?:(?>-?[0-9]+|\w+|\"[^\"]*\")(?:[\!=\>\<]{1,2}(?:-?[0-9]+|\w+|\"[^\"]*\"))?|\|)*))?\}|[^\{]+|\{#', $text, $struct, PREG_SET_ORDER);
+        preg_match_all('#'.self::TEMPLATE_REGEXP.'#', $text, $struct, PREG_SET_ORDER);
 
         $writes_to = 'OUT';
         $text = '$'.$writes_to.' = <<<FTEXT'.FStr::ENDL;
@@ -873,7 +877,7 @@ class FVISInterface extends FEventDispatcher
 
                 $params = array();
                 if (isset($part[3])) {
-                    preg_match_all('#((?>-?[0-9]+|\w+|\"[^\"]*\"))(?:([\!=\>\<]{1,2})(-?[0-9]+|\w+|\"[^\"]*\"))?#', $part[3], $params, PREG_PATTERN_ORDER);
+                    preg_match_all('#'.self::TEMPLATE_REGEXP_PARAM.'#', $part[3], $params, PREG_PATTERN_ORDER);
                 }
 
                 if ($tag == 'WRITE')
