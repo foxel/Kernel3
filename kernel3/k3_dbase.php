@@ -740,12 +740,12 @@ class FDBSelect
      * @param string|bool|null $tableAlias - false for autodetection, null to force no tableAlias
      * @return FDBSelect
      */
-    public function order($order, $desc = false, $tableAlias = false)
+    public function order($order, $desc = null, $tableAlias = false)
     {
         $columnGiven = FStr::isWord($order);
         $this->_determineTableAliasWithColumn($order, $tableAlias);
 
-        if ($columnGiven || FStr::isWord($order)) {// column given
+        if ($columnGiven || !is_null($desc)) {// column given
             $this->order[] = array($tableAlias, $order, (boolean) $desc);
         } else {
             $this->order[] = (string) $order;
@@ -894,12 +894,12 @@ class FDBSelect
                 $field = $this->fields[$field];
                 return $tableAlias;
             }
-        }
-
-        if (!$tableAlias) {
-            list($tableAlias) = array_keys($this->tables);
-        } else {
-            $tableAlias = (string) $tableAlias;
+        } elseif (FStr::isWord($field)) {
+            if (!$tableAlias) {
+                list($tableAlias) = array_keys($this->tables);
+            } else {
+                $tableAlias = (string) $tableAlias;
+            }
         }
 
         return $tableAlias;
