@@ -184,12 +184,65 @@ class K3_Image extends FBaseClass
     }
 
     /**
+     * @param K3_Image $srcImg
+     * @param int $dstX
+     * @param int $dstY
+     * @param int $srcX
+     * @param int $srcY
+     * @param int $width
+     * @param int $height
+     * @param int $percent
+     * @return $this
+     */
+    public function copymerge(K3_Image $srcImg, $dstX, $dstY, $srcX, $srcY, $width, $height, $percent)
+    {
+        return $this->copymergeresampled($srcImg, $dstX, $dstY, $srcX, $srcY, $width, $height, $width, $height, $percent);
+    }
+
+    /**
+     * @param K3_Image $srcImg
+     * @param int $dstX
+     * @param int $dstY
+     * @param int $srcX
+     * @param int $srcY
+     * @param int $dstWidth
+     * @param int $dstHeight
+     * @param int $srcWidth
+     * @param int $srcHeight
+     * @param int $percent
+     * @return $this
+     */
+    public function copymergeresampled(K3_Image $srcImg, $dstX, $dstY, $srcX, $srcY, $dstWidth, $dstHeight, $srcWidth, $srcHeight, $percent)
+    {
+        // creating a cut resource
+        $cut = imagecreatetruecolor($dstWidth, $dstHeight);
+
+        // copying relevant section from background to the cut resource
+        imagecopy($cut, $this->_resource, 0, 0, $dstX, $dstY, $dstWidth, $dstHeight);
+
+        $prevAB = imagealphablending($srcImg->getResource(), true);
+        // copying relevant section from watermark to the cut resource
+        if ($srcWidth == $dstWidth && $srcHeight == $dstHeight) {
+            imagecopy($cut, $srcImg->getResource(), 0, 0, $srcX, $srcY, $dstWidth, $dstHeight);
+        } else {
+            imagecopyresampled($cut, $srcImg->getResource(), 0, 0, $srcX, $srcY, $dstWidth, $dstHeight, $srcWidth, $srcHeight);
+        }
+        imagealphablending($srcImg->getResource(), $prevAB);
+
+        // insert cut resource to destination image
+        imagecopymerge($this->_resource, $cut, $dstX, $dstY, 0, 0, $dstWidth, $dstHeight, $percent);
+
+        return $this;
+    }
+
+    /**
      * @param string $text
      * @param string $fontFile
      * @param int|string $fontSize
+     * @param int $opacity
      * @return $this
      */
-    public function watermark($text, $fontFile, $fontSize = 24)
+    public function watermark($text, $fontFile, $fontSize = 24, $opacity = null)
     {
         if (is_string($fontSize) && preg_match('#^([\d\.]+)%$#', $fontSize, $matches)) {
             $percent  = ($matches[1]/100);
@@ -201,10 +254,26 @@ class K3_Image extends FBaseClass
         }
 
         $box = imagettfbbox($fontSize, 0, $fontFile, $text);
-        $x   = imagesx($this->_resource) - 10 - $box[2];
-        $y   = imagesy($this->_resource) - 10 - $box[3];
-        imagettftext($this->_resource, $fontSize, 0, $x + 1, $y + 1, $this->_imageColorAllocate(0, 0, 0), $fontFile, $text);
-        imagettftext($this->_resource, $fontSize, 0, $x, $y, $this->_imageColorAllocate(255, 255, 255), $fontFile, $text);
+        $boxWidth  = $box[2] - $box[6];
+        $boxHeight = $box[3] - $box[7];
+
+        $x   = imagesx($this->_resource) - 10 - $boxWidth;
+        $y   = imagesy($this->_resource) - 10 - $boxHeight;
+
+
+        $textImage = imagecreatetruecolor($boxWidth + 1, $boxHeight + 1);
+        imagealphablending($textImage, false);
+        imagefilledrectangle($textImage, 0, 0, $boxWidth, $boxHeight, 0x7FFFFFFF);
+        imagesavealpha($textImage, true);
+
+        imagettftext($textImage, $fontSize, 0, -$box[6] + 1, -$box[7] + 1, imagecolorallocate($textImage, 0, 0, 0), $fontFile, $text);
+        imagettftext($textImage, $fontSize, 0, -$box[6], -$box[7], imagecolorallocate($textImage, 255, 255, 255), $fontFile, $text);
+
+        if (is_null($opacity)) {
+            imagecopy($this->_resource, $textImage, $x, $y, 0, 0, $boxWidth, $boxHeight);
+        } else {
+            $this->copymerge(new K3_Image($textImage), $x, $y, 0, 0, $boxWidth, $boxHeight, $opacity);
+        }
 
         return $this;
     }
@@ -213,11 +282,14 @@ class K3_Image extends FBaseClass
      * @param int $r
      * @param int $g
      * @param int $b
+     * @param int|bool $a
      * @return int
      */
-    protected function _imageColorAllocate($r, $g, $b)
+    protected function _imageColorAllocate($r, $g, $b, $a = false)
     {
-        $idx = imagecolorallocate($this->_resource, $r, $g, $b);
+        $idx = is_bool($a)
+            ? imagecolorallocatealpha($this->_resource, $r, $g, $b, $a)
+            : imagecolorallocate($this->_resource, $r, $g, $b);
         if ($idx === false) {
             $idx = imagecolorclosesthwb($this->_resource, $r, $g, $b);
         }
@@ -319,11 +391,6 @@ class K3_Image extends FBaseClass
         'colorstotal'        => 'imagecolorstotal',
         'colortransparent'   => 'imagecolortransparent',
         'convolution'        => 'imageconvolution',
-        //'copy'               => 'imagecopy',
-        //'copymerge'          => 'imagecopymerge',
-        //'copymergegray'      => 'imagecopymergegray',
-        //'copyresampled'      => 'imagecopyresampled',
-        //'copyresized'        => 'imagecopyresized',
         'dashedline'         => 'imagedashedline',
         'ellipse'            => 'imageellipse',
         'fill'               => 'imagefill',
@@ -372,9 +439,18 @@ class K3_Image extends FBaseClass
         'ttftext'            => 'imagettftext',
     );
 
+    protected static $_combinatorsMap = array(
+        'copy'               => 'imagecopy',
+        //'copymerge'          => 'imagecopymerge',
+        //'copymergegray'      => 'imagecopymergegray',
+        'copyresampled'      => 'imagecopyresampled',
+        'copyresized'        => 'imagecopyresized',
+    );
+
     /**
      * @param string $name
      * @param array $arguments
+     * @throws FException
      * @return mixed|void
      */
     public function __call($name, $arguments)
@@ -382,6 +458,18 @@ class K3_Image extends FBaseClass
         if (isset(self::$_callMap[$name])) {
             array_unshift($arguments, $this->_resource);
             return call_user_func_array(self::$_callMap[$name], $arguments);
+        }
+
+        if (isset(self::$_combinatorsMap[$name])) {
+            $sourceImage = $arguments[0];
+            if (!$sourceImage instanceof K3_Image) {
+                throw new FException('source image should be instance of K3_Image');
+            }
+            $arguments[0] = $sourceImage->getResource();
+
+            array_unshift($arguments, $this->_resource);
+            call_user_func_array(self::$_combinatorsMap[$name], $arguments);
+            return $this;
         }
 
         /** @noinspection PhpVoidFunctionResultUsedInspection */
