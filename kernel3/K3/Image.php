@@ -31,6 +31,13 @@ class K3_Image extends FBaseClass
     const RESIZE_FIT   = 2;
     const RESIZE_CROP  = 3;
 
+    const ALIGN_LEFT   = 1;
+    const ALIGN_RIGHT  = 2;
+    const ALIGN_CENTER = 3;
+    const ALIGN_TOP    = 4;
+    const ALIGN_BOTTOM = 8;
+    const ALIGN_MIDDLE = 12;
+
     protected $_resource;
     protected $_format = IMAGETYPE_PNG;
 
@@ -155,10 +162,7 @@ class K3_Image extends FBaseClass
         }
 
         if (imageistruecolor($this->_resource)) {
-            $newImg = imagecreatetruecolor($newWidth, $newHeight);
-            imagealphablending($newImg, false);
-            imagefilledrectangle($newImg, 0, 0, $newWidth - 1, $newHeight - 1, 0x7FFFFFFF);
-            imagesavealpha($newImg, true);
+            $newImg = self::_prepareTransparentImage($newWidth, $newHeight);
         } else {
             $newImg = imagecreate($newWidth, $newHeight);
             $cid = imagecolortransparent($this->_resource);
@@ -239,14 +243,18 @@ class K3_Image extends FBaseClass
      * @param string $text
      * @param string $fontFile
      * @param int|string $fontSize
+     * @param int $align
      * @param int $opacity
      * @return $this
      */
-    public function watermark($text, $fontFile, $fontSize = 24, $opacity = null)
+    public function watermark($text, $fontFile, $fontSize = 24, $align = 0, $opacity = null)
     {
+        $hAlign = $align & 3;
+        $vAlign = $align & 12;
+
         if (is_string($fontSize) && preg_match('#^([\d\.]+)%$#', $fontSize, $matches)) {
             $percent  = ($matches[1]/100);
-            $fontSize = (int)($percent*(imagesy($this->_resource) - 20));
+            $fontSize = (int)($percent*(imagesy($this->_resource)*0.9));
             $testBox  = imagettfbbox(20, 0, $fontFile, $text);
             $fontSize = min($fontSize, (int)($percent*20*(imagesx($this->_resource) - 20)/$testBox[2]));
         } else {
@@ -254,17 +262,36 @@ class K3_Image extends FBaseClass
         }
 
         $box = imagettfbbox($fontSize, 0, $fontFile, $text);
-        $boxWidth  = $box[2] - $box[6];
-        $boxHeight = $box[3] - $box[7];
+        $boxWidth  = $box[2] - $box[6] + 1;
+        $boxHeight = $box[3] - $box[7] + 1;
 
-        $x   = imagesx($this->_resource) - 10 - $boxWidth;
-        $y   = imagesy($this->_resource) - 10 - $boxHeight;
+        switch ($hAlign) {
+            case self::ALIGN_LEFT:
+                $x = intval(imagesx($this->_resource)*0.05);
+                break;
+            case self::ALIGN_CENTER:
+                $x = intval((imagesx($this->_resource) - $boxWidth)/2);
+                break;
+            case self::ALIGN_RIGHT:
+            default:
+                $x = intval(imagesx($this->_resource)*0.95) - $boxWidth;
+                break;
+        }
 
+        switch ($vAlign) {
+            case self::ALIGN_TOP:
+                $y = intval(imagesy($this->_resource)*0.05);
+                break;
+            case self::ALIGN_MIDDLE:
+                $y = intval((imagesy($this->_resource) - $boxHeight)/2);
+                break;
+            case self::ALIGN_BOTTOM:
+            default:
+                $y = intval(imagesy($this->_resource)*0.95) - $boxHeight;
+                break;
+        }
 
-        $textImage = imagecreatetruecolor($boxWidth + 1, $boxHeight + 1);
-        imagealphablending($textImage, false);
-        imagefilledrectangle($textImage, 0, 0, $boxWidth, $boxHeight, 0x7FFFFFFF);
-        imagesavealpha($textImage, true);
+        $textImage = self::_prepareTransparentImage($boxWidth, $boxHeight);
 
         imagettftext($textImage, $fontSize, 0, -$box[6] + 1, -$box[7] + 1, imagecolorallocate($textImage, 0, 0, 0), $fontFile, $text);
         imagettftext($textImage, $fontSize, 0, -$box[6], -$box[7], imagecolorallocate($textImage, 255, 255, 255), $fontFile, $text);
@@ -295,6 +322,22 @@ class K3_Image extends FBaseClass
         }
 
         return $idx;
+    }
+
+    /**
+     * @param int $width
+     * @param int $height
+     * @return resource
+     */
+    protected static function _prepareTransparentImage($width, $height)
+    {
+        $img = imagecreatetruecolor($width, $height);
+        imagealphablending($img, false);
+        imagefilledrectangle($img, 0, 0, $width - 1, $height - 1, 0x7FFFFFFF);
+        imagealphablending($img, true);
+        imagesavealpha($img, true);
+
+        return $img;
     }
 
 
