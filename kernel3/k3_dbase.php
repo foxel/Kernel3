@@ -742,8 +742,8 @@ class FDBSelect
      */
     public function order($order, $desc = null, $tableAlias = false)
     {
-        $columnGiven = FStr::isWord($order);
         $this->_determineTableAliasWithColumn($order, $tableAlias);
+        $columnGiven = FStr::isWord($order);
 
         if ($columnGiven || !is_null($desc)) {// column given
             $this->order[] = array($tableAlias, $order, (boolean) $desc);
