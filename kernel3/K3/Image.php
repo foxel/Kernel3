@@ -251,12 +251,14 @@ class K3_Image extends FBaseClass
     {
         $hAlign = $align & 3;
         $vAlign = $align & 12;
+        $border = 20;
 
         if (is_string($fontSize) && preg_match('#^([\d\.]+)%$#', $fontSize, $matches)) {
             $percent  = ($matches[1]/100);
             $fontSize = (int)($percent*(imagesy($this->_resource)*0.9));
             $testBox  = imagettfbbox(20, 0, $fontFile, $text);
-            $fontSize = min($fontSize, (int)($percent*20*(imagesx($this->_resource) - 20)/$testBox[2]));
+            $fontSize = min($fontSize, (int)($percent*20*(imagesx($this->_resource)*0.9)/$testBox[2]));
+            $border   = (int) (min(imagesx($this->_resource), imagesy($this->_resource))*0.05);
         } else {
             $fontSize = (int)$fontSize;
         }
@@ -267,27 +269,27 @@ class K3_Image extends FBaseClass
 
         switch ($hAlign) {
             case self::ALIGN_LEFT:
-                $x = intval(imagesx($this->_resource)*0.05);
+                $x = $border;
                 break;
             case self::ALIGN_CENTER:
                 $x = intval((imagesx($this->_resource) - $boxWidth)/2);
                 break;
             case self::ALIGN_RIGHT:
             default:
-                $x = intval(imagesx($this->_resource)*0.95) - $boxWidth;
+                $x = imagesx($this->_resource) - $border - $boxWidth;
                 break;
         }
 
         switch ($vAlign) {
             case self::ALIGN_TOP:
-                $y = intval(imagesy($this->_resource)*0.05);
+                $y = $border;
                 break;
             case self::ALIGN_MIDDLE:
                 $y = intval((imagesy($this->_resource) - $boxHeight)/2);
                 break;
             case self::ALIGN_BOTTOM:
             default:
-                $y = intval(imagesy($this->_resource)*0.95) - $boxHeight;
+                $y = imagesy($this->_resource) - $border - $boxHeight;
                 break;
         }
 
