@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2010 - 2012 Andrey F. Kupreychik (Foxel)
+ * Copyright (C) 2010 - 2012, 2014 Andrey F. Kupreychik (Foxel)
  *
  * This file is part of QuickFox Kernel 3.
  * See https://github.com/foxel/Kernel3/ for more details.
@@ -125,7 +125,7 @@ final class FHTTPInterface implements I_K3_Deprecated
         return $this;
     }
 
-    public function sendDataStream(FDataStream $stream, $filename, $filemime = false, $filemtime = false, $flags = 0)
+    public function sendDataStream(K3_Stream $stream, $filename, $filemime = false, $filemtime = false, $flags = 0)
     {
         $params = array(
             'filename' => $filename
@@ -168,7 +168,7 @@ final class FHTTPInterface implements I_K3_Deprecated
             $filename = $file;
 
         FMisc::obFree();
-        return $this->sendDataStream(new FFileStream($file), $filename, $filemime, $filemtime, $flags);
+        return $this->sendDataStream(new K3_Stream_File($file), $filename, $filemime, $filemtime, $flags);
     }
 
     public function sendBuffer($recode_to = '', $c_type = '', $force_cache = 0, $send_filename = '')

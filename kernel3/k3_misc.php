@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2010 - 2013 Andrey F. Kupreychik (Foxel)
+ * Copyright (C) 2010 - 2014 Andrey F. Kupreychik (Foxel)
  *
  * This file is part of QuickFox Kernel 3.
  * See https://github.com/foxel/Kernel3/ for more details.
@@ -187,89 +187,6 @@ abstract class FEventDispatcher extends FBaseClass
             call_user_func_array($ev_link, $args);
         return true;
     }
-}
-
-/** basic data streaming abstraction class */
-abstract class FDataStream extends FBaseClass
-{
-    abstract public function open($mode = 'rb');
-    abstract public function close();
-    abstract public function EOF();
-    abstract public function size();
-    abstract public function read(&$data, $len);
-    abstract public function seek($pos);
-    abstract public function write($data);
-
-    /** @var int */
-    protected $mode = 0;
-    public function mode() { return $this->mode; }
-    public function mtime() { return time(); }
-    public function toString()
-    {
-        if ($this->open('rb'))
-        {
-            $this->seek(0);
-            $data = '';
-            $this->read($data, $this->size());
-            $this->close();
-            return $data;
-        }
-        else
-            return '';
-    }
-}
-
-/** file data streaming */
-class FFileStream extends FDataStream
-{
-    /** @var resource|null */
-    protected $stream = null;
-    /** @var string */
-    protected $filename = '';
-    public function __construct($fname) { $this->filename = $fname; }
-    public function open($mode = 'rb') { return (($this->stream = fopen($this->filename, $this->mode = $mode)) !== false); }
-    public function close() { return fclose($this->stream); }
-    public function EOF() { return feof($this->stream); }
-    public function size() { return filesize($this->filename); }
-    public function read(&$data, $len) { return strlen($data = fread($this->stream, $len)); }
-    public function seek($pos) { return (fseek($this->stream, $pos, SEEK_SET) === 0); }
-    public function write($data) { return fwrite($this->stream, $data); }
-    public function mtime() { return filemtime($this->filename); }
-}
-
-/** string data streaming */
-class FStringStream extends FDataStream
-{
-    private $string = null;
-    private $len = 0;
-    private $pos = 0;
-    public function __construct($string) { $this->len = strlen($this->string = $string); }
-    public function open($mode = 'rb') { return (bool) ($this->mode = $mode); }
-    public function close() { $this->pos = 0; return true; }
-    public function EOF() { return ($this->pos >= $this->len-1); }
-    public function size() { return $this->len; }
-    public function read(&$data, $len)
-    {
-        $data = substr($this->string, $this->pos, $len);
-        $got = strlen($data);
-        $this->pos+= $got;
-        return $got;
-    }
-    public function seek($pos)
-    {
-        if ($pos < 0)
-            return false;
-        $this->pos = $pos;
-        return true;
-    }
-    public function write($data)
-    {
-        $this->string = substr_replace($this->string, $data, $this->pos, 0);
-        $this->len = strlen($this->string);
-        $this->pos+= strlen($data);
-        return strlen($data);
-    }
-    public function toString() { return $this->string; }
 }
 
 /** special class to represent class with static methods as object */
