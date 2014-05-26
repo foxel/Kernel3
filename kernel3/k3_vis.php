@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2010 - 2012 Andrey F. Kupreychik (Foxel)
+ * Copyright (C) 2010 - 2012, 2014 Andrey F. Kupreychik (Foxel)
  *
  * This file is part of QuickFox Kernel 3.
  * See https://github.com/foxel/Kernel3/ for more details.
@@ -443,8 +443,8 @@ class FVISInterface extends FEventDispatcher
      */
     public function addAutoLoadDir($directory, $fileSuffix = '.vis')
     {
-        $directory = FStr::path($directory);
-        $hash = FStr::pathHash($directory);
+        $directory = K3_Util_String::filter($directory, K3_Util_String::FILTER_PATH);
+        $hash      = K3_Util_File::pathHash($directory);
 
         if (isset($this->auto_loads[$hash]))
             return $this;

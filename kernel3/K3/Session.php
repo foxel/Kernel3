@@ -321,7 +321,7 @@ class K3_Session extends K3_Environment_Element
             return $url;
         }
 
-        $url = FStr::urlAddParam($url, self::SID_NAME, $this->SID, $ampersand);
+        $url = K3_Util_Url::urlAddParam($url, self::SID_NAME, $this->SID, $ampersand);
 
         return $url;
     }
@@ -355,13 +355,11 @@ class K3_Session extends K3_Environment_Element
             $bounds = '';
         }
 
-        if (preg_match('#^\w+:#', $url)) {
-            if (strpos($url, F()->appEnv->server->rootUrl) !== 0) {
-                return $vars[1].$vars[3].' = '.$bounds.$url.$bounds;
-            }
+        if (preg_match('#^\w+:#', $url) && strpos($url, F()->appEnv->server->rootUrl) !== 0) {
+            // foreign url. no SID add
+        } else {
+            $url = K3_Util_Url::urlAddParam($url, self::SID_NAME, $this->SID, true);
         }
-
-        $url = FStr::urlAddParam($url, self::SID_NAME, $this->SID, true);
 
         return $vars[1].$vars[3].' = '.$bounds.$url.$bounds;
 

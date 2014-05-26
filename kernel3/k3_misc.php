@@ -37,9 +37,13 @@ abstract class FBaseClass
 
     public function __get($name)
     {
-        return (isset($this->pool[$name]))
-            ? $this->pool[$name]
-            : null;
+        if (isset($this->pool[$name])) {
+            return $this->pool[$name];
+        } elseif (method_exists($this, $getter = 'get'.ucfirst($name))) {
+            return $this->$getter();
+        }
+
+        return null;
     }
 
     public function __set($name, $val)
@@ -235,6 +239,21 @@ final class FNullObject
 
 class FException extends Exception
 {
+    /**
+     * @param string|array $message
+     * @param int $code
+     * @param Exception $previous
+     */
+    public function __construct($message = "", $code = 0, Exception $previous = null)
+    {
+        if (is_array($message)) {
+            $msgTemplate = (string) array_shift($message);
+            $message = vsprintf($msgTemplate, $message);
+        }
+
+        parent::__construct($message, $code, $previous);
+    }
+
 }
 
 

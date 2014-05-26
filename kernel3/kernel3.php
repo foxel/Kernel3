@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2010 - 2013 Andrey F. Kupreychik (Foxel)
+ * Copyright (C) 2010 - 2014 Andrey F. Kupreychik (Foxel)
  *
  * This file is part of QuickFox Kernel 3.
  * See https://github.com/foxel/Kernel3/ for more details.
@@ -26,6 +26,8 @@
  * @subpackage core
  */
 
+define('F_PHP_MIN_VERSION', '5.3.0');
+
 if (!defined('STARTED')) {
     die('Hacking attempt');
 }
@@ -48,8 +50,8 @@ if (!defined('F_PROFILE')) {
 }
 
 // let's check the kernel requirements
-if (version_compare(PHP_VERSION, '5.2.0', '<')) {
-    die('PHP 5.2.0 required');
+if (version_compare(PHP_VERSION, F_PHP_MIN_VERSION, '<')) {
+    die(sprintf('PHP %s required', F_PHP_MIN_VERSION));
 }
 
 /** kernel files directory */
@@ -77,21 +79,6 @@ if (!defined('F_DATA_ROOT')) {
 /**#@+ site code cache directory (can be defined before outside the kernel) */
 if (!defined('F_CODECACHE_DIR')) {
     define('F_CODECACHE_DIR', F_SITE_ROOT);
-}
-/**#@+*/
-
-/**#@+
- * @internal this will add missing error constants for older PHP
- * @ignore
- */
-if (!defined('E_RECOVERABLE_ERROR')) {
-    define('E_RECOVERABLE_ERROR', 4096);
-}
-if (!defined('E_DEPRECATED')) {
-    define('E_DEPRECATED', 8192);
-}
-if (!defined('E_USER_DEPRECATED')) {
-    define('E_USER_DEPRECATED', 16384);
 }
 /**#@+*/
 

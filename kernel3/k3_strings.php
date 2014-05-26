@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2010 - 2012 Andrey F. Kupreychik (Foxel)
+ * Copyright (C) 2010 - 2012, 2014 Andrey F. Kupreychik (Foxel)
  *
  * This file is part of QuickFox Kernel 3.
  * See https://github.com/foxel/Kernel3/ for more details.
@@ -29,59 +29,27 @@
 if (!defined('F_STARTED'))
     die('Hacking attempt');
 
-define('_STR_URL_ESCAPED', '%[[:xdigit:]]{2}');
-define('_STR_URL_CHAR_ALNUM', 'A-Za-z0-9');
-define('_STR_URL_CHAR_MARK', '-_.!~*\'()\[\]');
-define('_STR_URL_CHAR_RESERVED', ';/?:@&=+$,');
-define('_STR_URL_CHAR_SEGMENT', ':@&=+$,;');
-define('_STR_URL_CHAR_UNWISE', '{}|\\\\^`');
 
-// Segment can use escaped, unreserved or a set of additional chars
-define('_STR_URL_SEGMENT', '(?:'._STR_URL_ESCAPED.'|['._STR_URL_CHAR_ALNUM._STR_URL_CHAR_MARK._STR_URL_CHAR_SEGMENT.'])*');
-
-// Path can be a series of segmets char strings seperated by '/'
-define('_STR_URL_PATH', '(?:/|'._STR_URL_SEGMENT.')+');
-
-// URI characters can be escaped, alphanumeric, mark or reserved chars
-define('_STR_URL_URIC', '(?:'._STR_URL_ESCAPED.'|['._STR_URL_CHAR_ALNUM._STR_URL_CHAR_MARK._STR_URL_CHAR_RESERVED.'])');
-
-define('_STR_URL_RELATIVE', '('._STR_URL_PATH.')?(\?'._STR_URL_URIC.')?(\#'._STR_URL_SEGMENT.')?');
-define('_STR_URL_ABSOLUTE', '(?>[0-9A-z]+://(?:[0-9A-z_\-\.]+\.[A-z]{2,4}|\d{1-3}\.\d{1-3}\.\d{1-3}\.\d{1-3}))/'._STR_URL_RELATIVE);
-
-
+/** @deprecated */
+//class FStr implements I_K3_Deprecated
 class FStr
 {
-    const COMM = 0;
-    const HEX  = 1;
-    const WORD = 2;
-    const HTML = 3;
-    const PATH = 4;
-    const UNIXPATH = 5;
+    const COMM = K3_Util_String::FILTER_NONE;
+    const HEX  = K3_Util_String::FILTER_HEX;
+    const WORD = K3_Util_String::FILTER_WORD;
+    const HTML = K3_Util_String::FILTER_HTML;
+    const PATH = K3_Util_String::FILTER_PATH;
+    const UNIXPATH = K3_Util_String::FILTER_PATH_UNIX;
 
-    const LINE = 8; // flag
+    const LINE = K3_Util_String::FILTER_LINE; // flag
 
-//    const URL_MASK_R = _STR_URL_RELATIVE;
-//    const URL_MASK_F = _STR_URL_ABSOLUTE;
-//    const URL_CHAR_ALNUM    = _STR_URL_CHAR_ALNUM;
-//    const URL_CHAR_MARK     = _STR_URL_CHAR_MARK;
-//    const URL_CHAR_RESERVED = _STR_URL_CHAR_RESERVED;
-//    const URL_CHAR_SEGMENT  = _STR_URL_CHAR_SEGMENT;
+    const URL_MASK_R = K3_String::MASK_URL_REL;
+    const URL_MASK_F = K3_String::MASK_URL_FULL;
 
-    const URL_MASK_R = '[\w\#$%&~/\\\.\-;:=,?@+\(\)\[\]\|]+';
-    const URL_MASK_F = '(?>(?:[0-9A-z]+:)?//[0-9A-z_\-\.]+\.[A-z]{2,4})(?:\/[\w\#$%&~/\.\-;:=,?@+\(\)\[\]\|]+)?';
-
-    const EMAIL_MASK = '[0-9A-z_\-\.]+@[0-9A-z_\-\.]+\.[A-z]{2,4}';
-    const PHPWORD_MASK = '[A-z_]\w*';
-
-    const LTT_CACHEPREFIX = 'FSTR.LTT.';
-    const CHR_CACHEPREFIX = 'FSTR.CHR.';
-    const INT_ENCODING = F_INTERNAL_ENCODING;
+    const EMAIL_MASK = K3_String::MASK_EMAIL;
+    const PHPWORD_MASK = K3_String::MASK_PHP_WORD;
 
     const ENDL = PHP_EOL;
-
-    private static $ltts = array(); // alphabetic chars data array
-    private static $chrs = array(); // Charconv tables
-    private static $useMB = false;
 
     private function __construct() {}
 
@@ -94,361 +62,101 @@ class FStr
         return self::$self;
     }
 
-    static public function initEncoders()
-    {
-        self::$useMB = extension_loaded('mbstring');
-
-        setlocale(LC_ALL, 'EN');
-        if (self::$useMB)
-        {
-            mb_substitute_character(63);
-            mb_language('uni');
-            mb_internal_encoding(self::INT_ENCODING);
-        }
-        if (function_exists('iconv_set_encoding'))
-            iconv_set_encoding('internal_encoding', self::INT_ENCODING);
-    }
-
     // multibyte string routines
-    static public function strToUpper($string, $encoding = self::INT_ENCODING)
+    public static function strToUpper($string, $encoding = K3_String::INTERNAL_ENCODING)
     {
-        if (function_exists('mb_strtoupper') && $out = mb_strtoupper($string, $encoding))
-            return $out;
-
-        $table = self::_getLetterTable($encoding);
-        return strtr($string, $table);
+        return K3_String::strToUpper($string, $encoding);
     }
 
-    static public function strToLower($string, $encoding = self::INT_ENCODING)
+    public static function strToLower($string, $encoding = K3_String::INTERNAL_ENCODING)
     {
-        if (function_exists('mb_strtolower') && $out = mb_strtolower($string, $encoding))
-            return $out;
-
-        $table = self::_getLetterTable($encoding);
-        return strtr($string, array_flip($table));
+        return K3_String::strToLower($string, $encoding);
     }
 
-    static public function strLen($string, $encoding = self::INT_ENCODING)
+    public static function strLen($string, $encoding = K3_String::INTERNAL_ENCODING)
     {
-        if (self::$useMB && $out = mb_strlen($string, $encoding))
-            return $out;
-        elseif (function_exists('iconv_strlen') && $out = iconv_strlen($string, $encoding))
-            return $out;
-
-        $encoding = strtolower($encoding);
-        if ($encoding == 'utf-8')
-        {
-            $string = preg_replace('#[\x80-\xBF]+#', '', $string);
-            return strlen($string);
-        }
-        else
-            return strlen($string);
+        return K3_String::strLength($string, $encoding);
     }
 
-    static public function strRecode($string, $to_enc = self::INT_ENCODING, $from_enc = self::INT_ENCODING )
+    public static function strRecode($string, $toEncoding = K3_String::INTERNAL_ENCODING, $fromEncoding = K3_String::INTERNAL_ENCODING)
     {
-        $from_enc = strtolower($from_enc);
-        $to_enc   = strtolower($to_enc);
-        if (!$to_enc || !$from_enc)
-            return false;
-        if ($to_enc == $from_enc)
-            return $string;
-
-        if (self::$useMB && $out = mb_convert_encoding($string, $to_enc, $from_enc))
-            return $out;
-        elseif (extension_loaded('iconv') && $out = iconv($from_enc, $to_enc.'//IGNORE//TRANSLIT', $string))
-            return $out;
-
-        if ($from_enc == 'utf-8')
-            return self::_subFromUtf($string, $to_enc);
-        elseif ($to_enc == 'utf-8')
-            return self::_subToUtf($string, $from_enc);
-        else
-        {
-            if (!($table1 = self::_getCharTable($from_enc)) || !($table2 = self::_getCharTable($to_enc)))
-                return false;
-
-            $table = array();
-            foreach($table1 as $ut=>$cp)
-                $table[ord($cp)] = $table2[$ut];
-
-            $unk = (isset($table2[0x3F])) // Try set unknown to '?'
-                 ? $table2[0x3F]
-                 : '';
-            unset($table1, $table2);
-
-            $out = '';
-            $in_len = strlen($string);
-            for ($i=0; $i<$in_len; ++$i)
-            {
-                $ch = ord($string[$i]);
-
-                $out.= (isset($table[$ch]))
-                     ? $table[$ch]
-                     : $out.= $unk;
-            }
-            return $out;
-        }
+        return K3_String::strRecode($string, $toEncoding, $fromEncoding);
     }
 
-    static public function strToRFC2231($string, $recode_to = '')
+    public static function strToRFC2231($string, $toEncoding = K3_String::INTERNAL_ENCODING)
     {
-        if (!$recode_to)
-            $recode_to = self::INT_ENCODING;
-
-        if ($recode_to && $recoded = self::strRecode($string, $recode_to))
-            $string = $recoded;
-        else
-            $recode_to = self::INT_ENCODING;
-
-        if (!strlen($string))
-            return $string;
-
-        $out = $recode_to.'\'\''.rawurlencode($string);
-
-        return $out;
+        return K3_String::strToRFC2231($string, K3_String::INTERNAL_ENCODING, $toEncoding);
     }
 
-    static public function strToMime($string, $recode_to = '', $quotedPrintable = false)
+    public static function strToMime($string, $toEncoding = K3_String::INTERNAL_ENCODING, $quotedPrintable = false)
     {
-        if (!$recode_to)
-            $recode_to = self::INT_ENCODING;
-        if (self::$useMB && $out = mb_encode_mimeheader($string, $recode_to, $quotedPrintable ? 'Q' : 'B'))
-            return $out;
-
-        if ($recode_to && $recoded = self::strRecode($string, $recode_to))
-            $string = $recoded;
-        else
-            $recode_to = self::INT_ENCODING;
-
-        if (!strlen($string))
-            return $string;
-
-        if ($quotedPrintable)
-            $out = '=?'.$recode_to.'?Q?'.strtr(rawurlencode($string), '%', '=').'?=';
-        else
-            $out = '=?'.$recode_to.'?B?'.base64_encode($string).'?=';
-
-        return $out;
+        return K3_String::strToMime($string, K3_String::INTERNAL_ENCODING, $toEncoding, $quotedPrintable);
     }
 
-    static public function subStr($string, $start, $length = false, $encoding = self::INT_ENCODING)
+    public static function subStr($string, $start, $length = null, $encoding = K3_String::INTERNAL_ENCODING)
     {
-        if ($length === false)
-            $length = strlen($string);
-
-        if (self::$useMB && $out = mb_substr($string, $start, $length, $encoding))
-            return $out;
-        elseif (function_exists('iconv_substr') && $out = iconv_substr($string, $start, $length, $encoding))
-            return $out;
-
-        $encoding = strtolower($encoding);
-        if ($encoding != 'utf-8')
-            return substr($string, $start, $length);
-
-        if ($letters = self::_utfExplode($string))
-        {
-            $strLen = count($letters);
-            if ($strLen <= $start)
-                return false;
-            $letters = array_slice($letters, $start, $length);
-            $out = implode('', $letters);
-            return $out;
-        }
-        return '';
+        return K3_String::strSubString($string, $start, $length, $encoding);
     }
 
-    static public function smartTrim($string, $length = 15, $encoding = self::INT_ENCODING)
+    public static function smartTrim($string, $length = 15, $encoding = K3_String::INTERNAL_ENCODING)
     {
-        $len = self::strLen($string, $encoding);
-
-        if ($len > $length)
-        {
-            $string = self::subStr($string, 0, $length);
-            $pos = strrpos($string, ' ');
-            if ($pos > 0)
-                $string = substr($string, 0, $pos);
-            return $string.'...';
-        }
-        else
-            return $string;
+        return K3_String::strSmartTrim($string, $length, $encoding);
     }
 
-    // creates a constant lenght string
-    // use STR_PAD_RIGHT, STR_PAD_LEFT, STR_PAD_BOTH as mode
-    static public function fixLength($string, $length, $pad_with = ' ', $mode = null)
+    public static function fixLength($string, $length, $pad_with = ' ', $mode = null)
     {
-        if (!is_scalar($string))
-            return $string;
-        if ($length <= 0)
-            return $string;
-
-        $len = strlen($string);
-        if ($len > $length)
-        {
-            switch ($mode)
-            {
-                case STR_PAD_LEFT:
-                    return substr($string, -$length);
-                    break;
-                case STR_PAD_BOTH;
-                    return substr($string, ($len - $length)/2, $length);
-                    break;
-                default:
-                    return substr($string, 0, $length);
-            }
-        }
-        elseif ($len < $length)
-        {
-            if (!strlen($pad_with))
-                $pad_with = ' ';
-
-            switch ($mode)
-            {
-                case STR_PAD_LEFT;
-                case STR_PAD_RIGHT:
-                case STR_PAD_BOTH;
-                    return str_pad($string, $length, $pad_with, $mode);
-                    break;
-                default:
-                    return str_pad($string, $length, $pad_with);
-            }
-        }
-
-        return $string;
+        return K3_Util_String::fixLength($string, $length, $pad_with, $mode);
     }
 
     // subtype casting
-    static public function cast($val, $type = self::COMM)
+    public static function cast($val, $type = self::COMM)
     {
-        $val = (string) $val;
-
-        switch ($type & 7)
-        {
-            case self::HEX:
-                $val = strtolower(preg_replace('#[^0-9a-fA-F]#', '', $val));
-                break;
-
-            case self::HTML:
-                $val = htmlspecialchars($val); // TODO: revise
-                break;
-
-            case self::WORD:
-                $val = preg_replace('#[^0-9a-zA-Z_\-]#', '', $val);
-                break;
-
-            case self::UNIXPATH:
-                $val = preg_replace('#^[A-z]\:(\\\\|/)#', DIRECTORY_SEPARATOR, $val);
-            case self::PATH:
-                $val = preg_replace('#(\\\\|/)+#', DIRECTORY_SEPARATOR, $val);
-                $val = preg_replace('#[\x00-\x1F\*\?\;\|]|/$|\\\\$|^\.$|(?<!^[A-z])\:#', '', $val);
-                $val = trim($val);
-                break;
-        }
-
-        if ($type & self::LINE)
-            $val = preg_replace('#[\r\n]#', '', $val);
-
-        return $val;
+        return K3_Util_String::filter($val, $type);
     }
 
-    static public function addslashesHeredoc($text, $heredoc_id = false)
+    public static function addslashesHeredoc($text, $heredoc_id = false)
     {
-        $text = str_replace(array('\\', '$'), array('\\\\', '\\$'), $text);
-        if ($heredoc_id)
-            $text = str_replace('([\r\n])'.$heredoc_id, '$1 '.$heredoc_id, $text);
-        return $text;
+        return K3_Util_String::escapeHeredoc($text, $heredoc_id);
     }
 
-    static private $JS_REPLACE = array(
-           '\\' => '\\\\', '/'  => '\\/', "\r" => '\\r', "\n" => '\\n',
-           "\t" => '\\t',  "\b" => '\\b', "\f" => '\\f', '"'  => '\\"',
-           );
 
-    static public function addslashesJS($text)
+    public static function addslashesJS($text)
     {
-        $text = strtr($text, self::$JS_REPLACE);
-        return $text;
+        return K3_Util_String::escapeJSON($text);
     }
 
-    static public function unslash($data)
+    public static function unslash($data)
     {
         return FMisc::iterate($data, 'stripslashes', true);
     }
 
-    static public function htmlschars($data, $q_mode = ENT_COMPAT)
+    public static function htmlschars($data, $q_mode = ENT_COMPAT)
     {
         return FMisc::iterate($data, 'htmlspecialchars', true, $q_mode);
     }
 
-    static public function JSDefine($data)
+    public static function JSDefine($data)
     {
-        $odata = 'null';
-
-        if (is_bool($data))
-            $odata = $data ? 'true' : 'false';
-        elseif (is_scalar($data))
-        {
-            $odata = '"'.strtr($data, self::$JS_REPLACE).'"';
-        }
-        elseif (is_array($data) || is_object($data))
-        {
-            $odata = array();
-            foreach ($data as $key=>$val)
-                $odata[] = $key.': '.self::JSDefine($val);
-            $odata = '{ '.implode(', ', $odata).' }';
-        }
-
-        return $odata;
+        return K3_Util_Value::defineJSON($data);
     }
 
-    static public function PHPDefine($data, $tabs = 0)
+    public static function PHPDefine($data)
     {
-        $tab  = '    ';
-        $tabs = intval($tabs);
-        $pref = str_repeat($tab, $tabs+1);
-
-        if (is_numeric($data))
-            $def = $data;
-        elseif (is_bool($data))
-            $def = (($data) ? 'true' : 'false');
-        elseif (is_null($data))
-            $def = 'null';
-        elseif (is_array($data) || is_object($data))
-        {
-            $def = 'array ('.PHP_EOL;
-            $fields = array();
-            foreach( $data as $key => $val ) {
-                $field = (is_numeric($key)) ? $key." => " : '\''.addslashes($key).'\' => ';
-                $field.= self::PHPDefine($val, $tabs+1);
-                $fields[]= $pref.$field;
-            }
-            $def.=implode(' ,'.PHP_EOL, $fields).PHP_EOL.$pref.') ';
-        }
-        else
-            $def = '\''.addslashes($data).'\'';
-        return $def;
+        return K3_Util_Value::definePHP($data);
     }
 
-    static public function implodeRecursive(array $array, $glue = '')
+    public static function implodeRecursive(array $array, $glue = '')
     {
-        $out = array();
-        foreach ($array as $value) {
-            if (is_array($value)) {
-                $value = self::implodeRecursive($value, $glue);
-            }
-            $out[] = (string) $value;
-        }
-
-        return implode($glue, $out);
+        return K3_Util_Array::implodeRecursive($glue, $array);
     }
 
-    static public function heredocDefine($str, $heredoc_id = 'HSTR', $add_semicolon = false)
+    public static function heredocDefine($str, $heredoc_id = 'HSTR', $add_semicolon = false)
     {
-        return '<<<'.$heredoc_id.self::ENDL.self::addslashesHeredoc($str, $heredoc_id).self::ENDL.$heredoc_id.($add_semicolon ? ';' : '').self::ENDL;
+        return K3_Util_String::escapeHeredoc($str, $heredoc_id, true, $add_semicolon);
     }
 
-    static public function smartAmpersands($string)
+    /** @deprecated */
+    public static function smartAmpersands($string)
     {
         return preg_replace('#\&(?!([A-z]+|\#\d{1,5}|\#x[0-9a-fA-F]{2,4});)#', '&amp;', $string);
     }
@@ -458,7 +166,8 @@ class FStr
     /** @var array */
     static private $NQSCHARS = null;
 
-    static public function smartHTMLSchars($string, $no_quotes = false)
+    /** @deprecated */
+    public static function smartHTMLSchars($string, $no_quotes = false)
     {
         if (is_null(self::$SCHARS))
         {
@@ -471,186 +180,74 @@ class FStr
         return strtr(self::smartAmpersands($string), $no_quotes ? self::$NQSCHARS : self::$SCHARS);
     }
 
-    static public function smartSprintf($string, array $params)
+    public static function smartSprintf($string, array $params)
     {
-        $params = array_values($params);
-        $count = preg_match_all('#\%(\d+)\$|\%\w#', $string, $masks, PREG_PATTERN_ORDER);
-        if ($count > 0)
-        {
-            $masks = $masks[1];
-            $count = max($count, max($masks));
-            $params+= array_fill(0, $count, '');
-            $string = vsprintf($string, $params);
-        }
-
-        return $string;
+        return K3_Util_String::smartSprintf($string, $params);
     }
 
-    static public function isWord($string)
+    public static function isWord($string)
     {
-        return !!preg_match('#^'.self::PHPWORD_MASK.'$#D', $string);
+        return K3_String::isWord($string);
     }
 
-    static public function isEmail($string, $checkDNS = false)
+    public static function isEmail($string, $checkDNS = false)
     {
-        $res = !!preg_match('#^'.self::EMAIL_MASK.'$#D', $string);
-        if ($res && $checkDNS)
-        {
-            list($user, $domain) = explode('@', $string);
-            $res = checkdnsrr($domain, 'MX');
-        }
-
-        return $res;
+        return K3_String::isEmail($string, $checkDNS);
     }
 
-    static public function isUrl($string)
+    public static function isUrl($string)
     {
-        if (preg_match('#^'.self::URL_MASK_F.'$#D', $string)) {
-            return 1;
-        }
-        if (preg_match('#^'.self::URL_MASK_R.'$#D', $string)) {
-            return 2;
-        }
-        return 0;
+        return K3_String::isUrl($string);
     }
 
-    static public function path($path)
+    /** @deprecated */
+    public static function path($path)
     {
         return self::cast($path, self::PATH);
     }
 
-    static public function basename($name)
+    public static function basename($name)
     {
-        return (preg_match('#[\x80-\xFF]#', $name)) ? preg_replace('#^.*[\\\/]#', '', $name) : basename($name);
+        return K3_Util_File::basename($name);
     }
 
-    static public function basenameExt($name)
+    public static function basenameExt($name)
     {
-        return (preg_match('#[\x80-\xFF]#', $name)) ? preg_replace('#^.*\.#', '', $name) : pathinfo($name, PATHINFO_EXTENSION);
+        return K3_Util_File::basenameExtension($name);
     }
 
-    static public function urlencode($string, $spec_rw = false)
+    public static function urlencode($string, $spec_rw = false)
     {
-        $string = rawurlencode($string);
-        if ($spec_rw)
-            $string = str_replace('%2F', '/', $string); // strange but needed for mod_rw
-        return $string;
+        return K3_Util_Url::urlencode($string, $spec_rw);
     }
 
     // url parsing functions
-    static public function urlAddParam($url, $pname, $pdata, $with_amps = false, $replace = false)
+    public static function urlAddParam($url, $pname, $pdata, $with_amps = false, $replace = false)
     {
-        $sep = ($with_amps) ? '&amp;' : '&';
-
-        if (stristr($url, 'javascript'))
-            return $url;
-
-        if (strstr($url, $pname.'='))
-        {
-            if ($replace)
-                $url = self::urlDropParam($url, $pname);
-            else
-                return $url;
-        }
-
-        $insert = ( !strstr($url, '?') ) ? '?' : $sep;
-        $insert.= $pname.'='.rawurlencode($pdata);
-
-        $url = preg_replace('#(\#|$)#', $insert.'\\1', $url, 1);
-
-        return $url;
+        return K3_Util_Url::urlAddParam($url, $pname, $pdata, $with_amps, $replace);
     }
 
     // TODO: rebuild add/drop param functions
-    static public function urlDropParam($url, $pname)
+    public static function urlDropParam($url, $pname)
     {
-        if (stristr($url, 'javascript'))
-            return $url;
-
-        list($url, $anchor) = explode('#', $url, 2);
-        list($url, $query) = explode('?', $url, 2);
-
-        $query = preg_replace('#(&amp;|&)?'.preg_quote($pname, '#').'=[^&]*(&amp;|&)?#', '$1', $query);
-        return $url.($query ? '?'.$query : '').($anchor ? '#'.$anchor : '');
+        return K3_Util_Url::urlDropParam($url, $pname, !!strstr($url, '&amp;'));
     }
 
-    static public function urlDataPack($data)
+    public static function urlDataPack($data)
     {
-        $data = (string) $data;
-        $hash = self::shortHash($data);
-        return rawurlencode(base64_encode($hash.'|'.$data));
+        return K3_Util_Url::packString($data);
     }
 
-    static public function urlDataUnpack($data)
+    public static function urlDataUnpack($data)
     {
-        $data = (string) $data;
-        $data = base64_decode(rawurldecode($data));
-        list($hash, $data) = explode('|', $data, 2);
-        $rhash = self::shortHash($data);
-        return ($hash == $rhash) ? $data : false;
+        return K3_Util_Url::unpackString($data);
     }
 
     // generates full url
-    static public function fullUrl($url, $with_amps = false, $force_host = '', K3_Environment $env = null)
+    public static function fullUrl($url, $with_amps = false, $force_host = '', K3_Environment $env = null)
     {
-        $url = (string) $url;
-
-        if ($url && $url[0] == '#')
-            return $url;
-
-        if (is_null($env)) {
-            $env = F()->appEnv;
-        }
-
-        $url_p = parse_url($url);
-
-        if (isset($url_p['scheme'])) {
-            $scheme = strtolower($url_p['scheme']);
-            if ($scheme == 'mailto')
-                return $url;
-            $url = $scheme.'://';
-        } else {
-            $url = ($env->request->isSecure) ? 'https://' : 'http://';
-        }
-
-        if (isset($url_p['host'])) {
-            if (isset($url_p['username'])) {
-                $url.= $url_p['username'];
-                if (isset($url_p['password']))
-                    $url.= $url_p['password'];
-                $url.= '@';
-            }
-            $url.= $url_p['host'];
-            if (isset($url_p['port']))
-                $url.= ':'.$url_p['port'];
-
-            if (isset($url_p['path']))
-                $url.= preg_replace('#(\/|\\\)+#', '/', $url_p['path']);
-        } else {
-            $url.= ($force_host) ? $force_host : $env->server->domain;
-            if (isset($url_p['path']) && strlen($url_p['path'])) {
-                if ($url_p['path'][0] != '/') {
-                    $url_p['path'] = '/'.$env->server->rootPath.'/'.$url_p['path'];
-                }
-            } else {
-                $url_p['path'] = '/'.$env->server->rootPath.'/'.F_SITE_INDEX;
-            }
-
-            $url_p['path'] = preg_replace('#(\/|\\\)+#', '/', $url_p['path']);
-            $url.= $url_p['path'];
-        }
-
-        if (isset($url_p['query'])) {
-            $url.= '?'.$url_p['query'];
-        }
-
-        if (isset($url_p['fragment'])) {
-            $url.= '#'.$url_p['fragment'];
-        }
-
-        $url = ($with_amps) ? preg_replace('#\&(?![A-z]+;)#', '&amp;', $url) : str_replace('&amp;', '&', $url);
-
-        return $url;
+        $url = K3_Util_Url::fullUrl($url, $env ? : F()->appEnv, $force_host);
+        return ($with_amps) ? preg_replace('#\&(?![A-z]+;)#', '&amp;', $url) : str_replace('&amp;', '&', $url);
     }
 
     /**
@@ -660,227 +257,22 @@ class FStr
      */
     public static function getZendStyleURLParams($url)
     {
-        $parts = parse_url($url);
-        $out = array();
-        if (isset($parts['path'])) {
-            $pathParams = explode('/', $parts['path']);
-            reset($pathParams);
-            while ($key = current($pathParams)) {
-                $out[$key] = rawurldecode(next($pathParams));
-                next($pathParams);
-            }
-        }
-        if (isset($parts['query'])) {
-            parse_str($parts['query'], $tmp = array());
-            foreach ($tmp as $key => $value) {
-                $out[$key] = $value;
-            }
-        }
-
-        return $out;
+        return K3_Util_Url::parseZendStyleURLParams($url);
     }
 
     // UIDs and hashes
-    static public function shortUID($add_entr = '')
+    public static function shortUID($add_entr = '')
     {
-        static $etropy = '';
-        $out = str_pad(dechex(crc32(uniqid($add_entr.$etropy))), 8, '0', STR_PAD_LEFT);
-        $etropy = $out;
-        return $out;
+        return K3_Util_String::shortUID($add_entr);
     }
 
-    static public function shortHash($data)
+    public static function shortHash($data)
     {
-        return str_pad(dechex(crc32($data)), 8, '0', STR_PAD_LEFT);
+        return K3_Util_String::shortHash($data);
     }
 
-    static public function pathHash($path)
+    public static function pathHash($path)
     {
-        return md5(realpath($path)); // TODO: maybe this needs to be modified
+        return K3_Util_File::pathHash($path);
     }
-
-    // private functions
-    static private function _subFromUtf($string, $to_enc)
-    {
-        if ($to_enc == 'utf-8')
-            return $string;
-
-        if (!($table = self::_getCharTable($to_enc)))
-            return false;
-
-        $unk = (isset($table[0x3F])) // Try set unknown to '?'
-             ? $table[0x3F]
-             : '';
-        $out = '';
-
-        if ($letters = self::_utfExplode($string)) {
-            reset($letters);
-            while (list($i, $lett) = each($letters))
-            {
-                $uni = ord($lett[0]);
-
-                if ($uni < 0x80) {
-                    // do nothing
-                } elseif (($uni >> 5) == 0x06) {
-                    $uni = (($uni & 0x1F) <<  6) | (ord($lett[1]) & 0x3F);
-                } elseif (($uni >> 4) == 0x0E) {
-                    $uni = (($uni & 0x0F) << 12) | ((ord($lett[1]) & 0x3F) <<  6) | (ord($lett[2]) & 0x3F);
-                } elseif (($uni >> 3) == 0x1E) {
-                    $uni = (($uni & 0x07) << 18) | ((ord($lett[1]) & 0x3F) << 12) | ((ord($lett[2]) & 0x3F) << 6) | (ord($lett[3]) & 0x3F);
-                } else {
-                    $out.= $unk;
-                    continue;
-                }
-
-                $out.= (isset($table[$uni]))
-                     ? $table[$uni]
-                     : $unk;
-            }
-        }
-
-        return $out;
-    }
-
-    static private function _subToUtf($string, $from_enc)
-    {
-        if ($from_enc == 'utf-8')
-            return $string;
-
-        if (!($table0 = self::_getCharTable($from_enc)))
-            return false;
-
-        $table = array();
-        foreach ($table0 as $ut=>$cp)
-            $table[ord($cp)] = $ut;
-        unset($table0);
-
-        $out = '';
-        $in_len = strlen($string);
-        for ($i=0; $i<$in_len; ++$i)
-        {
-            $ch = ord($string[$i]);
-
-            if (isset($table[$ch]))
-            {
-                $uni = $table[$ch];
-                if ($uni < 0x80)
-                    $out.= chr($uni);
-                elseif ($uni < 0x800)
-                    $out.= chr(($uni >>  6) + 0xC0).chr(($uni & 0x3F) + 0x80);
-                elseif ($uni < 0x10000)
-                    $out.= chr(($uni >> 12) + 0xE0).chr((($uni >>  6) & 0x3F) + 0x80).chr(($uni & 0x3F) + 0x80);
-                elseif ($uni < 0x200000)
-                    $out.= chr(($uni >> 18) + 0xF0).chr((($uni >> 12) & 0x3F) + 0x80).chr((($uni >> 6)) & 0x3F + 0x80). chr(($uni & 0x3F) + 0x80);
-                else
-                    $out.= '?';
-            }
-            else
-                $out.= '?';
-        }
-        return $out;
-    }
-
-    static private function _getLetterTable($encoding = self::INT_ENCODING)
-    {
-        $encoding = strtolower($encoding);
-        $is_utf = ($encoding == 'utf-8');
-
-        $cachename = self::LTT_CACHEPREFIX.$encoding;
-        if (isset(self::$ltts[$encoding]))
-        {
-            return self::$ltts[$encoding];
-        }
-        elseif ($data = FCache::get($cachename))
-        {
-            return (self::$ltts[$encoding] = $data);
-        }
-        elseif ($data = file_get_contents(F_KERNEL_DIR.DIRECTORY_SEPARATOR.'chars'.DIRECTORY_SEPARATOR.$encoding.'.ltt')) // we'll try to load chars data
-        {
-            $table = array();
-            preg_match_all('#0x([0-9a-fA-F]{1,6})\[0x([0-9a-fA-F]{1,6})\]#', $data, $matches, PREG_SET_ORDER);
-            if ($is_utf)
-                foreach ($matches as $part)
-                    $table[self::_hexToUtf($part[1])] = self::_hexToUtf($part[2]);
-            else
-                foreach ($matches as $part)
-                    $table[self::_hexToChr($part[1])] = self::_hexToChr($part[2]);
-
-            FCache::set($cachename, $table);
-            return (self::$ltts[$encoding] = $table);
-        }
-        else
-        {
-            trigger_error('UString: There is no letter table for '.$encoding, E_USER_NOTICE);
-            return array();
-        }
-    }
-
-    // loads unicode to charset table
-    static private function _getCharTable($encoding = self::INT_ENCODING)
-    {
-        $encoding = strtolower($encoding);
-        if ($encoding == 'utf-8')
-            return false;
-
-        $cachename = self::CHR_CACHEPREFIX.$encoding;
-
-        if (isset(self::$chrs[$encoding]))
-        {
-            return self::$chrs[$encoding];
-        }
-        elseif ($data = FCache::get($cachename))
-        {
-            return (self::$chrs[$encoding] = $data);
-        }
-        elseif ($data = file_get_contents(F_KERNEL_DIR.DIRECTORY_SEPARATOR.'chars'.DIRECTORY_SEPARATOR.$encoding.'.chr')) // we'll try to load chars data
-        {
-            $table = array();
-            preg_match_all('#0x([0-9a-fA-F]{1,6})\[0x([0-9a-fA-F]{1,6})\]#', $data, $matches, PREG_SET_ORDER);
-            foreach ($matches as $part)
-            {
-                $table[hexdec($part[1])] = self::_hexToChr($part[2]);
-            }
-
-            FCache::set($cachename, $table);
-            return (self::$chrs[$encoding] = $table);
-        }
-        else
-        {
-            trigger_error('UString: Can\'t load chartable for '.$encoding, E_USER_WARNING);
-            return false;
-        }
-    }
-
-    static private function _hexToChr($Hex)
-    {
-        $dec = (hexdec($Hex) & 255);
-        return chr($dec);
-    }
-
-    static private function _hexToUtf($UtfCharInHex)
-    {
-        $UtfCharInDec = hexdec($UtfCharInHex);
-
-        if ($UtfCharInDec & 0x1F0000)
-            return pack('C*', ($UtfCharInDec >> 18) | 0xF0, ($UtfCharInDec >> 12) & 0x3F | 0x80, ($UtfCharInDec >> 6) & 0x3F | 0x80, $UtfCharInDec & 0x3F | 0x80);
-        elseif ($UtfCharInDec & 0xF800)
-            return pack('C*', ($UtfCharInDec >> 12) | 0xE0, ($UtfCharInDec >>  6) & 0x3F | 0x80, $UtfCharInDec & 0x3F | 0x80);
-        elseif ($UtfCharInDec & 0x780)
-            return pack('C*', ($UtfCharInDec >>  6) | 0xC0, $UtfCharInDec & 0x3F | 0x80);
-        else
-            return chr($UtfCharInDec & 0x7F);
-    }
-
-    static private function _utfExplode($string)
-    {
-        $letters = array();
-        if (preg_match_all('#[\x00-\x7F]|[\xC0-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF7][\x80-\xBF]{3}#', $string, $letters))
-            $letters = $letters[0];
-        else
-            $letters = array();
-        return $letters;
-    }
-
 }
-
-FStr::initEncoders();
