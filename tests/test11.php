@@ -7,7 +7,7 @@ $answer = '';
 
 if ($email=F()->Request->getString('email', K3_Request::POST))
 {
-    if (FStr::isEmail($email, true))
+    if (K3_String::isEmail($email, true))
     {
         /** @var $emailObj FMail */
         $emailObj = F()->Mail()

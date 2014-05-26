@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2010 - 2012 Andrey F. Kupreychik (Foxel)
+ * Copyright (C) 2010 - 2012, 2014 Andrey F. Kupreychik (Foxel)
  *
  * This file is part of QuickFox Kernel 3.
  * See https://github.com/foxel/Kernel3/ for more details.
@@ -105,7 +105,7 @@ class FDBaseQCmysql
                     $field = '('.$val->toString().')';
                 } elseif (is_array($val)) {
                     $field = (string) $val[1];
-                    if (FStr::isWord($field)) {
+                    if (K3_String::isWord($field)) {
                         $field = '`'.$field.'`';
                     }
                     if ($val[0]) {
@@ -134,12 +134,12 @@ class FDBaseQCmysql
         foreach ($selectInfo['tables'] as $tableAlias => $tableName) {
             if ($tableName instanceof FDBSelect) {
                 $tableName = $tableName->toString();
-            } elseif (!($flags & FDataBase::SQL_NOPREFIX) && FStr::isWord($tableName)) {
+            } elseif (!($flags & FDataBase::SQL_NOPREFIX) && K3_String::isWord($tableName)) {
                 $tableName = $this->db->tbPrefix.$tableName;
             }
 
             if ($tableAlias != $tableName) {
-                $table = (FStr::isWord($tableName))
+                $table = (K3_String::isWord($tableName))
                     ? '`'.$tableName.'` as `'.$tableAlias.'`'
                     : '('.$tableName.') as `'.$tableAlias.'`';
             }
@@ -202,7 +202,7 @@ class FDBaseQCmysql
             foreach($parts as $part) {
                 if (is_array($part)) {
                     $field = (string)$part[1];
-                    if (FStr::isWord($field)) {
+                    if (K3_String::isWord($field)) {
                         $field = '`'.$field.'`';
                     }
                     if ($part[0]) {

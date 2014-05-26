@@ -193,7 +193,7 @@ abstract class K3_Response extends K3_Environment_Element implements I_K3_Respon
         }
 
         if (!isset($params['filename'])) {
-            $params['filename'] = FStr::basename($file);
+            $params['filename'] = K3_Util_File::basename($file);
         }
 
         return $this->sendDataStream(new K3_Stream_File($file), $params, $flags);
@@ -227,7 +227,7 @@ abstract class K3_Response extends K3_Environment_Element implements I_K3_Respon
             }
 
             if ($encoding) {
-                if ($buffer = FStr::strRecode($this->buffer, $encoding)) {
+                if ($buffer = K3_String::strRecode($this->buffer, $encoding)) {
                     $this->buffer = $buffer;
                 } else {
                     $encoding = F::INTERNAL_ENCODING;
@@ -267,7 +267,7 @@ abstract class K3_Response extends K3_Environment_Element implements I_K3_Respon
      */
     public function sendRedirect($url, $useHTTP1 = false)
     {
-        $url = FStr::fullUrl($url);
+        $url = K3_Util_Url::fullUrl($url, $this->env);
         $this->throwEventRef('URL_Parse', $url);
         $hurl = strtr($url, array('&' => '&amp;'));
 
@@ -331,7 +331,7 @@ abstract class K3_Response extends K3_Environment_Element implements I_K3_Respon
                 //  IE will get it but other browsers probably not
                 //  so don't use it if you don't really need to
                 if ($flags & self::FILENAME_RFC1522) {
-                    $dispositionParts[] = 'filename="'.FStr::strToMime($filename).'"';
+                    $dispositionParts[] = 'filename="'.K3_String::strToMime($filename).'"';
                 } elseif ($flags & self::FILENAME_TRICKY) {
                     if (isset($params['contentType']) && preg_match('#^text/#i', $params['contentType'])) {
                         $disposition = 'attachment';
@@ -346,7 +346,7 @@ abstract class K3_Response extends K3_Environment_Element implements I_K3_Respon
 
                 // RFC2231 filename* token for modern browsers
                 if ($flags & self::FILENAME_RFC2231) {
-                    $dispositionHeader[] = 'filename*='.FStr::strToRFC2231($filename);
+                    $dispositionHeader[] = 'filename*='.K3_String::strToRFC2231($filename);
                 }
             } else {
                 $dispositionHeader[] = 'filename="'.$filename.'"';

@@ -17,7 +17,7 @@ $s = F()->DBase->select('qf2_users', 'u')
 
 $string = $s->toString();
 if (F()->Request->getBinary('execute')) {
-    $string.= '<pre>'.FStr::phpDefine($s->fetchAll()).'</pre>';
+    $string.= '<pre>'.K3_Util_Value::definePHP($s->fetchAll()).'</pre>';
     $string.= ' ('.print_r(F()->DBase->lastSelectRowsCount, true).' rows total)';
 }
 

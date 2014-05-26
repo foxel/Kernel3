@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2012 Andrey F. Kupreychik (Foxel)
+ * Copyright (C) 2012, 2014 Andrey F. Kupreychik (Foxel)
  *
  * This file is part of QuickFox Kernel 3.
  * See https://github.com/foxel/Kernel3/ for more details.
@@ -82,9 +82,10 @@ class K3_DOM extends DOMDocument
     /**
      * sets all HTML url attributes to contain full urls
      *
+     * @param K3_Environment $env
      * @return K3_DOM
      */
-    public function fixFullUrls()
+    public function fixFullUrls(K3_Environment $env)
     {
         $attributes = array('href', 'action', 'src');
         $xpathSelector = array();
@@ -98,7 +99,7 @@ class K3_DOM extends DOMDocument
             /** @var $node DOMElement */
             foreach ($attributes as $attributeName) {
                 if ($url = $node->getAttribute($attributeName)) {
-                    $node->setAttribute($attributeName, FStr::fullUrl($url));
+                    $node->setAttribute($attributeName, K3_Util_Url::fullUrl($url, $env));
                 }
             }
         }

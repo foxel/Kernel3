@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2011 - 2012 Andrey F. Kupreychik (Foxel)
+ * Copyright (C) 2011 - 2012, 2014 Andrey F. Kupreychik (Foxel)
  *
  * This file is part of QuickFox Kernel 3.
  * See https://github.com/foxel/Kernel3/ for more details.
@@ -46,7 +46,7 @@ class FMail
             $env = F()->appEnv;
         }
 
-        if (!FStr::isEmail($from_addr))
+        if (!K3_String::isEmail($from_addr))
             $from_addr = 'no-reply@'.$env->server->domain;
 
         $this->send_to = array();
@@ -68,7 +68,7 @@ class FMail
 
     public function addTo($addr, $name = false)
     {
-        if (FStr::isEmail($addr))
+        if (K3_String::isEmail($addr))
             $this->send_to[$addr] = (string) $name;
         else
             trigger_error('Mailer: email address is invalid', E_USER_WARNING);
@@ -78,7 +78,7 @@ class FMail
 
     public function addCopy($addr, $name = false)
     {
-        if (FStr::isEmail($addr))
+        if (K3_String::isEmail($addr))
             $this->copy_to[$addr] = (string) $name;
         else
             trigger_error('Mailer: email address is invalid', E_USER_WARNING);
@@ -88,7 +88,7 @@ class FMail
 
     public function addBcc($addr, $name = false)
     {
-        if (FStr::isEmail($addr))
+        if (K3_String::isEmail($addr))
             $this->bcc_to[$addr] = (string) $name;
         else
             trigger_error('Mailer: email address is invalid', E_USER_WARNING);
@@ -114,7 +114,7 @@ class FMail
             if (!$filemime)
                 $filemime = 'application/octet-stream';
 
-            $filebname = FStr::basename($filename);
+            $filebname = K3_Util_File::basename($filename);
             $FileSize = filesize($file);
             $FileTime = gmdate('D, d M Y H:i:s ', filemtime($file)).'GMT';
             // making part headers
@@ -157,15 +157,15 @@ class FMail
 
     protected function prepare($recode_to = '')
     {
-        $m_from = FStr::strToMime($this->from[1], $recode_to).' <'.$this->from[0].'>';
-        $m_subject = FStr::strToMime($this->subject, $recode_to);
+        $m_from = K3_String::strToMime($this->from[1], $recode_to).' <'.$this->from[0].'>';
+        $m_subject = K3_String::strToMime($this->subject, $recode_to);
         $m_to = $m_cc = $m_bcc = array();
         foreach ($this->send_to as $mail=>$name)
-            $m_to[]  = FStr::strToMime($name, $recode_to).' <'.$mail.'>';
+            $m_to[]  = K3_String::strToMime($name, $recode_to).' <'.$mail.'>';
         foreach ($this->copy_to as $mail=>$name)
-            $m_cc[]  = FStr::strToMime($name, $recode_to).' <'.$mail.'>';
+            $m_cc[]  = K3_String::strToMime($name, $recode_to).' <'.$mail.'>';
         foreach ($this->bcc_to  as $mail=>$name)
-            $m_bcc[] = FStr::strToMime($name, $recode_to).' <'.$mail.'>';
+            $m_bcc[] = K3_String::strToMime($name, $recode_to).' <'.$mail.'>';
 
         $m_headers = array(
             'From: '.$m_from,
@@ -188,7 +188,7 @@ class FMail
             $m_to = 'Undisclosed-Recipients';
         //$m_headers[] = 'To: '.$m_to;
 
-        if ($recode_to && $m_text = FStr::strRecode($this->text, $recode_to))
+        if ($recode_to && $m_text = K3_String::strRecode($this->text, $recode_to))
             $m_encoding = $recode_to;
         else
         {

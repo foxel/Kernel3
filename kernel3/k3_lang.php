@@ -150,7 +150,7 @@ class FLNGData // extends FEventDispatcher
 
     public function loadLanguage($filename)
     {
-        $hash = FStr::pathHash($filename);
+        $hash = K3_Util_File::pathHash($filename);
 
         if (!in_array($hash, $this->LNG_loaded))
         {
@@ -211,7 +211,7 @@ class FLNGData // extends FEventDispatcher
 
         if ($params) {
             $params = is_array($params) ? array_values($params) : array($params);
-            $out = FStr::smartSprintf($out, $params);
+            $out = K3_Util_String::smartSprintf($out, $params);
         }
         return $out;
     }
@@ -434,7 +434,7 @@ class FLNGData // extends FEventDispatcher
         static $cache = array();
         if (!$acc_str)
             $acc_str = $_SERVER['HTTP_ACCEPT_LANGUAGE'];
-        $hash = FStr::shortHash($acc_str);
+        $hash = K3_Util_String::shortHash($acc_str);
         
         if (isset($cache[$hash]))
             return $cache[$hash];

@@ -10,9 +10,9 @@ F()->VIS->loadTemplates('test.vis');
 F()->VIS->addData(0, 'PAGE_TITLE', 'basic test');
 F()->VIS->addData(0, 'PAGE_SUBTITLE', 'subtitle');
 
-$content.= '<pre>'.FStr::PHPDefine(get_loaded_extensions()).'</pre><br />';
+$content.= '<pre>'.K3_Util_Value::definePHP(get_loaded_extensions()).'</pre><br />';
 $content.= F()->appEnv->server->rootUrl.'<br />';
-$content.= FStr::strToUpper('Всем огромный привет от меня').'<br />';
+$content.= K3_String::strToUpper('Всем огромный привет от меня').'<br />';
 
 $content.= memory_get_usage().'<br />';
 $content.= memory_get_peak_usage().'<br />';

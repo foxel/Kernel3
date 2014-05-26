@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2010 - 2012 Andrey F. Kupreychik (Foxel)
+ * Copyright (C) 2010 - 2012, 2014 Andrey F. Kupreychik (Foxel)
  *
  * This file is part of QuickFox Kernel 3.
  * See https://github.com/foxel/Kernel3/ for more details.
@@ -544,7 +544,7 @@ class FDBSelect
     public function __construct($tableName, $tableAlias = false, array $fields = null, FDataBase $dbo = null)
     {
         if (!$tableAlias || !is_string($tableAlias)) {
-            $tableAlias = is_string($tableName) && FStr::isWord($tableName)
+            $tableAlias = is_string($tableName) && K3_String::isWord($tableName)
                 ? $tableName
                 : 't0';
         }
@@ -606,11 +606,11 @@ class FDBSelect
         {
             foreach ($joinOn as $field => &$toField)
             {
-                if (FStr::isWord($field))
+                if (K3_String::isWord($field))
                 {
                     if (is_string($toField)) {
                         $refTableAlias = $this->_determineTableAliasWithColumn($toField);
-                        if (FStr::isWord($refTableAlias)) {
+                        if (K3_String::isWord($refTableAlias)) {
                             $this->joins[$tableAlias][$field] = array($refTableAlias, $toField);
                         } 
                         else 
@@ -658,16 +658,16 @@ class FDBSelect
 
         if ($column instanceof self) {
             $expr = $column;
-        } elseif ($column == '*' || FStr::isWord($column)) {
+        } elseif ($column == '*' || K3_String::isWord($column)) {
             $expr = array($tableAlias, $column);
-            if (!FStr::isWord($alias)) {
+            if (!K3_String::isWord($alias)) {
                 $alias = $column;
             }
         } else {
             $expr = (string) $column;
         }
 
-        if (FStr::isWord($alias)) {
+        if (K3_String::isWord($alias)) {
             $this->fields[$alias] = $expr;
         } else {
             $this->fields[] = $expr;
@@ -709,10 +709,10 @@ class FDBSelect
             return $this;
         }
 
-        $columnGiven = FStr::isWord($where);
+        $columnGiven = K3_String::isWord($where);
         $this->_determineTableAliasWithColumn($where, $tableAlias);
 
-        if ($columnGiven || FStr::isWord($where)) { // column given
+        if ($columnGiven || K3_String::isWord($where)) { // column given
             $this->where[] = array($tableAlias, $where, $value, (boolean) $whereOr);
         } elseif (preg_match('#(?<!\w|\\\\)\?#', $where)) {
             $this->where[] = array($where, $value, (boolean) $whereOr);
@@ -743,7 +743,7 @@ class FDBSelect
     public function order($order, $desc = null, $tableAlias = false)
     {
         $this->_determineTableAliasWithColumn($order, $tableAlias);
-        $columnGiven = FStr::isWord($order);
+        $columnGiven = K3_String::isWord($order);
 
         if ($columnGiven || !is_null($desc)) {// column given
             $this->order[] = array($tableAlias, $order, (boolean) $desc);
@@ -763,7 +763,7 @@ class FDBSelect
     {
         $this->_determineTableAliasWithColumn($group, $tableAlias);
 
-        if (FStr::isWord($group)) // column given
+        if (K3_String::isWord($group)) // column given
             $this->group[] = array($tableAlias, $group);
         else
             $this->group[] = (string) $group;
@@ -877,8 +877,8 @@ class FDBSelect
     protected function _determineTableAliasWithColumn(&$field, &$tableAlias = false)
     {
         if (count($fParts = explode('.', $field)) == 2 // two parts separated by '.'
-            && (FStr::isWord($fParts[1]) || $fParts[1] == '*') // second part is field name
-            && FStr::isWord($fParts[0])) // first part is table alias name
+            && (K3_String::isWord($fParts[1]) || $fParts[1] == '*') // second part is field name
+            && K3_String::isWord($fParts[0])) // first part is table alias name
         {
             $field = $fParts[1];
             $tableAlias = $fParts[0];
@@ -894,7 +894,7 @@ class FDBSelect
                 $field = $this->fields[$field];
                 return $tableAlias;
             }
-        } elseif (FStr::isWord($field)) {
+        } elseif (K3_String::isWord($field)) {
             if (!$tableAlias) {
                 list($tableAlias) = array_keys($this->tables);
             } else {

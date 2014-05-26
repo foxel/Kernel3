@@ -25,17 +25,19 @@
  */
 class K3_Stream_MetaTar extends K3_Stream_Compound
 {
+    /** @var array */
     private $_contents = array();
+    /** @var string */
     private $_rootPath = '';
 
     /**
-     * @param string $root_link
+     * @param string $rootPath
      */
-    public function __construct($root_link = null)
+    public function __construct($rootPath = null)
     {
         parent::__construct(512, "\0");
         $this->_contents = array();
-        $this->_rootPath = preg_replace('#^(\\\\|/)#', '', FStr::cast($root_link ? $root_link : F_SITE_ROOT, FStr::UNIXPATH)).DIRECTORY_SEPARATOR;
+        $this->_rootPath = preg_replace('#^(\\\\|/)#', '', K3_Util_String::filter($rootPath ? $rootPath : F_SITE_ROOT, K3_Util_String::FILTER_PATH_UNIX)).DIRECTORY_SEPARATOR;
     }
 
     /**
@@ -54,12 +56,12 @@ class K3_Stream_MetaTar extends K3_Stream_Compound
         }
 
         if (!$packName) {
-            $packName = preg_replace('#^(\\\\|/)#', '', FStr::cast($filename, FStr::UNIXPATH));
+            $packName = preg_replace('#^(\\\\|/)#', '', K3_Util_String::filter($filename, K3_Util_String::FILTER_PATH_UNIX));
             if ($this->_rootPath) {
                 $packName = preg_replace('#^('.preg_quote($this->_rootPath, '#').')#', '', $packName);
             }
         } else {
-            $packName = preg_replace('#^(\\\\|/)#', '', FStr::cast($packName, FStr::UNIXPATH));
+            $packName = preg_replace('#^(\\\\|/)#', '', K3_Util_String::filter($packName, K3_Util_String::FILTER_PATH_UNIX));
         }
 
         if (in_array($packName, $this->_contents)) {
@@ -134,7 +136,7 @@ class K3_Stream_MetaTar extends K3_Stream_Compound
         if (!$packName) {
             $packName = 'data_'.($dataPackId++).'.bin';
         } else {
-            $packName = preg_replace('#^(\\\\|/)#', '', FStr::cast($packName, FStr::UNIXPATH));
+            $packName = preg_replace('#^(\\\\|/)#', '', K3_Util_String::filter($packName, K3_Util_String::FILTER_PATH_UNIX));
         }
 
         if (in_array($packName, $this->_contents)) {
@@ -183,7 +185,7 @@ class K3_Stream_MetaTar extends K3_Stream_Compound
             return false;
         }
 
-        $dirName = preg_replace('#^(\\\\|/)#', '', FStr::cast($dirName, FStr::UNIXPATH));
+        $dirName = preg_replace('#^(\\\\|/)#', '', K3_Util_String::filter($dirName, K3_Util_String::FILTER_PATH_UNIX));
 
         if (in_array($dirName, $this->_contents)) {
             return false;
@@ -241,16 +243,16 @@ class K3_Stream_MetaTar extends K3_Stream_Compound
             return false;
         }
 
-        $header['name']     = FStr::fixLength($header['name'], 100, "\0", STR_PAD_RIGHT);
-        $header['mode']     = FStr::fixLength(preg_replace('#[^0-7]#', '', $header['mode']), 6, '0', STR_PAD_LEFT)." \0";
-        $header['uid']      = FStr::fixLength(preg_replace('#[^0-7]#', '', decoct($header['uid'])), 6, '0', STR_PAD_LEFT)." \0";
-        $header['gid']      = FStr::fixLength(preg_replace('#[^0-7]#', '', decoct($header['gid'])), 6, '0', STR_PAD_LEFT)." \0";
-        $header['size']     = FStr::fixLength(preg_replace('#[^0-7]#', '', decoct($header['size'])), 11, '0', STR_PAD_LEFT)." ";
-        $header['time']     = FStr::fixLength(preg_replace('#[^0-7]#', '', decoct($header['time'])), 11, '0', STR_PAD_LEFT)." ";
+        $header['name']     = K3_Util_String::fixLength($header['name'], 100, "\0", STR_PAD_RIGHT);
+        $header['mode']     = K3_Util_String::fixLength(preg_replace('#[^0-7]#', '', $header['mode']), 6, '0', STR_PAD_LEFT)." \0";
+        $header['uid']      = K3_Util_String::fixLength(preg_replace('#[^0-7]#', '', decoct($header['uid'])), 6, '0', STR_PAD_LEFT)." \0";
+        $header['gid']      = K3_Util_String::fixLength(preg_replace('#[^0-7]#', '', decoct($header['gid'])), 6, '0', STR_PAD_LEFT)." \0";
+        $header['size']     = K3_Util_String::fixLength(preg_replace('#[^0-7]#', '', decoct($header['size'])), 11, '0', STR_PAD_LEFT)." ";
+        $header['time']     = K3_Util_String::fixLength(preg_replace('#[^0-7]#', '', decoct($header['time'])), 11, '0', STR_PAD_LEFT)." ";
         $header['chsum']    = str_repeat(' ', 8);
         $header['type']     = ($header['type'] == 5) ? 5 : 0;
-        $header['linkname'] = FStr::fixLength($header['linkname'], 100, "\0", STR_PAD_RIGHT);
-        $header['magic']    = FStr::fixLength($header['magic'], 8, "\0", STR_PAD_RIGHT);;
+        $header['linkname'] = K3_Util_String::fixLength($header['linkname'], 100, "\0", STR_PAD_RIGHT);
+        $header['magic']    = K3_Util_String::fixLength($header['magic'], 8, "\0", STR_PAD_RIGHT);;
 
         $csumm = 0;
         foreach (array_keys($headerFields) as $key) {
@@ -260,14 +262,14 @@ class K3_Stream_MetaTar extends K3_Stream_Compound
                 $csumm += ord(substr($val, $i, 1));
             }
         }
-        $header['chsum'] = FStr::fixLength(decoct($csumm), 6, '0', STR_PAD_LEFT)." \x00";
+        $header['chsum'] = K3_Util_String::fixLength(decoct($csumm), 6, '0', STR_PAD_LEFT)." \x00";
 
         $rawHeader = '';
         foreach (array_keys($headerFields) as $key) {
             $rawHeader .= $header[$key];
         }
 
-        $rawHeader = FStr::fixLength($rawHeader, 512, chr(0), STR_PAD_RIGHT);
+        $rawHeader = K3_Util_String::fixLength($rawHeader, 512, chr(0), STR_PAD_RIGHT);
 
         return $rawHeader;
     }

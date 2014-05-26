@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2012 - 2013 Andrey F. Kupreychik (Foxel)
+ * Copyright (C) 2012 - 2014 Andrey F. Kupreychik (Foxel)
  *
  * This file is part of QuickFox Kernel 3.
  * See https://github.com/foxel/Kernel3/ for more details.
@@ -161,8 +161,9 @@ class K3_Request_HTTP extends K3_Request
         foreach($this->_UPLOADS as $varname=>$upload)
         {
             $upload = $this->_UPLOADS[$varname] + $emptyFile;
-            if ($this->doGPCStrip)
-                $upload = FStr::unslash($upload);
+            if ($this->doGPCStrip) {
+                $upload = FMisc::iterate($upload, 'stripslashes', true);
+            }
 
             $tmpFile = $upload['tmp_name'];
             if ($upload['name'])
@@ -170,7 +171,7 @@ class K3_Request_HTTP extends K3_Request
                 if (is_callable($this->stringRecodeFunc))
                     $upload['name'] = call_user_func($this->stringRecodeFunc, $upload['name']);
 
-                $upload['name'] = FStr::basename($upload['name']);
+                $upload['name'] = K3_Util_File::basename($upload['name']);
             }
 
             if (!$upload['name']) //there is no uploaded file

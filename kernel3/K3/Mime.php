@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2011 - 2012 Andrey F. Kupreychik (Foxel)
+ * Copyright (C) 2011 - 2012, 2014 Andrey F. Kupreychik (Foxel)
  *
  * This file is part of QuickFox Kernel 3.
  * See https://github.com/foxel/Kernel3/ for more details.
@@ -38,7 +38,7 @@ class K3_Mime
     public function getMime($uri, $byNameOnly = false)
     {
         $map = $this->_getMimeMap();
-        $ext = strtolower(FStr::basenameExt($uri));
+        $ext = strtolower(K3_Util_File::basenameExtension($uri));
         return isset($map[$ext])
             ? $map[$ext]
             : 'application/octet-stream';

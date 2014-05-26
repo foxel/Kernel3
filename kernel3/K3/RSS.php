@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2012 Andrey F. Kupreychik (Foxel)
+ * Copyright (C) 2012, 2014 Andrey F. Kupreychik (Foxel)
  *
  * This file is part of QuickFox Kernel 3.
  * See https://github.com/foxel/Kernel3/ for more details.
@@ -55,7 +55,7 @@ class K3_RSS
         $rssNode->appendChild($this->_channel = $this->_xml->createElement('channel'));
 
         if (isset($params['link'])) {
-            $params['link'] = FStr::fullUrl($params['link'], false, '', $this->_env);
+            $params['link'] = K3_Util_Url::fullUrl($params['link'], $this->_env);
         }
 
         foreach (self::$_channelAttributes as $attribute => $defaultValue) {
@@ -64,7 +64,7 @@ class K3_RSS
 
         if (isset($params['feedLink']) && $feedLink = $params['feedLink']) {
             $this->_channel->appendChild($linkNode = $this->_xml->createElementNS('http://www.w3.org/2005/Atom', 'atom:link'));
-            $linkNode->setAttribute('href', FStr::fullUrl($feedLink, false, '', $this->_env));
+            $linkNode->setAttribute('href', K3_Util_Url::fullUrl($feedLink, $this->_env));
             $linkNode->setAttribute('rel', 'self');
             $linkNode->setAttribute('type', 'application/rss+xml');
         }
@@ -100,7 +100,7 @@ class K3_RSS
         $this->_currentItem = $item = $this->_channel->appendChild($this->_xml->createElement('item'));
 
         $item->appendChild($this->_xml->createElement('title', $itemData->getTitle()));
-        $item->appendChild($this->_xml->createElement('link', FStr::fullUrl($itemData->getLink(), false, '', $this->_env)));
+        $item->appendChild($this->_xml->createElement('link', K3_Util_Url::fullUrl($itemData->getLink(), $this->_env)));
         $item->appendChild($description = $this->_xml->createElement('description'));
         $description->appendChild($this->_xml->createCDATASection($itemData->getDescription()));
         $item->appendChild($this->_xml->createElement('pubDate', $itemData->getPubDate()));
@@ -108,7 +108,7 @@ class K3_RSS
 
         $guid = $itemData->getGUID();
         $item->appendChild($guidNode = $this->_xml->createElement('guid', $guid));
-        if (FStr::isUrl($guid) !== 1) {
+        if (K3_String::isUrl($guid) !== 1) {
             $guidNode->setAttribute('isPermaLink', 'false');
         }
 
@@ -120,7 +120,7 @@ class K3_RSS
         foreach ($enclosuresData as $enclosureData) {
             /** @var $enclosureData I_K3_RSS_Item_Enclosure */
             $item->appendChild($enclosure = $this->_xml->createElement('enclosure'));
-            $enclosure->setAttribute('url', FStr::fullUrl($enclosureData->getUrl(), false, '', $this->_env));
+            $enclosure->setAttribute('url', K3_Util_Url::fullUrl($enclosureData->getUrl(), $this->_env));
             $enclosure->setAttribute('type', $enclosureData->getType());
             $enclosure->setAttribute('length', $enclosureData->getLength());
         }

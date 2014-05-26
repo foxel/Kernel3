@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2012 - 2013 Andrey F. Kupreychik (Foxel)
+ * Copyright (C) 2012 - 2014 Andrey F. Kupreychik (Foxel)
  * This file is part of QuickFox Kernel 3.
  * See https://github.com/foxel/Kernel3/ for more details.
  *
@@ -138,7 +138,7 @@ abstract class K3_Request extends K3_Environment_Element implements I_K3_Request
         $val = $dataSource[$svarName];
 
         if ($this->doGPCStrip) {
-            $val = FStr::unslash($val);
+            $val = FMisc::iterate($val, 'stripslashes', true);
         }
 
         // setting for future use
@@ -199,7 +199,7 @@ abstract class K3_Request extends K3_Environment_Element implements I_K3_Request
         }
 
         if ($stringCastType) {
-            $val = FStr::cast($val, $stringCastType);
+            $val = K3_Util_String::filter($val, $stringCastType);
         }
 
         return $val;

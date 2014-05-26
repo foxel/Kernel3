@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2010 - 2012 Andrey F. Kupreychik (Foxel)
+ * Copyright (C) 2010 - 2012, 2014 Andrey F. Kupreychik (Foxel)
  *
  * This file is part of QuickFox Kernel 3.
  * See https://github.com/foxel/Kernel3/ for more details.
@@ -613,7 +613,7 @@ class FParser extends FEventDispatcher
             }
             else
             {
-                $output.= FStr::smartHTMLSchars($part[0]);
+                $output.= htmlspecialchars($part[0]);
             }
         }
 
@@ -641,7 +641,7 @@ class FParser extends FEventDispatcher
                     : ((isset($part[4]))
                         ? $part[4]
                         : $part[3]);
-                $val = FStr::smartHTMLSchars($val);
+                $val = htmlspecialchars($val);
             }
             $params[] = $par.'="'.$val.'"';
         }
@@ -711,7 +711,7 @@ class FParser extends FEventDispatcher
             $url = $capt = $buffer;
         }
 
-        if (FStr::isUrl($url) != 1)
+        if (K3_String::isUrl($url) != 1)
             return $buffer;
 
         if ($name == 'img')

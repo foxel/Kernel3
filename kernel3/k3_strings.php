@@ -31,8 +31,7 @@ if (!defined('F_STARTED'))
 
 
 /** @deprecated */
-//class FStr implements I_K3_Deprecated
-class FStr
+class FStr implements I_K3_Deprecated
 {
     const COMM = K3_Util_String::FILTER_NONE;
     const HEX  = K3_Util_String::FILTER_HEX;

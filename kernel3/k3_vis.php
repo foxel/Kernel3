@@ -115,7 +115,7 @@ class FVISNode extends FBaseClass // FEventDispatcher
             if ($addVars) {
                 foreach ($addVars as $var => $val) {
                     $data[$var] = is_array($val)
-                        ? FStr::implodeRecursive($val, FStr::ENDL)
+                        ? K3_Util_Array::implodeRecursive(PHP_EOL, $val)
                         : $val;
                 }
             }
@@ -147,7 +147,7 @@ class FVISNode extends FBaseClass // FEventDispatcher
         } else {
             $varname = strtoupper($varname);
             if (is_array($data))
-                $data = FStr::implodeRecursive($data, ' ');
+                $data = K3_Util_Array::implodeRecursive(' ', $data);
 
             if ($this->flags & self::VISNODE_ARRAY)
             {
@@ -186,7 +186,7 @@ class FVISNode extends FBaseClass // FEventDispatcher
                             foreach ($arr as $key => $var) {
                                 $key = strtoupper($prefix.$key);
                                 if (is_array($var)) {
-                                    $var = FStr::implodeRecursive($var, ' ');
+                                    $var = K3_Util_Array::implodeRecursive(' ', $var);
                                 }
                                 $this->vars[$in][$key] = $var;
                             }
@@ -208,7 +208,7 @@ class FVISNode extends FBaseClass // FEventDispatcher
                 foreach ($data_arr as $key => $var) {
                     $key = strtoupper($prefix.$key);
                     if (is_array($var))
-                        $var = FStr::implodeRecursive($var, ' ');
+                        $var = K3_Util_Array::implodeRecursive(' ', $var);
                     if (!isset($this->vars[$key]))
                         $this->vars[$key] = array($var);
                     else
@@ -487,7 +487,7 @@ class FVISInterface extends FEventDispatcher
 
     public function loadECSS($filename)
     {
-        $hash = FStr::pathHash($filename);
+        $hash = K3_Util_File::pathHash($filename);
         $cachename = self::CPREFIX.$this->cPrefix.F()->LNG->ask().'.'.$hash;
 
         if ($Cdata = FCache::get($cachename))
@@ -516,7 +516,7 @@ class FVISInterface extends FEventDispatcher
 
     public function loadEJS($filename)
     {
-        $hash = FStr::pathHash($filename);
+        $hash = K3_Util_File::pathHash($filename);
 
         if (!in_array($hash, $this->JS_loaded))
         {
@@ -556,7 +556,7 @@ class FVISInterface extends FEventDispatcher
 
     public function loadTemplates($filename)
     {
-        $hash = FStr::pathHash($filename);
+        $hash = K3_Util_File::pathHash($filename);
 
         if (!in_array($hash, $this->VIS_loaded))
         {
@@ -882,7 +882,7 @@ class FVISInterface extends FEventDispatcher
 
                 if ($tag == 'WRITE')
                 {
-                    if (isset($params[1]) && count($params[1]) && ($var = $params[1][0]) && FStr::isWord($var))
+                    if (isset($params[1]) && count($params[1]) && ($var = $params[1][0]) && K3_String::isWord($var))
                         $var = strtoupper($var);
                     else
                         $var = 'OUT';
@@ -913,7 +913,7 @@ class FVISInterface extends FEventDispatcher
                         for($i = 0; $i < $pars; ++$i)
                         {
                             $var = $params[1][$i];
-                            if (!FStr::isWord($var) || !isset($params[3][$i]) || !strlen($params[3][$i]))
+                            if (!K3_String::isWord($var) || !isset($params[3][$i]) || !strlen($params[3][$i]))
                                 continue;
                             $var = strtoupper($var);
                             $val = $params[3][$i];
@@ -950,7 +950,7 @@ class FVISInterface extends FEventDispatcher
                         $pp1 = $p1 = '0';
                     }
                     if ($p3)
-                        $pp3 = (!FStr::isWord($p3)) ? intval($p3) : $p3;
+                        $pp3 = (!K3_String::isWord($p3)) ? intval($p3) : $p3;
                     else
                         $pp3 = $p3 = '1';
 
@@ -991,7 +991,7 @@ class FVISInterface extends FEventDispatcher
                             for($i = 1; $i < $pars; ++$i)
                             {
                                 $var = $params[1][$i];
-                                if (!FStr::isWord($var))
+                                if (!K3_String::isWord($var))
                                     continue;
                                 $var = strtoupper($var);
                                 $val = (isset($params[3][$i]) && strlen($params[3][$i])) ? $params[3][$i] : '1';
@@ -1069,10 +1069,10 @@ class FVISInterface extends FEventDispatcher
                     $varname = strtoupper($part[2]);
                     if (isset($consts[$varname]))
                     {
-                        $text.= FStr::addslashesHeredoc($consts[$varname], 'FTEXT');
-                        $jstext.= FStr::addslashesJS($consts[$varname]);
+                        $text.= K3_Util_String::escapeHeredoc($consts[$varname], 'FTEXT');
+                        $jstext.= K3_Util_String::escapeJSON($consts[$varname]);
                     }
-                    elseif (FStr::isWord($varname))
+                    elseif (K3_String::isWord($varname))
                     {
                         $vars[$varname] = '';
                         if ($got_a)
@@ -1090,8 +1090,8 @@ class FVISInterface extends FEventDispatcher
             }
             else
             {
-                $text.= FStr::addslashesHeredoc($part[0], 'FTEXT');
-                $jstext.= FStr::addslashesJS($part[0]);
+                $text.= K3_Util_String::escapeHeredoc($part[0], 'FTEXT');
+                $jstext.= K3_Util_String::escapeJSON($part[0]);
             }
 
             unset($struct[$key]);
@@ -1156,7 +1156,7 @@ class FVISInterface extends FEventDispatcher
         if (!isset($this->templates[$vis]) && !$this->tryAutoLoad($vis))
             return '';
 
-        $body = 'v = '.FStr::JSDefine($this->templates[$vis]['V']).';'.FStr::ENDL
+        $body = 'v = '.K3_Util_Value::defineJSON($this->templates[$vis]['V']).';'.FStr::ENDL
             .'for (var i in FVIS.consts) v[i] = FVIS.consts[i];'.FStr::ENDL
             .'for (var i in data) v[i] = data[i];'.FStr::ENDL
             .$this->templates[$vis]['J'].FStr::ENDL
@@ -1292,7 +1292,7 @@ class FVISInterface extends FEventDispatcher
         foreach ($params as $id => $val)
         {
             $this_static = true;
-            if (FStr::isWord($val))
+            if (K3_String::isWord($val))
             {
                 $val = strtoupper($val);
                 if (substr($val, 0, 2) == 'L_')
@@ -1306,16 +1306,16 @@ class FVISInterface extends FEventDispatcher
                 }
                 $st_pars[$id]  = $val;
                 $dyn_pars[$id] = ($this_static)
-                    ? (is_bool($val) || is_null($val) ? FStr::PHPDefine($val) : FStr::heredocDefine($val, 'FTEXT'))
+                    ? (is_bool($val) || is_null($val) ? K3_Util_Value::definePHP($val) : K3_Util_String::escapeHeredoc($val, 'FTEXT', true))
                     : '$'.$val;
-                $dyn_pars_js[$id] = ($this_static) ? FStr::JSDefine($val) : 'v.'.$val;
+                $dyn_pars_js[$id] = ($this_static) ? K3_Util_Value::defineJSON($val) : 'v.'.$val;
             }
             elseif ($val[0] == '"')
             {
                 $val = substr($val, 1, -1);
                 $st_pars[$id]  = $val;
-                $dyn_pars[$id] = FStr::heredocDefine($val, 'FTEXT');
-                $dyn_pars_js[$id] = FStr::JSDefine($val);
+                $dyn_pars[$id] = K3_Util_String::escapeHeredoc($val, 'FTEXT', true);
+                $dyn_pars_js[$id] = K3_Util_Value::defineJSON($val);
             } else {
                 if (is_numeric($val) && $val[0] != '0') {
                     $val = intval($val);
@@ -1328,8 +1328,8 @@ class FVISInterface extends FEventDispatcher
         {
             $val = (string) $this->callParseFunctionArr($parsewith, $st_pars);
             if ($do_schars)
-                $val = FStr::smartHTMLSchars($val);
-            $code = $for_js ? FStr::JSDefine($val) : FStr::heredocDefine($val, 'FTEXT');
+                $val = htmlspecialchars($val);
+            $code = $for_js ? K3_Util_Value::defineJSON($val) : K3_Util_String::escapeHeredoc($val, 'FTEXT', true);
         }
         else
         {
@@ -1350,7 +1350,7 @@ class FVISInterface extends FEventDispatcher
         $code = '';
         $static = strpos($parsewith, 'RAND') === false;
 
-        if (FStr::isWord($val))
+        if (K3_String::isWord($val))
         {
             $val = strtoupper($val);
             if (substr($val, 0, 2) == 'L_')
@@ -1376,8 +1376,8 @@ class FVISInterface extends FEventDispatcher
             if ($parsewith)
                 $val = $this->callParseFunction($parsewith, $val);
             if ($do_schars)
-                $val = FStr::smartHTMLSchars($val);
-            $code = $for_js ? FStr::JSDefine($val) : FStr::heredocDefine($val, 'FTEXT');
+                $val = htmlspecialchars($val);
+            $code = $for_js ? K3_Util_Value::defineJSON($val) : K3_Util_String::escapeHeredoc($val, 'FTEXT', true);
         }
         elseif ($parsewith)
         {

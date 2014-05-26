@@ -119,7 +119,6 @@ $base_modules_files = array(
     F_KERNEL_DIR.DIRECTORY_SEPARATOR.'k3_misc.php',          // kernel 3 classes and functions library
     F_KERNEL_DIR.DIRECTORY_SEPARATOR.'k3_timer.php',         // kernel 3 basic classes
     F_KERNEL_DIR.DIRECTORY_SEPARATOR.'k3_cache.php',         // kernel 3 cacher class
-    F_KERNEL_DIR.DIRECTORY_SEPARATOR.'k3_strings.php',       // kernel 3 strings parsing
     F_KERNEL_DIR.DIRECTORY_SEPARATOR.'k3_lang.php',          // kernel 3 LNG interface
     F_KERNEL_DIR.DIRECTORY_SEPARATOR.'k3_dbase.php',         // kernel 3 database interface
 );
@@ -232,13 +231,24 @@ class F extends FEventDispatcher
      */
     private function __construct()
     {
+        $this->pool['Autoloader'] = new K3_Autoloader();
+        $this->Autoloader->registerClassPath(self::KERNEL_DIR);
+
         set_exception_handler(array($this, 'handleException'));
         set_error_handler(array($this, 'logError'), F_DEBUG ? E_ALL : E_ALL & ~(E_NOTICE | E_USER_NOTICE | E_STRICT));
 
-        $this->pool['Autoloader'] = new K3_Autoloader();
+        if ($CL_Config = FMisc::loadDatafile(self::KERNEL_DIR.DIRECTORY_SEPARATOR.'modules.qfc', FMisc::DF_SLINE, false, '|')) {
+            foreach ($CL_Config as $mod => $cfg) {
+                $this->classes[$mod] = $class = array_shift($cfg);
+                if ($file = array_shift($cfg)) {
+                    $this->Autoloader->registerClassFile($class, $file);
+                }
+            }
+        }
+
         $this->pool['Timer']      = new FTimer();
         $this->pool['Cache']      = FCache::getInstance();
-        $this->pool['Str']        = FStr::getInstance();
+//        $this->pool['Str']        = FStr::getInstance();
         $this->pool['LNG']        = FLNGData::getInstance();
         $this->pool['appEnv']     = $e = $this->prepareDefaultEnvironment();
         $this->pool['Request']    = $e->getRequest();
@@ -253,16 +263,6 @@ class F extends FEventDispatcher
 
         $this->pool['LNG']->_Start(); // TODO: introduce F_Kernel_Module abstract class / interface
 
-        if ($CL_Config = FMisc::loadDatafile(self::KERNEL_DIR.DIRECTORY_SEPARATOR.'modules.qfc', FMisc::DF_SLINE, false, '|')) {
-            $this->Autoloader->registerClassPath(self::KERNEL_DIR);
-
-            foreach ($CL_Config as $mod => $cfg) {
-                $this->classes[$mod] = $class = array_shift($cfg);
-                if ($file = array_shift($cfg)) {
-                    $this->Autoloader->registerClassFile($class, $file);
-                }
-            }
-        }
     }
 
     /**
@@ -413,7 +413,7 @@ class F extends FEventDispatcher
         $eName = isset(self::$ERR_TYPES[$c]) ? '['.self::$ERR_TYPES[$c].']' : '[UNKNOWN ERROR]';
         if ($logfile) {
             flock($logfile, LOCK_EX);
-            fwrite($logfile, date('[d M Y H:i]').' '.$eName.': '.$m.'. File: '.$f.'. Line: '.$l.'.'.PHP_EOL.FStr::PHPDefine(array_slice(debug_backtrace(), 1)).'.'.PHP_EOL);
+            fwrite($logfile, date('[d M Y H:i]').' '.$eName.': '.$m.'. File: '.$f.'. Line: '.$l.'.'.PHP_EOL.K3_Util_Value::definePHP(array_slice(debug_backtrace(), 1)).'.'.PHP_EOL);
             flock($logfile, LOCK_UN);
         }
     }

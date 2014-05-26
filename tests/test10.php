@@ -18,7 +18,7 @@ $s->where('city', 'Tomsk');
 
 $string = $s->toString();
 if (F()->Request->getBinary('execute'))
-    $string.= '<pre>'.FStr::phpDefine($s->fetchAll()).'</pre>';
+    $string.= '<pre>'.K3_Util_Value::definePHP($s->fetchAll()).'</pre>';
 
 $page = '<html><head><!--Meta-Content-Type--><title>'.F_SITE_INDEX.'</title></head>
 <body>
