@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2010 - 2012 Andrey F. Kupreychik (Foxel)
+ * Copyright (C) 2010 - 2012, 2014 Andrey F. Kupreychik (Foxel)
  *
  * This file is part of QuickFox Kernel 3.
  * See https://github.com/foxel/Kernel3/ for more details.
@@ -30,67 +30,68 @@ if (!defined('F_STARTED'))
     die('Hacking attempt');
 
 // timing and time logging class
-class FTimer
+class FTimer extends K3_Chronometer implements I_K3_Deprecated
 {
-    private $qTime;
-    private $sTime;
-    private $timePoints = array();
-    private $timeLog = array();
+    /** @var array[]  */
+    protected $_timeLog = array();
 
-    public function __construct()
-    {
-        $this->qTime = time();
-        $this->timePoints[] = $this->sTime = $this->microTime();
-    }
-
-    public function microTime()
-    {
-        return microtime(true);
-    }
-
+    /**
+     * @param $id
+     * @return $this
+     */
     public function setTimer($id)
     {
-        $id = $id ? $id : count($this->timePoints);
-        $this->timePoints[$id] = $this->microTime();
-        return $id;
+        return $this->setMeasurePoint($id);
     }
 
+    /**
+     * @param $id
+     * @param bool $reset
+     * @return bool|float
+     */
     public function getTimer($id, $reset = false)
     {
-        if (!isset($this->timePoints[$id]))
-            return false;
-        $out = $this->microTime() - $this->timePoints[$id];
-        if ($reset)
-            $this->timePoints[$id] = $this->microTime();
-        return $out;
+        return $this->getMeasuredTime($id, $reset);
     }
 
-    public function timeSpent()
-    {
-        return ($this->microTime() - $this->sTime);
-    }
-
-    public function logEvent($event = 'unknown')
-    {
-        $this->timeLog[] = array(
-            'time' => $this->timeSpent(),
-            'name' => $event );
-    }
-
-    public function getLog()
-    {
-        return $this->timeLog;
-    }
-
+    /**
+     * @return int
+     */
     public function qTime()
     {
-        return $this->qTime;
+        return $this->getStartTime();
     }
 
+    /** @deprecated */
     public function setQTime($time)
     {
-        $this->qTime = (int) $time;
+        $this->_startTime = (int) $time;
+    }
+
+    /**
+     * @param string $event
+     */
+    public function logEvent($event = 'unknown')
+    {
+        $this->_timeLog[] = array(
+            'time' => $this->timeSpent(),
+            'name' => $event,
+        );
+    }
+
+    /**
+     * @return array[]
+     */
+    public function getLog()
+    {
+        return $this->_timeLog;
+    }
+
+    /**
+     * @return float
+     */
+    public function timeSpent()
+    {
+        return $this->getTimeSpent();
     }
 }
-
-?>

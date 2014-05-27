@@ -434,7 +434,7 @@ class FDataBase extends FEventDispatcher
         if (!$query)
             return null;
 
-        $start_time = F()->Timer->MicroTime();
+        $clock = new K3_Chronometer();
 
         $this->_qResult = null;
 
@@ -452,7 +452,7 @@ class FDataBase extends FEventDispatcher
             throw new FException('SQL Error '.$err[0].' ('.$this->_dbType.' '.$err[1].'): '.$err[2].PHP_EOL.'Query: '.$query);
         }
 
-        $query_time = F()->Timer->MicroTime() - $start_time;
+        $query_time = $clock->timeSpent;
 
         $this->_queriesCount++;
         $this->_queriesTime += $query_time;

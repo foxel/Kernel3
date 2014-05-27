@@ -361,7 +361,7 @@ class FVISInterface extends FEventDispatcher
             'FALSE'   => false,
             'TRUE'    => true,
             'NULL'    => null,
-            'TIME'    => F()->Timer->qTime(),
+            'TIME'    => $this->env->clock->startTime,
             'ROOTURL' => $this->env->server->rootUrl,
             'CAST_HEX'  => K3_Util_String::FILTER_HEX,
             'CAST_HTML' => K3_Util_String::FILTER_HTML,

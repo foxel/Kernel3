@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2012 Andrey F. Kupreychik (Foxel)
+ * Copyright (C) 2012, 2014 Andrey F. Kupreychik (Foxel)
  *
  * This file is part of QuickFox Kernel 3.
  * See https://github.com/foxel/Kernel3/ for more details.
@@ -23,6 +23,7 @@
  * @property K3_Request  $request
  * @property K3_Response $response
  * @property K3_Session  $session
+ * @property K3_Chronometer $clock
  *
  * @property K3_Environment_Client $client
  * @property K3_Environment_Server $server
@@ -56,6 +57,11 @@ class K3_Environment extends FEventDispatcher
     protected $_client = null;
 
     /**
+     * @var K3_Chronometer
+     */
+    protected $_clock  = null;
+
+    /**
      * @var array
      */
     protected $_elements = array();
@@ -65,6 +71,7 @@ class K3_Environment extends FEventDispatcher
      */
     public function __construct($class = 'HTTP')
     {
+        $this->_clock = new K3_Chronometer();
         $this->setClient(K3_Environment_Client::construct($class, $this));
         $this->setServer(K3_Environment_Server::construct($class, $this));
     }
@@ -193,5 +200,13 @@ class K3_Environment extends FEventDispatcher
     public function getServer()
     {
         return $this->_server;
+    }
+
+    /**
+     * @return K3_Chronometer
+     */
+    public function getClock()
+    {
+        return $this->_clock;
     }
 }

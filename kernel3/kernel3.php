@@ -117,7 +117,6 @@ if (F_PROFILE && extension_loaded('xhprof')) {
 $base_modules_files = array(
     F_KERNEL_DIR.DIRECTORY_SEPARATOR.'K3/Autoloader.php',    // kernel 3 autoloader
     F_KERNEL_DIR.DIRECTORY_SEPARATOR.'k3_misc.php',          // kernel 3 classes and functions library
-    F_KERNEL_DIR.DIRECTORY_SEPARATOR.'k3_timer.php',         // kernel 3 basic classes
     F_KERNEL_DIR.DIRECTORY_SEPARATOR.'k3_cache.php',         // kernel 3 cacher class
     F_KERNEL_DIR.DIRECTORY_SEPARATOR.'k3_lang.php',          // kernel 3 LNG interface
     F_KERNEL_DIR.DIRECTORY_SEPARATOR.'k3_dbase.php',         // kernel 3 database interface
@@ -246,7 +245,6 @@ class F extends FEventDispatcher
             }
         }
 
-        $this->pool['Timer']      = new FTimer();
         $this->pool['Cache']      = FCache::getInstance();
         $this->pool['LNG']        = FLNGData::getInstance();
         $this->pool['appEnv']     = $e = $this->prepareDefaultEnvironment();

@@ -156,7 +156,7 @@ abstract class K3_Response extends K3_Environment_Element implements I_K3_Respon
             $this->setDefaultHeaders($params, $flags);
 
             $this->setHeader('Content-Transfer-Encoding', 'binary');
-            $this->setHeader('X-K3-Page-GenTime', F()->Timer->timeSpent());
+            $this->setHeader('X-K3-Page-GenTime', $this->env->clock->timeSpent);
 
             if ($flags & self::STREAM_SETRANGE) {
                 $this->setStatusCode(206);
@@ -210,7 +210,7 @@ abstract class K3_Response extends K3_Environment_Element implements I_K3_Respon
             if ($this->doHTMLParse) {
                 $this->throwEventRef('HTML_parse', $this->buffer);
 
-                $statstring = sprintf(F()->LNG->lang('FOOT_STATS_PAGETIME'), F()->Timer->timeSpent()).' ';
+                $statstring = sprintf(F()->LNG->lang('FOOT_STATS_PAGETIME'), $this->env->clock->timeSpent).' ';
                 if (F()->ping('DBase') && F()->DBase->queriesCount) {
                     $statstring .= sprintf(F()->LNG->lang('FOOT_STATS_SQLSTAT'), F()->DBase->queriesCount, F()->DBase->queriesTime).' ';
                 }
@@ -253,7 +253,7 @@ abstract class K3_Response extends K3_Environment_Element implements I_K3_Respon
         $params['contentLength'] = strlen($this->buffer);
 
         $this->setDefaultHeaders($params, $flags);
-        $this->setHeader('X-K3-Page-GenTime', F()->Timer->timeSpent());
+        $this->setHeader('X-K3-Page-GenTime', $this->env->clock->timeSpent);
 
         $this->prepareResponse();
         $this->sendHeadersData();
@@ -305,7 +305,7 @@ abstract class K3_Response extends K3_Environment_Element implements I_K3_Respon
         }
         // expires time
         if (isset($params['contentCacheTime'])) {
-            $this->setHeader('Expires', date('r', F()->Timer->qTime() + (int)$params['contentCacheTime']), true);
+            $this->setHeader('Expires', date('r', $this->env->clock->startTime + (int)$params['contentCacheTime']), true);
         } elseif (!isset($params['contentTime'])) {
             $this->setHeader('Cache-Control', 'no-cache');
         }

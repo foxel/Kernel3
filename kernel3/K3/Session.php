@@ -144,7 +144,7 @@ class K3_Session extends K3_Environment_Element
         }
 
         if ($sess['ip'] != $this->env->client->IPInteger
-            || $sess['lastused'] < (F()->Timer->qTime() - self::LIFETIME)
+            || $sess['lastused'] < ($this->env->clock->startTime - self::LIFETIME)
             || $sess['clsign'] != $this->env->client->getSignature($this->securityLevel)
         ) {
             FCache::drop(self::CACHE_PREFIX.$this->SID);
@@ -203,13 +203,14 @@ class K3_Session extends K3_Environment_Element
             'ip'       => $this->env->client->IPInteger,
             'clsign'   => $this->env->client->getSignature($this->securityLevel),
             'vars'     => serialize($this->pool),
-            'lastused' => F()->Timer->qTime(),
+            'lastused' => $this->env->clock->startTime,
             'clicks'   => $this->clicks,
         );
 
         if (!($this->mode & self::MODE_DBASE)) {
             $dataArray['sid'] = $this->SID;
-            return FCache::set(self::CACHE_PREFIX.$this->SID, $dataArray);
+            FCache::set(self::CACHE_PREFIX.$this->SID, $dataArray);
+            return true;
         }
 
         // if using database
@@ -217,12 +218,12 @@ class K3_Session extends K3_Environment_Element
             $this->dbObject->doUpdate($this->dbTableName, $dataArray, array('sid' => $this->SID));
         } else {
             $dataArray['sid']       = $this->SID;
-            $dataArray['starttime'] = F()->Timer->qTime();
+            $dataArray['starttime'] = $this->env->clock->startTime;
             $this->dbObject->doInsert($this->dbTableName, $dataArray, true);
         }
 
         // delete old session data
-        $this->dbObject->doDelete($this->dbTableName, array('lastused' => '< '.(F()->Timer->qTime() - self::LIFETIME)), FDataBase::SQL_USEFUNCS);
+        $this->dbObject->doDelete($this->dbTableName, array('lastused' => '< '.($this->env->clock->startTime - self::LIFETIME)), FDataBase::SQL_USEFUNCS);
 
         return true;
     }

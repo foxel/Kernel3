@@ -18,8 +18,9 @@ $content.= memory_get_usage().'<br />';
 $content.= memory_get_peak_usage().'<br />';
 
 $w = F()->VIS->addNode('TEST_WINDOW', 'PAGE_CONTENTS');
-for ($i = 0; $i < 30; $i++)
-    F()->VIS->addNode('TEST_WINDOW', 'PAGE_CONTENTS', 0, Array('CONTENTS' => F()->Timer->timeSpent()));
+for ($i = 0; $i < 30; $i++) {
+    F()->VIS->addNode('TEST_WINDOW', 'PAGE_CONTENTS', 0, Array('CONTENTS' => F()->appEnv->clock->timeSpent));
+}
 
 $w->addData('CONTENTS', $content);
 F()->VIS->addNode('TEST_WINDOW', 'PAGE_CONTENTS')->addData('CONTENTS', '<pre>'.htmlspecialchars(F()->VIS->prepJSFunc('TEST_WINDOW')).'</pre>');

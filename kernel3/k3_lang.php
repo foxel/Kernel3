@@ -238,7 +238,7 @@ class FLNGData // extends FEventDispatcher
         static $now, $correction, $today, $yesterday, $timeFormat, $lastTimeZone = null, $relativeFormat;
 
         if (!$now) {
-            $now = F()->Timer->qTime();
+            $now = F()->appEnv->clock->startTime;
             $correction = 0;        //(int) F()->Config->Get('time_correction', 'common', 0);
             $timeFormat = 'H:i';    //F()->Config->Get('def_time_format', 'visual', 'H:i');
             $relativeFormat = true; //(bool) F()->Config->Get('force_no_rel_time', 'common', false);

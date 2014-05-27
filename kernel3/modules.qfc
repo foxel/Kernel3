@@ -18,8 +18,6 @@
  * along with Kernel 3. If not, see <http://www.gnu.org/licenses/>.
  */
 
-Str      => FStr|k3_strings.php
-MetaFile => FMetaFileFactory|k3_metafile.php
 VIS      => FVISInterface|k3_vis.php
 Parser   => FParser|k3_parser.php
 Captcha  => FCaptcha|k3_captcha.php
@@ -28,7 +26,10 @@ FlexyStore => FFlexyStoreFactory|k3_flexystore.php
 MPC      => FMPCFactory|k3_mpc.php
 Mime     => K3_Mime
 # compatibility failback
-GPC       => FGPC|k3_request.php
-HTTP      => FHTTPInterface|k3_http.php
-_Registry => FRegistry|k3_registry.php
-Config   => FConfig|k3_registry.php
+Str       => FStr|deprecated/k3_strings.php
+MetaFile  => FMetaFileFactory|deprecated/k3_metafile.php
+GPC       => FGPC|deprecated/k3_request.php
+HTTP      => FHTTPInterface|deprecated/k3_http.php
+_Registry => FRegistry|deprecated/k3_registry.php
+Config    => FConfig|deprecated/k3_registry.php
+Timer     => FTimer|deprecated/k3_timer.php
