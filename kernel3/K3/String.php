@@ -68,6 +68,8 @@ class K3_String extends FBaseClass
     const MASK_EMAIL    = '[0-9A-z_\-\.]+@[0-9A-z_\-\.]+\.[A-z]{2,4}';
     const MASK_PHP_WORD = '[A-z_]\w*';
 
+    const EOL = PHP_EOL;
+
     /** @var string  */
     protected $_string   = '';
     /** @var string  */

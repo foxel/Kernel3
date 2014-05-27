@@ -48,7 +48,7 @@ class FStr implements I_K3_Deprecated
     const EMAIL_MASK = K3_String::MASK_EMAIL;
     const PHPWORD_MASK = K3_String::MASK_PHP_WORD;
 
-    const ENDL = PHP_EOL;
+    const ENDL = K3_String::EOL;
 
     private function __construct() {}
 
@@ -124,14 +124,16 @@ class FStr implements I_K3_Deprecated
         return K3_Util_String::escapeJSON($text);
     }
 
+    /** @deprecated */
     public static function unslash($data)
     {
         return FMisc::iterate($data, 'stripslashes', true);
     }
 
+    /** @deprecated */
     public static function htmlschars($data, $q_mode = ENT_COMPAT)
     {
-        return FMisc::iterate($data, 'htmlspecialchars', true, $q_mode);
+        return FMisc::iterate($data, array('K3_Util_String', 'escapeXML'), true, $q_mode);
     }
 
     public static function JSDefine($data)

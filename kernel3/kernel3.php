@@ -248,7 +248,6 @@ class F extends FEventDispatcher
 
         $this->pool['Timer']      = new FTimer();
         $this->pool['Cache']      = FCache::getInstance();
-//        $this->pool['Str']        = FStr::getInstance();
         $this->pool['LNG']        = FLNGData::getInstance();
         $this->pool['appEnv']     = $e = $this->prepareDefaultEnvironment();
         $this->pool['Request']    = $e->getRequest();

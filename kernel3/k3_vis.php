@@ -109,7 +109,7 @@ class FVISNode extends FBaseClass // FEventDispatcher
             }
 
             foreach ($vars as $var => $val) {
-                $data[$var] = implode(FStr::ENDL, $val);
+                $data[$var] = implode(K3_String::EOL, $val);
             }
 
             if ($addVars) {
@@ -283,7 +283,7 @@ class FVISInterface extends FEventDispatcher
     const CPREFIX = 'VIS_CSS.';
     const JPREFIX = 'VIS_JS.';
 
-    const VIS_BR = FStr::ENDL;
+    const VIS_BR = K3_String::EOL;
 
     // defining some usefull constants
     // VIS resource types
@@ -329,14 +329,14 @@ class FVISInterface extends FEventDispatcher
         $this->nodes[0] = new FVISNode('GLOBAL_HTMLPAGE', 0, $this);
         $this->named = array('PAGE' => 0, 'MAIN' => 0);
         $this->func_parsers = array(
-            'FULLURL'   => array('FStr', 'fullUrl'),
-            'CAST'      => array('FStr', 'cast'),
-            'HTMLQUOTE' => 'htmlspecialchars',
-            'SMARTHTMLQUOTE' => array('FStr', 'smartHTMLSchars'),
-            'URLENCODE' => array('FStr', 'urlencode'),
-            'URLEN'     => array('FStr', 'urlencode'),
-            'JS_DEF'    => array('FStr', 'JSDefine'),
-            'PHP_DEF'   => array('FStr', 'PHPDefine'),
+            'FULLURL'   => array('K3_Util_Url', 'fullUrl', $this->env),
+            'CAST'      => array('K3_Util_String', 'filter'),
+            'HTMLQUOTE' => array('K3_Util_String', 'escapeXML'),
+            'SMARTHTMLQUOTE' => array('K3_Util_String', 'escapeXML'), //deprecated
+            'URLENCODE' => array('K3_Util_Url', 'urlencode'),
+            'URLEN'     => array('K3_Util_Url', 'urlencode'),
+            'JS_DEF'    => array('K3_Util_Value', 'defineJSON'),
+            'PHP_DEF'   => array('K3_Util_Value', 'definePHP'),
             'FTIME'     => array(F()->LNG, 'timeFormat'),
             'FBYTES'    => array(F()->LNG, 'sizeFormat'),
             'STRFORMAT' => 'sprintf',
@@ -363,10 +363,10 @@ class FVISInterface extends FEventDispatcher
             'NULL'    => null,
             'TIME'    => F()->Timer->qTime(),
             'ROOTURL' => $this->env->server->rootUrl,
-            'CAST_HEX'  => FStr::HEX,
-            'CAST_HTML' => FStr::HTML,
-            'CAST_WORD' => FStr::WORD,
-            'CAST_PATH' => FStr::UNIXPATH, // unix always
+            'CAST_HEX'  => K3_Util_String::FILTER_HEX,
+            'CAST_HTML' => K3_Util_String::FILTER_HTML,
+            'CAST_WORD' => K3_Util_String::FILTER_WORD,
+            'CAST_PATH' => K3_Util_String::FILTER_PATH_UNIX, // unix always
         );
 
         if (!$keep_nodes)
@@ -524,7 +524,7 @@ class FVISInterface extends FEventDispatcher
 
             if ($JSData = FCache::get($cachename))
             {
-                $this->JS_data.= FStr::ENDL.$JSData;
+                $this->JS_data.= K3_String::EOL.$JSData;
 
                 F()->Timer->logEvent('"'.$filename.'" JScript loaded (from global cache)');
             }
@@ -539,7 +539,7 @@ class FVISInterface extends FEventDispatcher
                     $this->throwEventRef('EJS_PreParse', $indata);
 
                     $JSData = $this->prepareEJS($indata, $this->vis_consts);
-                    $this->JS_data.= FStr::ENDL.$JSData;
+                    $this->JS_data.= K3_String::EOL.$JSData;
 
                     FCache::set($cachename, $JSData);
                     F()->Timer->logEvent('"'.$filename.'" JScript loaded (from EJS file)');
@@ -565,8 +565,8 @@ class FVISInterface extends FEventDispatcher
             if (list($Tdata, $VCSS, $VJS) = FCache::get($cachename))
             {
                 $this->templates += $Tdata;
-                $this->VCSS_data .= FStr::ENDL.$VCSS;
-                $this->VJS_data  .= FStr::ENDL.$VJS;
+                $this->VCSS_data .= K3_String::EOL.$VCSS;
+                $this->VJS_data  .= K3_String::EOL.$VJS;
 
                 F()->Timer->logEvent('"'.$filename.'" visuals loaded (from global cache)');
             }
@@ -595,9 +595,9 @@ class FVISInterface extends FEventDispatcher
                     }
 
                     $this->templates += $Tdata;
-                    $this->VCSS_data .= FStr::ENDL.$VCSS;
+                    $this->VCSS_data .= K3_String::EOL.$VCSS;
                     $VJS = $this->prepareEJS($VJS, $this->vis_consts); // and here we actually parse EJS
-                    $this->VJS_data  .= FStr::ENDL.$VJS;
+                    $this->VJS_data  .= K3_String::EOL.$VJS;
 
                     FCache::set($cachename, array($Tdata, $VCSS, $VJS) );
                     F()->Timer->logEvent('"'.$filename.'" visuals loaded (from VIS file)');
@@ -855,7 +855,7 @@ class FVISInterface extends FEventDispatcher
         preg_match_all('#'.self::TEMPLATE_REGEXP.'#', $text, $struct, PREG_SET_ORDER);
 
         $writes_to = 'OUT';
-        $text = '$'.$writes_to.' = <<<FTEXT'.FStr::ENDL;
+        $text = '$'.$writes_to.' = <<<FTEXT'.K3_String::EOL;
         $jstext = 'v.'.$writes_to.' = "';
         $vars = array();
 
@@ -889,8 +889,8 @@ class FVISInterface extends FEventDispatcher
                     if ($var != $writes_to)
                     {
                         $writes_to = $var;
-                        $text.= FStr::ENDL.'FTEXT;'.FStr::ENDL.'$'.$writes_to.(($got_a) ? '' : '.').'= <<<FTEXT'.FStr::ENDL;
-                        $jstext.= '";'.FStr::ENDL.'v.'.$writes_to.(($got_a) ? '' : '+').'= "';
+                        $text.= K3_String::EOL.'FTEXT;'.K3_String::EOL.'$'.$writes_to.(($got_a) ? '' : '.').'= <<<FTEXT'.K3_String::EOL;
+                        $jstext.= '";'.K3_String::EOL.'v.'.$writes_to.(($got_a) ? '' : '+').'= "';
                     }
                 }
                 elseif (isset($this->func_parsers[$tag])) //parsing the variable with func
@@ -898,11 +898,11 @@ class FVISInterface extends FEventDispatcher
                     if (!isset($params[1]) || !count($params[1]))
                         continue;
 
-                    $text.= FStr::ENDL.'FTEXT'.FStr::ENDL.'.';
-                    $jstext.= '"'.FStr::ENDL.'+';
+                    $text.= K3_String::EOL.'FTEXT'.K3_String::EOL.'.';
+                    $jstext.= '"'.K3_String::EOL.'+';
                     $text.= $this->templVISFuncCB($tag, $params[1], $vars, $consts, false, $got_a);
                     $jstext.= $this->templVISFuncCB($tag, $params[1], $vars, $consts, true, $got_a);
-                    $text.= '.<<<FTEXT'.FStr::ENDL;
+                    $text.= '.<<<FTEXT'.K3_String::EOL;
                     $jstext.= '+"';
                 }
                 elseif ($tag == 'SET')
@@ -918,13 +918,13 @@ class FVISInterface extends FEventDispatcher
                             $var = strtoupper($var);
                             $val = $params[3][$i];
                             $sets.= '$'.$var.' = '.$this->templVISParamCB($val, $vars, $consts).';';
-                            $jssets.= 'v.'.$var.' = '.$this->templVISParamCB($val, $vars, $consts, false, true).';'.FStr::ENDL;
+                            $jssets.= 'v.'.$var.' = '.$this->templVISParamCB($val, $vars, $consts, false, true).';'.K3_String::EOL;
                         }
 
                         if ($sets)
                         {
-                            $text.= FStr::ENDL.'FTEXT;'.FStr::ENDL.$sets.FStr::ENDL.'$'.$writes_to.'.= <<<FTEXT'.FStr::ENDL;
-                            $jstext.= '";'.FStr::ENDL.$sets.'v.'.$writes_to.'+= "';
+                            $text.= K3_String::EOL.'FTEXT;'.K3_String::EOL.$sets.K3_String::EOL.'$'.$writes_to.'.= <<<FTEXT'.K3_String::EOL;
+                            $jstext.= '";'.K3_String::EOL.$sets.'v.'.$writes_to.'+= "';
                         }
                     }
                 }
@@ -954,20 +954,20 @@ class FVISInterface extends FEventDispatcher
                     else
                         $pp3 = $p3 = '1';
 
-                    $text.= FStr::ENDL.'FTEXT;'.FStr::ENDL.'for ($I = '.$this->templVISParamCB($pp1, $vars, $consts).'; $I <= '.$this->templVISParamCB($pp2, $vars, $consts).'; $I+= '.$this->templVISParamCB($pp3, $vars, $consts).') {'.FStr::ENDL.'$'.$writes_to.'.= <<<FTEXT'.FStr::ENDL;
-                    $jstext.= '";'.FStr::ENDL.'for (v.I = '.$this->templVISParamCB($p1, $vars, $consts, false, true).'; v.I <= '.$this->templVISParamCB($p2, $vars, $consts, false, true).'; v.I+= '.$this->templVISParamCB($p3, $vars, $consts, false, true).') {'.FStr::ENDL.'v.'.$writes_to.'+= "';
+                    $text.= K3_String::EOL.'FTEXT;'.K3_String::EOL.'for ($I = '.$this->templVISParamCB($pp1, $vars, $consts).'; $I <= '.$this->templVISParamCB($pp2, $vars, $consts).'; $I+= '.$this->templVISParamCB($pp3, $vars, $consts).') {'.K3_String::EOL.'$'.$writes_to.'.= <<<FTEXT'.K3_String::EOL;
+                    $jstext.= '";'.K3_String::EOL.'for (v.I = '.$this->templVISParamCB($p1, $vars, $consts, false, true).'; v.I <= '.$this->templVISParamCB($p2, $vars, $consts, false, true).'; v.I+= '.$this->templVISParamCB($p3, $vars, $consts, false, true).') {'.K3_String::EOL.'v.'.$writes_to.'+= "';
                 }
                 elseif ($tag == 'ENDFOR' || $tag == '/FOR')
                 {
                     if ($in_for)
                     {
-                        $text.= FStr::ENDL.'FTEXT;'.FStr::ENDL;
-                        $jstext.= '";'.FStr::ENDL;
+                        $text.= K3_String::EOL.'FTEXT;'.K3_String::EOL;
+                        $jstext.= '";'.K3_String::EOL;
                         $in_for = false;
                         $text.= str_repeat('} ', $iflevel);
                         $jstext.= str_repeat('} ', $iflevel);
-                        $text.= FStr::ENDL.'}'.FStr::ENDL.'$'.$writes_to.'.= <<<FTEXT'.FStr::ENDL;
-                        $jstext.= FStr::ENDL.'}'.FStr::ENDL.'v.'.$writes_to.'.= "';
+                        $text.= K3_String::EOL.'}'.K3_String::EOL.'$'.$writes_to.'.= <<<FTEXT'.K3_String::EOL;
+                        $jstext.= K3_String::EOL.'}'.K3_String::EOL.'v.'.$writes_to.'.= "';
                         $iflevel = $outiflevel;
                     }
                 }
@@ -976,7 +976,7 @@ class FVISInterface extends FEventDispatcher
                     if (!isset($params[1]) || !count($params[1]))
                         continue;
                     $visname = $params[1][0];
-                    $text.= FStr::ENDL.'FTEXT;'.FStr::ENDL.'$'.$writes_to.(($got_a) ? '' : '.').'= $_vis->parseVIS(\''.$visname.'\'';
+                    $text.= K3_String::EOL.'FTEXT;'.K3_String::EOL.'$'.$writes_to.(($got_a) ? '' : '.').'= $_vis->parseVIS(\''.$visname.'\'';
                     if (count($params[1]) > 1)
                     {
                         $passMyParams = false;
@@ -1005,7 +1005,7 @@ class FVISInterface extends FEventDispatcher
                             $text.= ', $_in';
                         }
                     }
-                    $text.= ');'.FStr::ENDL.'$'.$writes_to.'.= <<<FTEXT'.FStr::ENDL;
+                    $text.= ');'.K3_String::EOL.'$'.$writes_to.'.= <<<FTEXT'.K3_String::EOL;
                 }
                 elseif ($tag == 'IF' || $tag == 'ELSEIF')
                 {
@@ -1037,30 +1037,30 @@ class FVISInterface extends FEventDispatcher
 
                     if ($tag == 'IF')
                     {
-                        $text.= FStr::ENDL.'FTEXT;'.FStr::ENDL.'if ('.$condition.') {'.FStr::ENDL.'$'.$writes_to.'.= <<<FTEXT'.FStr::ENDL;
-                        $jstext.= '";'.FStr::ENDL.'if ('.$jscondition.') {'.FStr::ENDL.'v.'.$writes_to.'+= "';
+                        $text.= K3_String::EOL.'FTEXT;'.K3_String::EOL.'if ('.$condition.') {'.K3_String::EOL.'$'.$writes_to.'.= <<<FTEXT'.K3_String::EOL;
+                        $jstext.= '";'.K3_String::EOL.'if ('.$jscondition.') {'.K3_String::EOL.'v.'.$writes_to.'+= "';
                         $iflevel++;
                     }
                     elseif ($iflevel)
                     {
-                        $text.= FStr::ENDL.'FTEXT;'.FStr::ENDL.'} elseif('.$condition.') {'.FStr::ENDL.'$'.$writes_to.'.= <<<FTEXT'.FStr::ENDL;
-                        $jstext.= '";}'.FStr::ENDL.'else if ('.$jscondition.') {'.FStr::ENDL.'v.'.$writes_to.'+= "';
+                        $text.= K3_String::EOL.'FTEXT;'.K3_String::EOL.'} elseif('.$condition.') {'.K3_String::EOL.'$'.$writes_to.'.= <<<FTEXT'.K3_String::EOL;
+                        $jstext.= '";}'.K3_String::EOL.'else if ('.$jscondition.') {'.K3_String::EOL.'v.'.$writes_to.'+= "';
                     }
                 }
                 elseif ($tag == 'ELSE')
                 {
                     if ($iflevel)
                     {
-                        $text.= FStr::ENDL.'FTEXT;'.FStr::ENDL.'} elseif(true) {'.FStr::ENDL.'$'.$writes_to.'.= <<<FTEXT'.FStr::ENDL;
-                        $jstext.= '";}'.FStr::ENDL.'else if (true) {'.FStr::ENDL.'v.'.$writes_to.'+= "';
+                        $text.= K3_String::EOL.'FTEXT;'.K3_String::EOL.'} elseif(true) {'.K3_String::EOL.'$'.$writes_to.'.= <<<FTEXT'.K3_String::EOL;
+                        $jstext.= '";}'.K3_String::EOL.'else if (true) {'.K3_String::EOL.'v.'.$writes_to.'+= "';
                     }
                 }
                 elseif ($tag == 'ENDIF' || $tag == '/IF')
                 {
                     if ($iflevel)
                     {
-                        $text.= FStr::ENDL.'FTEXT;'.FStr::ENDL.'}'.FStr::ENDL.'$'.$writes_to.'.= <<<FTEXT'.FStr::ENDL;
-                        $jstext.= '";}'.FStr::ENDL.'v.'.$writes_to.'+= "';
+                        $text.= K3_String::EOL.'FTEXT;'.K3_String::EOL.'}'.K3_String::EOL.'$'.$writes_to.'.= <<<FTEXT'.K3_String::EOL;
+                        $jstext.= '";}'.K3_String::EOL.'v.'.$writes_to.'+= "';
                         $iflevel--;
                     }
                 }
@@ -1077,8 +1077,8 @@ class FVISInterface extends FEventDispatcher
                         $vars[$varname] = '';
                         if ($got_a)
                         {
-                            $text.= FStr::ENDL.'FTEXT'.FStr::ENDL.'.FStr::smartHTMLSchars($'.$varname.').<<<FTEXT'.FStr::ENDL;
-                            $jstext.= '"+FStr.smartHTMLSchars(v.'.$varname.')+"';
+                            $text.= K3_String::EOL.'FTEXT'.K3_String::EOL.'.K3_Util_String::escapeXML($'.$varname.').<<<FTEXT'.K3_String::EOL;
+                            $jstext.= '"+K3_Util_String.escapeXML(v.'.$varname.')+"';
                         }
                         else
                         {
@@ -1097,8 +1097,8 @@ class FVISInterface extends FEventDispatcher
             unset($struct[$key]);
         }
 
-        $text.= FStr::ENDL.'FTEXT;'.FStr::ENDL;
-        $jstext.= '";'.FStr::ENDL;
+        $text.= K3_String::EOL.'FTEXT;'.K3_String::EOL;
+        $jstext.= '";'.K3_String::EOL;
 
         $text.= str_repeat('} ', $iflevel);
         $jstext.= str_repeat('} ', $iflevel);
@@ -1136,7 +1136,7 @@ class FVISInterface extends FEventDispatcher
 
         $vis = strtoupper($vis);
         if (!isset($this->templates[$vis]) && !$this->tryAutoLoad($vis))
-            return implode(FStr::ENDL, $data);
+            return implode(K3_String::EOL, $data);
 
         if (!isset($this->templates[$vis]['F']))
             $this->templates[$vis]['F'] = create_function(
@@ -1156,13 +1156,13 @@ class FVISInterface extends FEventDispatcher
         if (!isset($this->templates[$vis]) && !$this->tryAutoLoad($vis))
             return '';
 
-        $body = 'v = '.K3_Util_Value::defineJSON($this->templates[$vis]['V']).';'.FStr::ENDL
-            .'for (var i in FVIS.consts) v[i] = FVIS.consts[i];'.FStr::ENDL
-            .'for (var i in data) v[i] = data[i];'.FStr::ENDL
-            .$this->templates[$vis]['J'].FStr::ENDL
+        $body = 'v = '.K3_Util_Value::defineJSON($this->templates[$vis]['V']).';'.K3_String::EOL
+            .'for (var i in FVIS.consts) v[i] = FVIS.consts[i];'.K3_String::EOL
+            .'for (var i in data) v[i] = data[i];'.K3_String::EOL
+            .$this->templates[$vis]['J'].K3_String::EOL
             .'return v.OUT';
 
-        return 'function(data) {'.FStr::ENDL.$body.FStr::ENDL.'}';
+        return 'function(data) {'.K3_String::EOL.$body.K3_String::EOL.'}';
     }
 
     public function prepareECSS($indata, $constants = null, $force_compact = false)
@@ -1209,7 +1209,7 @@ class FVISInterface extends FEventDispatcher
         $indata = preg_replace('#(?<=\s)//.*?$#m', '', $indata);
         $indata = preg_replace('#(\n\s*)+#', "\n", $indata);
         $indata = preg_replace('#\n(.{1,5})$#m', ' \\1', $indata);
-        $indata = str_replace("\n", FStr::ENDL, $indata);
+        $indata = str_replace("\n", K3_String::EOL, $indata);
         $indata = trim($indata);
         return $indata;
     }
@@ -1222,7 +1222,7 @@ class FVISInterface extends FEventDispatcher
         $indata = preg_replace('#\n(.{1,5})$#m', ' \\1', $indata);
         $indata = preg_replace('#\s*(,|:|;|\{)\s+#', '\\1 ', $indata);
         $indata = preg_replace('#\s+\}\s+#', " }\n", $indata);
-        $indata = str_replace("\n", FStr::ENDL, $indata);
+        $indata = str_replace("\n", K3_String::EOL, $indata);
         $indata = trim($indata);
         return $indata;
     }
@@ -1233,7 +1233,7 @@ class FVISInterface extends FEventDispatcher
         $indata = preg_replace('#(\n\s*)+#', "\n", $indata);
         $indata = preg_replace('#\n(.{1,5})$#m', ' \\1', $indata);
         $indata = preg_replace('#\x20+#', ' ', $indata);
-        $indata = str_replace("\n", FStr::ENDL, $indata);
+        $indata = str_replace("\n", K3_String::EOL, $indata);
         $indata = trim($indata);
         return $indata;
     }
@@ -1328,7 +1328,7 @@ class FVISInterface extends FEventDispatcher
         {
             $val = (string) $this->callParseFunctionArr($parsewith, $st_pars);
             if ($do_schars)
-                $val = htmlspecialchars($val);
+                $val = K3_Util_String::escapeXML($val);
             $code = $for_js ? K3_Util_Value::defineJSON($val) : K3_Util_String::escapeHeredoc($val, 'FTEXT', true);
         }
         else
@@ -1338,8 +1338,8 @@ class FVISInterface extends FEventDispatcher
                 : '$_vis->callParseFunctionArr(\''.$parsewith.'\', array('.implode(', ', $dyn_pars).'))';
             if ($do_schars)
                 $code = $for_js
-                    ? 'FStr.smartHTMLSchars('.$code.')'
-                    : 'FStr::smartHTMLSchars('.$code.')';
+                    ? 'K3_Util_String.escapeXML('.$code.')'
+                    : 'K3_Util_String::escapeXML('.$code.')';
         }
 
         return $code;
@@ -1376,7 +1376,7 @@ class FVISInterface extends FEventDispatcher
             if ($parsewith)
                 $val = $this->callParseFunction($parsewith, $val);
             if ($do_schars)
-                $val = htmlspecialchars($val);
+                $val = K3_Util_String::escapeXML($val);
             $code = $for_js ? K3_Util_Value::defineJSON($val) : K3_Util_String::escapeHeredoc($val, 'FTEXT', true);
         }
         elseif ($parsewith)
@@ -1386,8 +1386,8 @@ class FVISInterface extends FEventDispatcher
                 : '$_vis->callParseFunction(\''.$parsewith.'\', $'.$val.')';
             if ($do_schars)
                 $code = $for_js
-                    ? 'FStr.smartHTMLSchars('.$code.')'
-                    : 'FStr::smartHTMLSchars('.$code.')';
+                    ? 'K3_Util_String.escapeXML('.$code.')'
+                    : 'K3_Util_String::escapeXML('.$code.')';
         }
 
         return $code;
@@ -1399,7 +1399,12 @@ class FVISInterface extends FEventDispatcher
             return $data;
 
         $func_parser = $this->func_parsers[$func_name];
-        return call_user_func($func_parser, $data);
+
+        $args = array($data);
+        if (is_array($func_parser) && count($func_parser) > 2) {
+            $args = array_merge($args, array_splice($func_parser, 2));
+        }
+        return call_user_func_array($func_parser, $args);
     }
 
     public function callParseFunctionArr($func_name, $data) //parsing data with funcParser
@@ -1408,6 +1413,10 @@ class FVISInterface extends FEventDispatcher
             return '';
 
         $func_parser = $this->func_parsers[$func_name];
+
+        if (is_array($func_parser) && count($func_parser) > 2) {
+            $data = array_merge($data, array_splice($func_parser, 2));
+        }
         return call_user_func_array($func_parser, $data);
     }
 

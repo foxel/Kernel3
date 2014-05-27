@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2012 - 2013 Andrey F. Kupreychik (Foxel)
+ * Copyright (C) 2012 - 2014 Andrey F. Kupreychik (Foxel)
  *
  * This file is part of QuickFox Kernel 3.
  * See https://github.com/foxel/Kernel3/ for more details.
@@ -87,13 +87,13 @@ class K3_Session extends K3_Environment_Element
         $this->mode |= $mode & (self::MODES_ALLOW);
 
         $this->SID = $this->env->client->getCookie(self::SID_NAME);
-        if ($ForceSID = $this->env->request->getString('ForceFSID', K3_Request::POST, FStr::HEX)) {
+        if ($ForceSID = $this->env->request->getString('ForceFSID', K3_Request::POST, K3_Util_String::FILTER_HEX)) {
             $this->SID = $ForceSID;
         }
 
         if (!$this->SID) {
             $this->mode |= self::MODE_URLS;
-            $this->SID = $this->env->request->getString(self::SID_NAME, K3_Request::ALL, FStr::HEX);
+            $this->SID = $this->env->request->getString(self::SID_NAME, K3_Request::ALL, K3_Util_String::FILTER_HEX);
         }
 
         if (!$this->SID || $this->tried || !$this->load()) {

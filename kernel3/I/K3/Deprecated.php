@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2012 Andrey F. Kupreychik (Foxel)
+ * Copyright (C) 2012, 2014 Andrey F. Kupreychik (Foxel)
  *
  * This file is part of QuickFox Kernel 3.
  * See https://github.com/foxel/Kernel3/ for more details.
@@ -22,3 +22,5 @@
 interface I_K3_Deprecated {}
 
 trigger_error('This project uses deprecated class(es).', E_USER_DEPRECATED);
+
+//throw new FException('This project uses deprecated class(es)');

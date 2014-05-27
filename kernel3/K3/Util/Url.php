@@ -188,7 +188,7 @@ class K3_Util_Url extends K3_Util
 
         $paramPair = $paramName.'='.self::urlencode($paramValue);
         if ($xmlEncoded) {
-            $paramPair = htmlspecialchars($paramPair);
+            $paramPair = K3_Util_String::escapeXML($paramPair);
         }
 
         $insert = (!strstr($url, '?')) ? '?' : $separator;
@@ -218,7 +218,7 @@ class K3_Util_Url extends K3_Util
 
         $paramName = self::urlencode($paramName);
         if ($xmlEncoded) {
-            $paramName = htmlspecialchars($paramName);
+            $paramName = K3_Util_String::escapeXML($paramName);
         }
 
         $query = preg_replace('#('.$separator.'|^)'.preg_quote($paramName, '#').'=.*?('.$separator.'|$)#', '$1', $query);

@@ -112,7 +112,7 @@ class K3_Util_String extends K3_Util
                 break;
 
             case self::FILTER_HTML:
-                $string = htmlspecialchars($string); // TODO: revise
+                $string = K3_Util_String::escapeXML($string); // TODO: revise
                 break;
 
             case self::FILTER_WORD:
@@ -133,6 +133,15 @@ class K3_Util_String extends K3_Util
         }
 
         return $string;
+    }
+
+    /**
+     * @param string $text
+     * @return string
+     */
+    public static function escapeXML($text)
+    {
+        return htmlspecialchars($text);
     }
 
     /**

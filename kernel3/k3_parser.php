@@ -88,14 +88,14 @@ class FParser extends FEventDispatcher
         $this->addBBTag('background', '<span style="background-color: {param};">{data}</span>', self::BBTAG_FHTML, array('param_mask' => '\#[0-9a-f]{6}|[a-z\-]+') );
         $this->addBBTag('font', '<span style="font-family: {param};">{data}</span>', self::BBTAG_FHTML, array('param_mask' => '[0-9A-z\x20]+') );
         $this->addBBTag('size', '<span style="font-size: {param}px;">{data}</span>', self::BBTAG_FHTML, array('param_mask' => '[1-2]?[0-9]') );
-        $this->addBBTag('email', '<a href="mailto:{data}">{data}</a>', self::BBTAG_FHTML, array('data_mask' => FStr::EMAIL_MASK));
+        $this->addBBTag('email', '<a href="mailto:{data}">{data}</a>', self::BBTAG_FHTML, array('data_mask' => K3_String::MASK_EMAIL));
         $this->addBBTag('img', '', self::BBTAG_NOSUB, array('func' => array( &$this, 'BBCodeStdUrlImg') ) );
         $this->addBBTag('url', '', false, array('func' => array( &$this, 'BBCodeStdUrlImg') ) );
         $this->addBBTag('table', '', self::BBTAG_BLLEV | self::BBTAG_USEBRK, array('func' => array( &$this, 'BBCodeStdTable') ) );
         $this->addBBTag('list', '', self::BBTAG_BLLEV | self::BBTAG_USEBRK, array('func' => array( &$this, 'BBCodeStdList') ) );
 
-        $this->addPreg(FStr::URL_MASK_F, '[url]{data}[/url]');
-        //$this->addPreg(FStr::EMAIL_MASK, '[email]{data}[/email]');
+        $this->addPreg(K3_String::MASK_URL_FULL, '[url]{data}[/url]');
+        //$this->addPreg(K3_String::MASK_EMAIL, '[email]{data}[/email]');
     }
 
     public function addBBTag($bbtag, $html, $tag_mode=0, $extra = null)
@@ -168,7 +168,7 @@ class FParser extends FEventDispatcher
             
         if ($mode == self::BBPARSE_ALL || $mode == self::BBPARSE_PREP) // doing replaces and html strips
         {
-            $input = htmlspecialchars($input, ENT_NOQUOTES);
+            $input = K3_Util_String::escapeXML($input, ENT_NOQUOTES);
             $input = $this->pregsParse($input, $style);
             //$input = nl2br($input);
         }
@@ -258,7 +258,7 @@ class FParser extends FEventDispatcher
                                 $buffer.= $tdata;
                         }
                     }
-                    $tdata = $pclose.FStr::ENDL.$popen;
+                    $tdata = $pclose.K3_String::EOL.$popen;
                     if (!$this->TStackWrite($tdata))
                         $buffer.= $tdata;
                 }
@@ -279,7 +279,7 @@ class FParser extends FEventDispatcher
 
                                 $tdata = $this->parseBBTag($tdata['name'], $tdata['param'], $tdata['buffer'], $popen, $pclose);
                                 if (($this->cur_mode != self::BBPARSE_CHECK) && ($subtmode & self::BBTAG_BLLEV))
-                                    $tdata = $pclose.FStr::ENDL.$tdata.FStr::ENDL.$popen;
+                                    $tdata = $pclose.K3_String::EOL.$tdata.K3_String::EOL.$popen;
                                 if (!$this->TStackWrite($tdata))
                                     $buffer.= $tdata;
 
@@ -388,7 +388,7 @@ class FParser extends FEventDispatcher
 
                                 $tdata = $this->parseBBTag($tdata['name'], $tdata['param'], $tdata['buffer'], $popen, $pclose);
                                 if (($this->cur_mode != self::BBPARSE_CHECK) && ($subtmode & self::BBTAG_BLLEV))
-                                    $tdata = $pclose.FStr::ENDL.$tdata.FStr::ENDL.$popen;
+                                    $tdata = $pclose.K3_String::EOL.$tdata.K3_String::EOL.$popen;
                                 if (!$this->TStackWrite($tdata))
                                     $buffer.= $tdata;
 
@@ -431,7 +431,7 @@ class FParser extends FEventDispatcher
 
             $tdata = $this->parseBBTag($tdata['name'], $tdata['param'], $tdata['buffer'], $popen, $pclose);
             if (($this->cur_mode != self::BBPARSE_CHECK) && ($subtmode & self::BBTAG_BLLEV))
-                $tdata = $pclose.FStr::ENDL.$tdata.FStr::ENDL.$popen;
+                $tdata = $pclose.K3_String::EOL.$tdata.K3_String::EOL.$popen;
             if (!$this->TStackWrite($tdata))
                 $buffer.= $tdata;
         }
@@ -613,7 +613,7 @@ class FParser extends FEventDispatcher
             }
             else
             {
-                $output.= htmlspecialchars($part[0]);
+                $output.= K3_Util_String::escapeXML($part[0]);
             }
         }
 
@@ -641,7 +641,7 @@ class FParser extends FEventDispatcher
                     : ((isset($part[4]))
                         ? $part[4]
                         : $part[3]);
-                $val = htmlspecialchars($val);
+                $val = K3_Util_String::escapeXML($val);
             }
             $params[] = $par.'="'.$val.'"';
         }
