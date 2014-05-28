@@ -122,7 +122,7 @@ $base_modules_files = array(
     F_KERNEL_DIR.DIRECTORY_SEPARATOR.'k3_dbase.php',         // kernel 3 database interface
 );
 // we'll do some trick with caching base modules in one file
-if (F_DEBUG) {
+if ((strpos(F_KERNEL_DIR, 'phar://') === 0) || F_DEBUG) {
     foreach ($base_modules_files as $fname) {
         /** @noinspection PhpIncludeInspection */
         require_once($fname);
