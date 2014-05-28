@@ -141,7 +141,7 @@ class K3_Util_String extends K3_Util
      */
     public static function escapeXML($text)
     {
-        return htmlspecialchars($text);
+        return htmlspecialchars($text, ENT_QUOTES, K3_String::INTERNAL_ENCODING);
     }
 
     /**
