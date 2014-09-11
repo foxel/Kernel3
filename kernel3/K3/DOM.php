@@ -44,7 +44,7 @@ class K3_DOM extends DOMDocument
             $src = preg_quote($src, '#');
         }
 
-        $allowedIFrameRegExp = '#^https?://(www\.)?('.implode('|', $allowedIFrameSources).')/#';
+        $allowedIFrameRegExp = '#^(https?:)?//(www\.)?('.implode('|', $allowedIFrameSources).')/#';
         $iFrames = $xpath->query('//iframe');
         foreach ($iFrames as $item) {
             /** @var $item DOMElement */
