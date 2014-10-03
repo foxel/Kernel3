@@ -84,7 +84,8 @@ class K3_Csv
                     strpos($field, "\t")!==false ||
                     strpos($field, ' ')!==false )
             ) {
-                $line[] = '"'.strtr($field, array('"' => '""')).'"';
+                $quot = $this->_enclosure;
+                $line[] = $quot.strtr($field, array($quot => $quot.$quot)).$quot;
             } else {
                 $line[] = (string) $field;
             }
