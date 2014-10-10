@@ -73,19 +73,12 @@ class K3_Csv
     {
         $escape_char = '\\';
 
+        $regexp = "/[{$this->_delimiter}{$this->_enclosure}{$escape_char}\r\n\t\\s]/";
         $line = array();
         foreach ($data as $field) {
-            if (is_string($field) && (
-                    strpos($field, $this->_delimiter)!==false ||
-                    strpos($field, $this->_enclosure)!==false ||
-                    strpos($field, $escape_char)!==false ||
-                    strpos($field, "\n")!==false ||
-                    strpos($field, "\r")!==false ||
-                    strpos($field, "\t")!==false ||
-                    strpos($field, ' ')!==false )
-            ) {
+            if (preg_match($regexp, $field)) {
                 $quot = $this->_enclosure;
-                $line[] = $quot.strtr($field, array($quot => $quot.$quot)).$quot;
+                $line[] = $quot.str_replace($quot, $quot.$quot, $field).$quot;
             } else {
                 $line[] = (string) $field;
             }
