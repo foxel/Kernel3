@@ -21,7 +21,7 @@
 
 /**
  * QuickFox kernel 3 'SlyFox' main file
- * Requires PHP >= 5.2.0
+ * Requires PHP >= 5.3.0
  * @package kernel3
  * @subpackage core
  */

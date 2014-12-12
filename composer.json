@@ -1,0 +1,23 @@
+{
+    "name": "foxel/kernel3",
+    "type": "library",
+    "homepage": "https://github.com/foxel/kernel3",
+    "description": "Simple WWW sites framework",
+    "version": "0.1.0",
+    "require": {
+        "php": ">=5.3.0"
+    },
+    "minimum-stability": "beta",
+    "license": "GPLv3",
+    "authors": [
+        {
+            "name": "Andrey F. Kupreychik",
+            "email": "foxel@quickfox.ru"
+        }
+    ],
+    "autoload": {
+        "psr-0": {
+            "files": ["kernel3/kernel3.php"]
+        }
+    }
+}
