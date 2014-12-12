@@ -16,8 +16,6 @@
         }
     ],
     "autoload": {
-        "psr-0": {
-            "files": ["kernel3/kernel3.php"]
-        }
+        "files": ["kernel3/kernel3.php"]
     }
 }
