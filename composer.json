@@ -16,6 +16,6 @@
         }
     ],
     "autoload": {
-        "files": ["kernel3/kernel3.php"]
+        "files": ["bootstrap.php"]
     }
 }
