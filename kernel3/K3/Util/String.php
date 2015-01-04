@@ -204,6 +204,23 @@ class K3_Util_String extends K3_Util
         return $string;
     }
 
+    /**
+     * @param string|string[] $input
+     * @return string|string[]
+     */
+    static public function replaceConstants($input)
+    {
+        $constants = get_defined_constants(true);
+        $replaces  = array();
+        foreach ($constants['user'] as $name => $value) {
+            $replaces['{'.$name.'}'] = $value;
+        }
+
+        $output = str_replace(array_keys($replaces), array_values($replaces), $input);
+
+        return $output;
+    }
+
     // UIDs and hashes
     /**
      * @param string $string

@@ -464,11 +464,11 @@ class FVISInterface extends FEventDispatcher
                 while ($entry = readdir($dir))
                 {
                     $filename = $directory.DIRECTORY_SEPARATOR.$entry;
-                    if (preg_match($preg_pattern, $entry) && is_file($filename) && $datas = FMisc::loadDatafile($filename, FMisc::DF_BLOCK, true))
-                    {
-                        $datas = array_keys($datas);
-                        foreach ($datas as $key)
+                    if (preg_match($preg_pattern, $entry) && is_file($filename) && $data = FMisc::loadDatafile($filename, FMisc::DF_BLOCK, true)) {
+                        $keys = array_keys($data);
+                        foreach ($keys as $key) {
                             $aldata[$key] = $entry;
+                        }
                     }
                 }
                 closedir($dir);

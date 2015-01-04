@@ -266,8 +266,15 @@ final class FMisc
     const DF_MLINE = 3;
     const DF_BLOCK = 4;
     const DF_FROMSTR = 16; //flag
+    const EXTENDS_KEYWORD = '@extends';
 
-    private static $dfMasks  = array('', '', '#^\s*([\w\-\.\/]+)\s*=>(.*)$#m', '#^((?>\w+)):(.*?)\r?\n---#sm', '#<<\+ \'(?>(\w+))\'>>(.*?)<<- \'\\1\'>>#s');
+    private static $dfMasks  = array(
+        self::DF_PLAIN => '',
+        self::DF_SERIALIZED => '',
+        self::DF_SLINE => '#^\s*(@?[\w\-\.\/]+)\s*=>(.*)$#m',
+        self::DF_MLINE => '#^((?>@?\w+)):(.*?)\r?\n---#sm',
+        self::DF_BLOCK => '#<<\+ \'(?>(@?\w+))\'>>(.*?)<<- \'\\1\'>>#s',
+    );
     private static $cbCode   = false;
     private static $sdCBacks = array();
     private static $inited   = false;
@@ -350,19 +357,27 @@ final class FMisc
     }
 
     /**
-     * @param string $datasource
+     * @param string $dataSource
      * @param int $format
-     * @param bool $force_upcase
-     * @param string $explode_by
+     * @param bool $forceUpCase
+     * @param string $explodeBy
      * @return mixed
      */
-    static public function loadDatafile($datasource, $format = self::DF_PLAIN, $force_upcase = false, $explode_by = '')
+    static public function loadDatafile($dataSource, $format = self::DF_PLAIN, $forceUpCase = false, $explodeBy = '')
     {
-        $indata = ($format & self::DF_FROMSTR)
-            ? $datasource
-            : (file_exists($datasource) ? file_get_contents($datasource) : false);
+        $dataFileName = null;
 
-        if ($indata == false) {
+        if ($format & self::DF_FROMSTR) {
+            $inData = $dataSource;
+        } else {
+            $dataFileName = $dataSource;
+            if (!file_exists($dataSource)) {
+                return false;
+            }
+            $inData = file_get_contents($dataFileName);
+        }
+
+        if ($inData == false) {
             return false;
         }
 
@@ -371,31 +386,51 @@ final class FMisc
         switch ($format)
         {
             case self::DF_SERIALIZED:
-                return unserialize($indata);
+                return unserialize($inData);
             case self::DF_SLINE:
             case self::DF_MLINE:
             case self::DF_BLOCK:
                 $matches = array();
                 $arr = array();
-                preg_match_all(self::$dfMasks[$format], $indata, $matches);
+                preg_match_all(self::$dfMasks[$format], $inData, $matches);
                 if (is_array($matches[1]))
                 {
                     $names =& $matches[1];
                     $vars  =& $matches[2];
                     foreach ($names as $num => $name)
                     {
-                        if ($force_upcase)
+                        if ($forceUpCase) {
                             $name = strtoupper($name);
+                        }
                         $var = trim($vars[$num]);
-                        if ($explode_by)
-                            $var = explode($explode_by, $var);
+                        if ($explodeBy) {
+                            $var = explode($explodeBy, $var);
+                        }
                         $arr[$name] = $var;
+                    }
+                }
+
+                $extendKey = self::EXTENDS_KEYWORD;
+                if ($forceUpCase) {
+                    $extendKey = strtoupper($extendKey);
+                }
+
+                if (isset($arr[$extendKey])) {
+                    $baseFileName = K3_Util_String::replaceConstants(trim($arr[$extendKey]));
+                    unset($arr[$extendKey]);
+                    if ($dataFileName) {
+                        // TODO: export to separate function
+                        $cwd = getcwd();
+                        chdir(dirname($dataFileName));
+                        $baseArr = static::loadDatafile($baseFileName, $format, $forceUpCase, $explodeBy);
+                        $arr = array_merge($baseArr, $arr);
+                        chdir($cwd);
                     }
                 }
 
                 return $arr;
             default:
-                return $indata;
+                return $inData;
         }
     }
 
