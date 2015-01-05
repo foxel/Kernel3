@@ -275,7 +275,10 @@ class FVISNode extends FBaseClass // FEventDispatcher
     }
 }
 
-// VIS interface
+/**
+ * Class FVISInterface
+ * @author Andrey F. Kupreychik
+ */
 class FVISInterface extends FEventDispatcher
 {
     // Cache prefixes for module data
@@ -290,6 +293,9 @@ class FVISInterface extends FEventDispatcher
     const VIS_NORMAL =  0;
     const VIS_STATIC =  1;
     const VIS_DINAMIC = 2;
+
+    const EVENT_EJS_PRE_PARSE = 'EJS_PreParse';
+    const EVENT_VIS_PRE_PARSE = 'VIS_PreParse';
 
     protected $templates  = array();
 
@@ -536,7 +542,7 @@ class FVISInterface extends FEventDispatcher
                 }
                 elseif ($indata = FMisc::loadDatafile($filename))
                 {
-                    $this->throwEventRef('EJS_PreParse', $indata);
+                    $this->throwEventRef(self::EVENT_EJS_PRE_PARSE, $indata);
 
                     $JSData = $this->prepareEJS($indata, $this->vis_consts);
                     $this->JS_data.= K3_String::EOL.$JSData;
@@ -578,7 +584,7 @@ class FVISInterface extends FEventDispatcher
                 }
                 elseif ($indata = FMisc::loadDatafile($filename, FMisc::DF_BLOCK, true))
                 {
-                    $this->throwEventRef('VIS_PreParse', $indata, $filename);
+                    $this->throwEventRef(self::EVENT_VIS_PRE_PARSE, $indata, $filename);
 
                     $Tdata  = array();
                     $VCSS   = '';

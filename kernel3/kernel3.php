@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2010 - 2014 Andrey F. Kupreychik (Foxel)
+ * Copyright (C) 2010 - 2015 Andrey F. Kupreychik (Foxel)
  *
  * This file is part of QuickFox Kernel 3.
  * See https://github.com/foxel/Kernel3/ for more details.
@@ -211,6 +211,8 @@ class F extends FEventDispatcher
     /** kernel files directory */
     const KERNEL_DIR = F_KERNEL_DIR;
 
+    const EVENT_MODULE_START = 'moduleStart';
+
     static private $ERR_TYPES = array(
         E_ERROR             => 'PHP ERROR',
         E_WARNING           => 'PHP WARNING',
@@ -348,7 +350,7 @@ class F extends FEventDispatcher
                 if (method_exists($mod_class, '_Close')) {
                     $this->clclose[] = array(&$this->pool[$mod_name], '_Close');
                 }
-                $this->throwEvent('moduleStart', $mod_name);
+                $this->throwEvent(self::EVENT_MODULE_START, $mod_name);
                 return true;
             }
         }

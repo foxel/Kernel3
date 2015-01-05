@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2012 - 2014 Andrey F. Kupreychik (Foxel)
+ * Copyright (C) 2012 - 2015 Andrey F. Kupreychik (Foxel)
  *
  * This file is part of QuickFox Kernel 3.
  * See https://github.com/foxel/Kernel3/ for more details.
@@ -26,6 +26,12 @@
  */
 class K3_Session extends K3_Environment_Element
 {
+    const EVENT_CREATE  = 'created';
+    const EVENT_LOAD    = 'loaded';
+    const EVENT_PREOPEN = 'preopen';
+    const EVENT_OPEN    = 'opened';
+    const EVENT_PRESAVE = 'presave';
+
     protected $SID       = '';           // Session ID
 
     protected $clicks    = 1;            // session clicks stats
@@ -35,10 +41,9 @@ class K3_Session extends K3_Environment_Element
 
     protected $securityLevel = 3;        // security level for client signature used
 
-    /**
-     * @var FDataBase
-     */
+    /** @var FDataBase */
     protected $dbObject = null;
+    /** @var string */
     protected $dbTableName = 'sessions';
 
     const SID_NAME     = 'FSID';
@@ -105,19 +110,19 @@ class K3_Session extends K3_Environment_Element
 
         if ($this->mode & self::MODE_STARTED) {
             // allows mode changes and any special reactions
-            $this->throwEventRef('preopen', $this->mode, $this->SID);
+            $this->throwEventRef(self::EVENT_PREOPEN, $this->mode, $this->SID);
 
             if (!($this->mode & self::MODE_FIXED)) {
                 $this->env->client->setCookie(self::SID_NAME, $this->SID);
             }
 
             // allows mode changes and any special reactions
-            $this->throwEventRef('opened', $this->mode, $this->SID);
+            $this->throwEventRef(self::EVENT_OPEN, $this->mode, $this->SID);
 
             // TODO: allowing from config
             if (!($this->mode & self::MODE_NOURLS) && ($this->mode & self::MODE_URLS)) {
-                $this->env->response->addEventHandler('HTML_parse', array($this, 'HTMLURLsAddSID'));
-                $this->env->response->addEventHandler('URL_Parse', array($this, 'addSID'));
+                $this->env->response->addEventHandler(K3_Response::EVENT_HTML_PARSE, array($this, 'HTMLURLsAddSID'));
+                $this->env->response->addEventHandler(K3_Response::EVENT_URL_PARSE, array($this, 'addSID'));
             }
 
             FMisc::addShutdownCallback(array(&$this, 'close'));
@@ -156,7 +161,7 @@ class K3_Session extends K3_Environment_Element
         $this->clicks = $sess['clicks'] + 1;
 
         $this->mode |= (self::MODE_STARTED | self::MODE_LOADED);
-        $this->throwEventRef('loaded', $vars, $this->mode);
+        $this->throwEventRef(self::EVENT_LOAD, $vars, $this->mode);
 
         $this->pool = is_array($vars)
             ? $vars
@@ -176,7 +181,7 @@ class K3_Session extends K3_Environment_Element
         $vars = array();
 
         $this->mode |= (self::MODE_STARTED | self::MODE_URLS); // TODO: MODEURLS only if it's allowed by config
-        $this->throwEventRef('created', $vars, $this->mode);
+        $this->throwEventRef(self::EVENT_CREATE, $vars, $this->mode);
 
         $this->pool = is_array($vars)
             ? $vars
@@ -197,7 +202,7 @@ class K3_Session extends K3_Environment_Element
             return true;
         }
 
-        $this->throwEventRef('presave', $this->pool);
+        $this->throwEventRef(self::EVENT_PRESAVE, $this->pool);
 
         $dataArray = array(
             'ip'       => $this->env->client->IPInteger,

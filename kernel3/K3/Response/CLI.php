@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2013 Andrey F. Kupreychik (Foxel)
+ * Copyright (C) 2013, 2015 Andrey F. Kupreychik (Foxel)
  *
  * This file is part of QuickFox Kernel 3.
  * See https://github.com/foxel/Kernel3/ for more details.
@@ -60,7 +60,7 @@ class K3_Response_CLI extends K3_Response
 
     protected function closeAndExit()
     {
-        $this->throwEvent('closeAndExit');
+        $this->throwEvent(self::EVENT_CLOSE_AND_EXIT);
         exit($this->statusCode);
     }
 }

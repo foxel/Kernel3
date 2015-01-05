@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2012 - 2014 Andrey F. Kupreychik (Foxel)
+ * Copyright (C) 2012 - 2015 Andrey F. Kupreychik (Foxel)
  *
  * This file is part of QuickFox Kernel 3.
  * See https://github.com/foxel/Kernel3/ for more details.
@@ -26,6 +26,10 @@
  */
 abstract class K3_Response extends K3_Environment_Element implements I_K3_Response
 {
+    const EVENT_CLOSE_AND_EXIT = 'closeAndExit';
+    const EVENT_HTML_PARSE = 'HTML_parse';
+    const EVENT_URL_PARSE = 'URL_Parse';
+
     // HTTP send content types
     const DISPOSITION_ATTACHMENT = 1;
     const STREAM_SETRANGE        = 4;
@@ -33,7 +37,9 @@ abstract class K3_Response extends K3_Environment_Element implements I_K3_Respon
     const FILENAME_TRICKY        = 16;
     const FILENAME_RFC2231       = 32;
 
+    /** @var string */
     protected $buffer = '';
+    /** @var array */
     protected $headers = array();
 
     /**
@@ -208,7 +214,7 @@ abstract class K3_Response extends K3_Environment_Element implements I_K3_Respon
     {
         if (!$this->isEmpty()) {
             if ($this->doHTMLParse) {
-                $this->throwEventRef('HTML_parse', $this->buffer);
+                $this->throwEventRef(self::EVENT_HTML_PARSE, $this->buffer);
 
                 $statstring = sprintf(F()->LNG->lang('FOOT_STATS_PAGETIME'), $this->env->clock->timeSpent).' ';
                 if (F()->ping('DBase') && F()->DBase->queriesCount) {
@@ -268,7 +274,7 @@ abstract class K3_Response extends K3_Environment_Element implements I_K3_Respon
     public function sendRedirect($url, $useHTTP1 = false)
     {
         $url = K3_Util_Url::fullUrl($url, $this->env);
-        $this->throwEventRef('URL_Parse', $url);
+        $this->throwEventRef(self::EVENT_URL_PARSE, $url);
         $hurl = strtr($url, array('&' => '&amp;'));
 
         if ($useHTTP1) {
@@ -459,7 +465,7 @@ abstract class K3_Response extends K3_Environment_Element implements I_K3_Respon
      */
     protected function closeAndExit()
     {
-        $this->throwEvent('closeAndExit');
+        $this->throwEvent(self::EVENT_CLOSE_AND_EXIT);
         exit();
     }
 }
