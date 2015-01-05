@@ -167,7 +167,7 @@ class K3_Session extends K3_Environment_Element
             ? $vars
             : array();
 
-        F()->Timer->logEvent('Session data loaded');
+        F()->Profiler->logEvent('Session data loaded');
 
         return true;
     }
@@ -187,7 +187,7 @@ class K3_Session extends K3_Environment_Element
             ? $vars
             : array();
 
-        F()->Timer->logEvent('Session data created');
+        F()->Profiler->logEvent('Session data created');
 
         return true;
     }

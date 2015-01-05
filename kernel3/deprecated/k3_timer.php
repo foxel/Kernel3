@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2010 - 2012, 2014 Andrey F. Kupreychik (Foxel)
+ * Copyright (C) 2010 - 2012, 2014 - 2015 Andrey F. Kupreychik (Foxel)
  *
  * This file is part of QuickFox Kernel 3.
  * See https://github.com/foxel/Kernel3/ for more details.
@@ -32,9 +32,6 @@ if (!defined('F_STARTED'))
 // timing and time logging class
 class FTimer extends K3_Chronometer implements I_K3_Deprecated
 {
-    /** @var array[]  */
-    protected $_timeLog = array();
-
     /**
      * @param $id
      * @return $this
@@ -73,10 +70,7 @@ class FTimer extends K3_Chronometer implements I_K3_Deprecated
      */
     public function logEvent($event = 'unknown')
     {
-        $this->_timeLog[] = array(
-            'time' => $this->timeSpent(),
-            'name' => $event,
-        );
+        F()->Profiler->logEvent($event);
     }
 
     /**
@@ -84,7 +78,11 @@ class FTimer extends K3_Chronometer implements I_K3_Deprecated
      */
     public function getLog()
     {
-        return $this->_timeLog;
+        return array_map(function(array $el) {
+            $el['name'] = $el['event'];
+            unset($el['event'], $el['meta']);
+            return $el;
+        }, F()->Profiler->getProfile());
     }
 
     /**

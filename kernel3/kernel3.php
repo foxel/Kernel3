@@ -193,6 +193,7 @@ unset($kernel_codecache_dir, $base_modules_files, $base_modules_stats, $base_mod
  * @property K3_Response $Response
  * @property K3_Session $Sess
  * @property K3_Session $Session
+ * @property K3_Profiler $Profiler
  * @property FLNGData $LNG
  * @property FDataBase $DBase
  * @property K3_Registry $Registry
@@ -263,6 +264,7 @@ class F extends FEventDispatcher
         //$this->pool['DBase'] = new FDataBase();
         $this->classes['DBase']    = 'FDataBase';
         $this->classes['Registry'] = 'K3_Registry';
+        $this->classes['Profiler'] = 'K3_Profiler';
         $this->classes['Config']   = 'FConfig';
         //$this->pool['DBObject'] = new StaticInstance('FDBObject');
 
