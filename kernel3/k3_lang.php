@@ -46,7 +46,8 @@ class FLNGData // extends FEventDispatcher
     private $bsize_tr      = null;
 
     private $auto_loads = array();
-    public  $timeZone   = 0;
+    /** @var DateTimeZone */
+    protected $_defaultTimeZone;
 
     /**
      * @static
@@ -59,8 +60,10 @@ class FLNGData // extends FEventDispatcher
         return self::$self;
     }
 
+    /** constructor */
     private function __construct()
     {
+        $this->_defaultTimeZone = new DateTimeZone('UTC');
         $this->pool = array(
             'language' => &$this->lang_name,
             'name' => &$this->lang_name,
@@ -235,10 +238,13 @@ class FLNGData // extends FEventDispatcher
 
     public function timeFormat($timestamp = false, $format = '', $timeZone = false, $forceNoRelativeFormat = false)
     {
-        static $now, $correction, $today, $yesterday, $timeFormat, $lastTimeZone = null, $relativeFormat;
+        static $now, $correction, $today, $yesterday, $timeFormat, $relativeFormat;
 
         if (!$now) {
             $now = F()->appEnv->clock->startTime;
+            $today = $now + 60*$correction;
+            $today = floor($today/86400)*86400;
+            $yesterday = $today - 86400;
             $correction = 0;        //(int) F()->Config->Get('time_correction', 'common', 0);
             $timeFormat = 'H:i';    //F()->Config->Get('def_time_format', 'visual', 'H:i');
             $relativeFormat = true; //(bool) F()->Config->Get('force_no_rel_time', 'common', false);
@@ -281,14 +287,7 @@ class FLNGData // extends FEventDispatcher
         }
 
         if ($timeZone === false) {
-            $timeZone = $this->timeZone;
-        }
-
-        if ($lastTimeZone !== $timeZone) {
-            $today = $now + 60*$correction;
-            $today = floor($today/86400)*86400;
-            $yesterday = $today - 86400;
-            $lastTimeZone = $timeZone;
+            $timeZone = $this->_defaultTimeZone;
         }
 
         if (!$format) {
@@ -304,20 +303,9 @@ class FLNGData // extends FEventDispatcher
         $timeToDraw->setTimestamp($timestamp);
 
         if (is_numeric($timeZone)) {
-            // compatibility
-            $zones = DateTimeZone::listIdentifiers();
-            while (!empty($zones)) {
-                $temp = new DateTimeZone(array_shift($zones));
-                if ($temp->getOffset($timeToDraw) == $timeZone*3600) {
-                    $timeZone = $temp;
-                    break;
-                }
-            }
-            if (!$timeZone instanceof DateTimeZone) {
-                throw new FException('Time Zone with given offset not found');
-            }
+            $timeZone = self::_getTimeZoneByOffset($timeZone*3600);
         } elseif (!$timeZone instanceof DateTimeZone) {
-            $timeZone= new DateTimeZone($timeZone);
+            $timeZone = new DateTimeZone($timeZone);
         }
         $timeToDraw->setTimezone($timeZone);
 
@@ -516,6 +504,34 @@ class FLNGData // extends FEventDispatcher
 
         $this->lang_name = $lng;
         return true;
+    }
+
+    /** @var DateTimeZone[] */
+    protected static $_timeZOnesByOffset = array();
+
+    /**
+     * @param int $offset
+     * @return DateTimeZone
+     * @throws FException
+     */
+    protected static function _getTimeZoneByOffset($offset)
+    {
+        if (empty(self::$_timeZOnesByOffset)) {
+            $zones = DateTimeZone::listIdentifiers();
+            $time = new DateTime();
+            foreach ($zones as $zoneName) {
+                $timeZone = new DateTimeZone($zoneName);
+                if (!isset(self::$_timeZOnesByOffset[$timeZone->getOffset($time)])) {
+                    self::$_timeZOnesByOffset[$timeZone->getOffset($time)] = $timeZone;
+                }
+            }
+        }
+
+        if (!isset(self::$_timeZOnesByOffset[$offset])) {
+            throw new FException('Time Zone with given offset not found');
+        }
+
+        return self::$_timeZOnesByOffset[$offset];
     }
     
 }
