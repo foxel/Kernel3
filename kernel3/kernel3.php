@@ -96,10 +96,15 @@ if (function_exists('get_magic_quotes_runtime') && get_magic_quotes_runtime()) {
 
 set_time_limit(30);  // not '0' - once i had my script running for a couple of hours collecting GBytes of errors :)
 // here comes the fatal catcher :P
-register_shutdown_function(create_function('', 'if (($a = error_get_last()) && $a[\'type\'] == E_ERROR)
-    { $message = sprintf(\'E%d "%s" at %s:%d\', $a[\'type\'], $a[\'message\'], $a[\'file\'], $a[\'line\']);
-    file_put_contents(F_LOGS_ROOT.DIRECTORY_SEPARATOR.\'php_fatal.log\', $message);
-    $i = ob_get_level(); while ($i--) @ob_end_clean(); print F_DEBUG ? $message : \'Fatal error. Sorry :(\'; }'));
+register_shutdown_function(function() {
+    if (($e = error_get_last()) && $e['type'] == E_ERROR) {
+        $message = sprintf('E%d "%s" at %s:%d', $e['type'], $e['message'], $e['file'], $e['line']);
+        error_log($message, 5);
+        $i = ob_get_level();
+        while ($i--) @ob_end_clean();
+        print (F_DEBUG ? $message : 'Fatal error. Sorry :(');
+    }
+});
 
 // here we set an error catcher
 set_error_handler(create_function('$c, $m, $f, $l', 'throw new ErrorException($m, 0, $c, $f, $l);'),
