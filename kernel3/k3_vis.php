@@ -855,7 +855,7 @@ class FVISInterface extends FEventDispatcher
         if ($this->_forceCompact)
             $text = $this->compactHTML($text);
 
-        $text = $this->templLang($text);
+        $text = $this->_templateReplaceLang($text);
 
         $text = preg_replace('#(?<=\})\r?\n\s*?(?=\{\w)#', '', $text);
         preg_match_all('#'.self::TEMPLATE_REGEXP.'#', $text, $struct, PREG_SET_ORDER);
@@ -1171,31 +1171,49 @@ class FVISInterface extends FEventDispatcher
         return 'function(data) {'.K3_String::EOL.$body.K3_String::EOL.'}';
     }
 
-    public function prepareECSS($indata, $constants = null, $force_compact = false)
+    /**
+     * @param string $input
+     * @param array|null $constants
+     * @param bool $forceCompact
+     * @return mixed
+     */
+    public function prepareECSS($input, array $constants = null, $forceCompact = false)
     {
-        if (is_array($constants))
-            foreach ($constants as $name=>$val)
-                $indata = str_replace('{'.$name.'}', $val, $indata);
+        if (is_array($constants)) {
+            foreach ($constants as $name => $val) {
+                $input = str_replace('{'.$name.'}', $val, $input);
+            }
+        }
 
-        $vars_mask='#\{((?>[\w\-]+))\}\s*=(.*)#';
-        $vars_block='#\{VARS\}(.*?)\{/VARS\}#si';
+        $varsMask  = '#\{((?>[\w\-]+))\}\s*=(.*)#';
+        $varsBlock = '#\{VARS\}(.*?)\{/VARS\}#si';
 
-        preg_match_all($vars_block, $indata, $blocks);
+        preg_match_all($varsBlock, $input, $blocks);
         $blocks = implode(' ', $blocks[0]);
 
-        preg_match_all($vars_mask, $blocks, $sets);
-        if (is_array($sets[1]))
-            foreach ($sets[1] as $num => $name)
+        $CSSVars = array();
+        preg_match_all($varsMask, $blocks, $sets);
+        if (is_array($sets[1])) {
+            foreach ($sets[1] as $num => $name) {
                 $CSSVars[strtoupper($name)] = trim($sets[2][$num]);
+            }
+        }
 
-        $Cdata = preg_replace($vars_block, '', $indata);
+        $output = preg_replace($varsBlock, '', $input);
 
-        if ($this->_forceCompact || $force_compact)
-            $Cdata = $this->compactCSS($Cdata);
+        if ($this->_forceCompact || $forceCompact) {
+            $output = $this->compactCSS($output);
+        }
 
-        $Cdata = preg_replace('#\{(?>(\w+))\}#e', '(isset(\$CSSVars[strtoupper("\1")])) ? \$CSSVars[strtoupper("\1")] : ""', $Cdata);
+        $output = preg_replace_callback('#\{(?>(\w+))\}#e', function (array $match) use ($CSSVars) {
+            $varName = strtoupper($match[1]);
 
-        return $Cdata;
+            return isset($CSSVars[$varName])
+                ? $CSSVars[$varName]
+                : "";
+        }, $output);
+
+        return $output;
     }
 
     public function prepareEJS($Jdata, $constants = null, $force_compact = false)
@@ -1262,10 +1280,23 @@ class FVISInterface extends FEventDispatcher
 
     // private parsers
 
-    // reparses {L_...} blocks in raw templates
-    private function templLang($data)
+    /**
+     * reparses {L_...} blocks in raw templates
+     * @param string $data
+     * @return string mixed
+     */
+    protected function _templateReplaceLang($data)
     {
-        return preg_replace('#\{(?>L_((?:\w+|\"[^\"]+\"|\|)+))\}#e','\$this->templLangCB(\'$1\')', $data);
+        return preg_replace_callback('#\{(?>L_((?:\w+|\"[^\"]+\"|\|)+))\}#',array($this, '_templateReplaceLangCallback'), $data);
+    }
+
+    /**
+     * @param array $match
+     * @return string
+     */
+    protected function _templateReplaceLangCallback(array $match)
+    {
+        return $this->templLangCB($match[1]);
     }
 
     private function templLangCB($code)
