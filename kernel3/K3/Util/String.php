@@ -146,12 +146,12 @@ class K3_Util_String extends K3_Util
 
     /**
      * @param string $text
-     * @param bool $heredocSectionId
+     * @param string $heredocSectionId
      * @param bool $doWrap
      * @param bool $addSemicolon
      * @return string
      */
-    public static function escapeHeredoc($text, $heredocSectionId = false, $doWrap = false, $addSemicolon = false)
+    public static function escapeHeredoc($text, $heredocSectionId = null, $doWrap = false, $addSemicolon = false)
     {
         $text = strtr($text, array(
             '\\' => '\\\\',
@@ -164,6 +164,45 @@ class K3_Util_String extends K3_Util
 
         if ($doWrap && $heredocSectionId) {
             $text = '<<<'.$heredocSectionId.PHP_EOL.$text.PHP_EOL.$heredocSectionId.($addSemicolon ? ';' : '').PHP_EOL;
+        }
+
+        return $text;
+    }
+
+    /**
+     * @param string $text
+     * @param string $nowdocSectionId
+     * @param bool $doWrap
+     * @param bool $addSemicolon
+     * @return string
+     */
+    public static function escapeNowdoc($text, $nowdocSectionId = null, $doWrap = false, $addSemicolon = false)
+    {
+        if ($nowdocSectionId) {
+            $text = preg_replace('#([\r\n])'.$nowdocSectionId.'#', '$1 '.$nowdocSectionId, $text);
+        }
+
+        if ($doWrap && $nowdocSectionId) {
+            $text = "<<<'".$nowdocSectionId."'".PHP_EOL.$text.PHP_EOL.$nowdocSectionId.($addSemicolon ? ';' : '').PHP_EOL;
+        }
+
+        return $text;
+    }
+
+    /**
+     * @param string $text
+     * @param bool $doWrap
+     * @return string
+     */
+    public static function escapeSingleQuote($text, $doWrap = true)
+    {
+        $text = strtr($text, array(
+            '\\' => '\\\\',
+            '\'' => '\\\'',
+        ));
+
+        if ($doWrap) {
+            $text = '\''.$text.'\'';
         }
 
         return $text;

@@ -906,8 +906,8 @@ class FVISInterface extends FEventDispatcher
 
                     $text.= K3_String::EOL.'FTEXT'.K3_String::EOL.'.';
                     $jstext.= '"'.K3_String::EOL.'+';
-                    $text.= $this->templVISFuncCB($tag, $params[1], $vars, $consts, false, $got_a);
-                    $jstext.= $this->templVISFuncCB($tag, $params[1], $vars, $consts, true, $got_a);
+                    $text.= $this->_templateVISFunctionCB($tag, $params[1], $vars, $consts, false, $got_a);
+                    $jstext.= $this->_templateVISFunctionCB($tag, $params[1], $vars, $consts, true, $got_a);
                     $text.= '.<<<FTEXT'.K3_String::EOL;
                     $jstext.= '+"';
                 }
@@ -923,8 +923,8 @@ class FVISInterface extends FEventDispatcher
                                 continue;
                             $var = strtoupper($var);
                             $val = $params[3][$i];
-                            $sets.= '$'.$var.' = '.$this->templVISParamCB($val, $vars, $consts).';';
-                            $jssets.= 'v.'.$var.' = '.$this->templVISParamCB($val, $vars, $consts, false, true).';'.K3_String::EOL;
+                            $sets.= '$'.$var.' = '.$this->_templateVISParamCB($val, $vars, $consts).';';
+                            $jssets.= 'v.'.$var.' = '.$this->_templateVISParamCB($val, $vars, $consts, false, true).';'.K3_String::EOL;
                         }
 
                         if ($sets)
@@ -960,8 +960,8 @@ class FVISInterface extends FEventDispatcher
                     else
                         $pp3 = $p3 = '1';
 
-                    $text.= K3_String::EOL.'FTEXT;'.K3_String::EOL.'for ($I = '.$this->templVISParamCB($pp1, $vars, $consts).'; $I <= '.$this->templVISParamCB($pp2, $vars, $consts).'; $I+= '.$this->templVISParamCB($pp3, $vars, $consts).') {'.K3_String::EOL.'$'.$writes_to.'.= <<<FTEXT'.K3_String::EOL;
-                    $jstext.= '";'.K3_String::EOL.'for (v.I = '.$this->templVISParamCB($p1, $vars, $consts, false, true).'; v.I <= '.$this->templVISParamCB($p2, $vars, $consts, false, true).'; v.I+= '.$this->templVISParamCB($p3, $vars, $consts, false, true).') {'.K3_String::EOL.'v.'.$writes_to.'+= "';
+                    $text.= K3_String::EOL.'FTEXT;'.K3_String::EOL.'for ($I = '.$this->_templateVISParamCB($pp1, $vars, $consts).'; $I <= '.$this->_templateVISParamCB($pp2, $vars, $consts).'; $I+= '.$this->_templateVISParamCB($pp3, $vars, $consts).') {'.K3_String::EOL.'$'.$writes_to.'.= <<<FTEXT'.K3_String::EOL;
+                    $jstext.= '";'.K3_String::EOL.'for (v.I = '.$this->_templateVISParamCB($p1, $vars, $consts, false, true).'; v.I <= '.$this->_templateVISParamCB($p2, $vars, $consts, false, true).'; v.I+= '.$this->_templateVISParamCB($p3, $vars, $consts, false, true).') {'.K3_String::EOL.'v.'.$writes_to.'+= "';
                 }
                 elseif ($tag == 'ENDFOR' || $tag == '/FOR')
                 {
@@ -1001,7 +1001,7 @@ class FVISInterface extends FEventDispatcher
                                     continue;
                                 $var = strtoupper($var);
                                 $val = (isset($params[3][$i]) && strlen($params[3][$i])) ? $params[3][$i] : '1';
-                                $text.= '\''.$var.'\' => '.$this->templVISParamCB($val, $vars, $consts).',';
+                                $text.= '\''.$var.'\' => '.$this->_templateVISParamCB($val, $vars, $consts).',';
                             }
                             $text.= ') ';
                             if ($passMyParams) {
@@ -1026,13 +1026,13 @@ class FVISInterface extends FEventDispatcher
                             ? ' '.$condition.' '
                             : ' == ';
 
-                        $condition = '('.$this->templVISParamCB($var, $vars, $consts).$condition.$this->templVISParamCB($condvar, $vars, $consts).')';
-                        $jscondition = '('.$this->templVISParamCB($var, $vars, $consts, false, true).$condition.$this->templVISParamCB($condvar, $vars, $consts, false, true).')';
+                        $condition = '('.$this->_templateVISParamCB($var, $vars, $consts).$condition.$this->_templateVISParamCB($condvar, $vars, $consts).')';
+                        $jscondition = '('.$this->_templateVISParamCB($var, $vars, $consts, false, true).$condition.$this->_templateVISParamCB($condvar, $vars, $consts, false, true).')';
                     }
                     else
                     {
-                        $condition = 'strlen('.$this->templVISParamCB($var, $vars, $consts).')';
-                        $jscondition = '('.$this->templVISParamCB($var, $vars, $consts, false, true).'.length)';
+                        $condition = 'strlen('.$this->_templateVISParamCB($var, $vars, $consts).')';
+                        $jscondition = '('.$this->_templateVISParamCB($var, $vars, $consts, false, true).'.length)';
                     }
 
                     if ($got_a)
@@ -1075,7 +1075,7 @@ class FVISInterface extends FEventDispatcher
                     $varname = strtoupper($part[2]);
                     if (isset($consts[$varname]))
                     {
-                        $text.= K3_Util_String::escapeHeredoc($consts[$varname], 'FTEXT');
+                        $text.= K3_Util_String::escapeHeredoc($consts[$varname], 'FTEXT', false);
                         $jstext.= K3_Util_String::escapeJSON($consts[$varname]);
                     }
                     elseif (K3_String::isWord($varname))
@@ -1096,7 +1096,7 @@ class FVISInterface extends FEventDispatcher
             }
             else
             {
-                $text.= K3_Util_String::escapeHeredoc($part[0], 'FTEXT');
+                $text.= K3_Util_String::escapeHeredoc($part[0], 'FTEXT', false);
                 $jstext.= K3_Util_String::escapeJSON($part[0]);
             }
 
@@ -1320,141 +1320,212 @@ class FVISInterface extends FEventDispatcher
         return $data;
     }
 
-    private function templVISFuncCB($parsewith, array $params, &$vars, $consts, $for_js = false, $do_schars = false) // calling function with many params
+    /**
+     * calling function with many params
+     *
+     * @param string $parserName
+     * @param array $params
+     * @param string[] $vars
+     * @param string[] $constants
+     * @param bool $forJavaScript
+     * @param bool $escapeXML
+     * @return string
+     */
+    protected function _templateVISFunctionCB($parserName, array $params, array &$vars, array $constants, $forJavaScript = false, $escapeXML = false)
     {
         $code = null;
-        $static = strpos($parsewith, 'RAND') === false;
+        $callIsStatic = $this->_parserIsPure($parserName);
 
-        $st_pars = $dyn_pars_js = $dyn_pars = array();
-        foreach ($params as $id => $val)
-        {
-            $this_static = true;
-            if (K3_String::isWord($val))
-            {
+        $staticArgs = $dynamicArgsJS = $dynamicArgs = array();
+        foreach ($params as $id => $val) {
+            $argumentIsStatic = true;
+            if (K3_String::isWord($val)) {
                 $val = strtoupper($val);
-                if (substr($val, 0, 2) == 'L_')
+                if (substr($val, 0, 2) == 'L_') {
                     $val = $this->templLangCB(substr($val, 2));
-                elseif (isset($consts[$val]))
-                    $val = $consts[$val];
-                else
-                {
-                    $vars[$val] = '';
-                    $static = $this_static = false;
+                } elseif (isset($constants[$val])) {
+                    $val = $constants[$val];
+                } else {
+                    $vars[$val]       = '';
+                    $argumentIsStatic = false;
                 }
-                $st_pars[$id]  = $val;
-                $dyn_pars[$id] = ($this_static)
-                    ? (is_bool($val) || is_null($val) ? K3_Util_Value::definePHP($val) : K3_Util_String::escapeHeredoc($val, 'FTEXT', true))
+                $staticArgs[$id]    = $val;
+                $dynamicArgs[$id]   = ($argumentIsStatic)
+                    ? (is_bool($val) || is_null($val) ? K3_Util_Value::definePHP($val) : $this->_escapeString($val))
                     : '$'.$val;
-                $dyn_pars_js[$id] = ($this_static) ? K3_Util_Value::defineJSON($val) : 'v.'.$val;
-            }
-            elseif ($val[0] == '"')
-            {
-                $val = substr($val, 1, -1);
-                $st_pars[$id]  = $val;
-                $dyn_pars[$id] = K3_Util_String::escapeHeredoc($val, 'FTEXT', true);
-                $dyn_pars_js[$id] = K3_Util_Value::defineJSON($val);
+                $dynamicArgsJS[$id] = ($argumentIsStatic) ? K3_Util_Value::defineJSON($val) : 'v.'.$val;
+            } elseif ($val[0] == '"') {
+                $val                = substr($val, 1, -1);
+                $staticArgs[$id]    = $val;
+                $dynamicArgs[$id]   = $this->_escapeString($val);
+                $dynamicArgsJS[$id] = K3_Util_Value::defineJSON($val);
             } else {
                 if (is_numeric($val) && $val[0] != '0') {
                     $val = intval($val);
                 }
-                $st_pars[$id] = $dyn_pars[$id] = $dyn_pars_js[$id] = $val;
+                $staticArgs[$id] = $dynamicArgs[$id] = $dynamicArgsJS[$id] = $val;
             }
+            $callIsStatic = $callIsStatic && $argumentIsStatic;
         }
 
-        if ($static)
-        {
-            $val = (string) $this->callParseFunctionArr($parsewith, $st_pars);
-            if ($do_schars)
+        if ($callIsStatic) {
+            $val = (string)$this->callParseFunctionArr($parserName, $staticArgs);
+            if ($escapeXML) {
                 $val = K3_Util_String::escapeXML($val);
-            $code = $for_js ? K3_Util_Value::defineJSON($val) : K3_Util_String::escapeHeredoc($val, 'FTEXT', true);
-        }
-        else
-        {
-            $code = $for_js
-                ? 'FVIS.callParseFunctionArr(\''.$parsewith.'\', ['.implode(', ', $dyn_pars_js).'])'
-                : '$_vis->callParseFunctionArr(\''.$parsewith.'\', array('.implode(', ', $dyn_pars).'))';
-            if ($do_schars)
-                $code = $for_js
+            }
+            $code = $forJavaScript
+                ? K3_Util_Value::defineJSON($val)
+                : $this->_escapeString($val);
+        } else {
+            $code = $forJavaScript
+                ? 'FVIS.callParseFunctionArr(\''.$parserName.'\', ['.implode(', ', $dynamicArgsJS).'])'
+                : '$_vis->callParseFunctionArr(\''.$parserName.'\', array('.implode(', ', $dynamicArgs).'))';
+            if ($escapeXML) {
+                $code = $forJavaScript
                     ? 'K3_Util_String.escapeXML('.$code.')'
                     : 'K3_Util_String::escapeXML('.$code.')';
+            }
         }
 
         return $code;
     }
 
-    private function templVISParamCB($val, &$vars, $consts, $parsewith = null, $for_js = false, $do_schars = false)
+    /**
+     * @param string $val
+     * @param string[] $vars
+     * @param string[] $consts
+     * @param string $parseWith
+     * @param bool $forJavaScript
+     * @param bool $escapeXML
+     * @return string
+     */
+    protected function _templateVISParamCB($val, array &$vars, array $consts, $parseWith = null, $forJavaScript = false, $escapeXML = false)
     {
         $code = '';
-        $static = strpos($parsewith, 'RAND') === false;
+        $callIsStatic = empty($parseWith) || $this->_parserIsPure($parseWith);
 
-        if (K3_String::isWord($val))
-        {
+        if (K3_String::isWord($val)) {
             $val = strtoupper($val);
-            if (substr($val, 0, 2) == 'L_')
+            if (substr($val, 0, 2) == 'L_') {
                 $val = $this->templLangCB(substr($val, 2));
-            elseif (isset($consts[$val]))
+            } elseif (isset($consts[$val])) {
                 $val = $consts[$val];
-            else
-            {
+            } else {
                 $vars[$val] = '';
-                $static = false;
-                $code = ($for_js)
+                $callIsStatic = false;
+                $code       = ($forJavaScript)
                     ? 'v.'.$val
                     : '$'.$val;
             }
-        }
-        elseif (is_numeric($val) && $val[0] != '0')
+        } elseif (is_numeric($val) && $val[0] != '0') {
             $val = intval($val);
-        elseif ($val[0] == '"')
+        } elseif ($val[0] == '"') {
             $val = substr($val, 1, -1);
-
-        if ($static)
-        {
-            if ($parsewith)
-                $val = $this->callParseFunction($parsewith, $val);
-            if ($do_schars)
-                $val = K3_Util_String::escapeXML($val);
-            $code = $for_js ? K3_Util_Value::defineJSON($val) : K3_Util_String::escapeHeredoc($val, 'FTEXT', true);
         }
-        elseif ($parsewith)
-        {
-            $code = $for_js
-                ? 'FVIS.callParseFunction(\''.$parsewith.'\', v.'.$val.')'
-                : '$_vis->callParseFunction(\''.$parsewith.'\', $'.$val.')';
-            if ($do_schars)
-                $code = $for_js
+
+        if ($callIsStatic) {
+            if ($parseWith) {
+                $val = $this->callParseFunction($parseWith, $val);
+            }
+            if ($escapeXML) {
+                $val = K3_Util_String::escapeXML($val);
+            }
+            $code = $forJavaScript
+                ? K3_Util_Value::defineJSON($val)
+                : $this->_escapeString($val);
+        } elseif ($parseWith) {
+            $code = $forJavaScript
+                ? 'FVIS.callParseFunction(\''.$parseWith.'\', v.'.$val.')'
+                : '$_vis->callParseFunction(\''.$parseWith.'\', $'.$val.')';
+            if ($escapeXML) {
+                $code = $forJavaScript
                     ? 'K3_Util_String.escapeXML('.$code.')'
                     : 'K3_Util_String::escapeXML('.$code.')';
+            }
         }
 
         return $code;
     }
 
-    public function callParseFunction($func_name, $data) //parsing data with funcParser
+    /**
+     * parsing data with funcParser
+     * @param string $parserName
+     * @param mixed $data
+     * @return mixed
+     */
+    public function callParseFunction($parserName, $data)
     {
-        if (!isset($this->func_parsers[$func_name]))
+        if (!isset($this->func_parsers[$parserName])) {
             return $data;
+        }
 
-        $func_parser = $this->func_parsers[$func_name];
+        $parserDefinition = $this->func_parsers[$parserName];
 
         $args = array($data);
-        if (is_array($func_parser) && count($func_parser) > 2) {
-            $args = array_merge($args, array_splice($func_parser, 2));
+        if (is_array($parserDefinition) && count($parserDefinition) > 2) {
+            $args = array_merge($args, array_splice($parserDefinition, 2));
         }
-        return call_user_func_array($func_parser, $args);
+
+        return call_user_func_array($parserDefinition, $args);
     }
 
-    public function callParseFunctionArr($func_name, $data) //parsing data with funcParser
+    /**
+     * parsing data with funcParser
+     * @param string $parserName
+     * @param array $data
+     * @return mixed|string
+     */
+    public function callParseFunctionArr($parserName, array $data)
     {
-        if (!isset($this->func_parsers[$func_name]))
+        if (!isset($this->func_parsers[$parserName])) {
             return '';
-
-        $func_parser = $this->func_parsers[$func_name];
-
-        if (is_array($func_parser) && count($func_parser) > 2) {
-            $data = array_merge($data, array_splice($func_parser, 2));
         }
-        return call_user_func_array($func_parser, $data);
+
+        $parserDefinition = $this->func_parsers[$parserName];
+
+        if (is_array($parserDefinition) && count($parserDefinition) > 2) {
+            $data = array_merge($data, array_splice($parserDefinition, 2));
+        }
+
+        return call_user_func_array($parserDefinition, $data);
+    }
+
+    /**
+     * Determines if the parser function is pure
+     * @param $parserName
+     * @return bool
+     */
+    protected function _parserIsPure($parserName)
+    {
+        if (!isset($this->func_parsers[$parserName])) {
+            return false;
+        }
+
+        $parserDefinition = $this->func_parsers[$parserName];
+
+        if (is_array($parserDefinition)) {
+            if (count($parserDefinition) > 2) {
+                return false;
+            }
+            if (is_object($parserDefinition[0])) {
+                return false;
+            }
+        }
+
+        return (strpos($parserName, 'RAND') === false);
+    }
+
+    /**
+     * @param string $text
+     * @return string
+     */
+    protected function _escapeString($text)
+    {
+        if (strpos($text, PHP_EOL) !== false || strpos($text, '\'') !== false) {
+            return K3_Util_String::escapeNowdoc($text, 'FTEXT', true, false);
+        } else {
+            return K3_Util_String::escapeSingleQuote($text, true);
+        }
     }
 
     // singleton structures
