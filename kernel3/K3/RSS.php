@@ -99,30 +99,42 @@ class K3_RSS
 
         $this->_currentItem = $item = $this->_channel->appendChild($this->_xml->createElement('item'));
 
+        // required elements
         $item->appendChild($this->_xml->createElement('title', $itemData->getTitle()));
         $item->appendChild($this->_xml->createElement('link', K3_Util_Url::fullUrl($itemData->getLink(), $this->_env)));
         $item->appendChild($description = $this->_xml->createElement('description'));
         $description->appendChild($this->_xml->createCDATASection($itemData->getDescription()));
-        $item->appendChild($this->_xml->createElement('pubDate', $itemData->getPubDate()));
-        $item->appendChild($this->_xml->createElement('author', $itemData->getAuthor()));
 
-        $guid = $itemData->getGUID();
-        $item->appendChild($guidNode = $this->_xml->createElement('guid', $guid));
-        if (K3_String::isUrl($guid) !== 1) {
-            $guidNode->setAttribute('isPermaLink', 'false');
+        // optional elements
+        if ($pubDate = $itemData->getPubDate()) {
+            $item->appendChild($this->_xml->createElement('pubDate', $pubDate));
+        }
+        if ($authorEmail = $itemData->getAuthor()) {
+            $item->appendChild($this->_xml->createElement('author', $authorEmail));
+        }
+        if ($guid = $itemData->getGUID()) {
+            $item->appendChild($guidNode = $this->_xml->createElement('guid', $guid));
+            if (K3_String::isUrl($guid) !== 1) {
+                $guidNode->setAttribute('isPermaLink', 'false');
+            }
         }
 
-        foreach ($itemData->getCategories() as $category) {
-            $item->appendChild($this->_xml->createElement('category', $category));
+        // categories
+        if ($categories = $itemData->getCategories()) {
+            foreach ($categories as $category) {
+                $item->appendChild($this->_xml->createElement('category', $category));
+            }
         }
 
-        $enclosuresData = $itemData->getEnclosures();
-        foreach ($enclosuresData as $enclosureData) {
-            /** @var $enclosureData I_K3_RSS_Item_Enclosure */
-            $item->appendChild($enclosure = $this->_xml->createElement('enclosure'));
-            $enclosure->setAttribute('url', K3_Util_Url::fullUrl($enclosureData->getUrl(), $this->_env));
-            $enclosure->setAttribute('type', $enclosureData->getType());
-            $enclosure->setAttribute('length', $enclosureData->getLength());
+        // enclosures
+        if ($enclosuresData = $itemData->getEnclosures()) {
+            foreach ($enclosuresData as $enclosureData) {
+                /** @var $enclosureData I_K3_RSS_Item_Enclosure */
+                $item->appendChild($enclosure = $this->_xml->createElement('enclosure'));
+                $enclosure->setAttribute('url', K3_Util_Url::fullUrl($enclosureData->getUrl(), $this->_env));
+                $enclosure->setAttribute('type', $enclosureData->getType());
+                $enclosure->setAttribute('length', $enclosureData->getLength());
+            }
         }
 
         return $this;

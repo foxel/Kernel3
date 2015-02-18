@@ -27,14 +27,15 @@ interface I_K3_RSS_Item
     public function getLink();
     /** @return string */
     public function getDescription();
-    /** @return string */
+
+    /** @return string|null */
     public function getAuthor();
-    /** @return string */
+    /** @return string|null */
     public function getGUID();
-    /** @return string */
+    /** @return string|null */
     public function getPubDate();
-    /** @return string[] */
+    /** @return string[]|null */
     public function getCategories();
-    /** @return I_K3_RSS_Item_Enclosure[] */
+    /** @return I_K3_RSS_Item_Enclosure[]|null */
     public function getEnclosures();
 }
