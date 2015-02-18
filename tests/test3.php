@@ -9,9 +9,9 @@ if (F()->GPC->getBin('load')) {
 } else {
     /** @var $file FMetaFile */
     $file = F()->MetaFile(512, " ");
-    $file->add(new FFileStream(__FILE__));
-    $file->add(new FFileStream('test0.php'));
-    $file->add(new FStringStream('This is a test string ^.^'));
+    $file->add(new K3_Stream_File(__FILE__));
+    $file->add(new K3_Stream_File('test0.php'));
+    $file->add(new K3_Stream_String('This is a test string ^.^'));
     F()->MetaFile->save($file, 'test.file');
 }
 
