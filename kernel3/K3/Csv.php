@@ -88,13 +88,12 @@ class K3_Csv
     }
 
     /**
-     * @param mixed $data
      * @param int|null $length
-     * @return int
+     * @return array|false
      */
-    public function read(&$data, $length = null)
+    public function read($length = null)
     {
-        return count($data = fgetcsv($this->_stream, $length, $this->_delimiter, $this->_enclosure));
+        return fgetcsv($this->_stream, $length, $this->_delimiter, $this->_enclosure);
     }
 
     /**
