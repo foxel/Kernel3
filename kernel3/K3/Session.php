@@ -41,7 +41,7 @@ class K3_Session extends K3_Environment_Element
 
     protected $securityLevel = 3;        // security level for client signature used
 
-    /** @var FDataBase */
+    /** @var K3_Db_Abstract */
     protected $dbObject = null;
     /** @var string */
     protected $dbTableName = 'sessions';
@@ -61,7 +61,7 @@ class K3_Session extends K3_Environment_Element
     // Modes mask for flags allowed to set with "open()"
     const MODES_ALLOW  = 15; // MODE_FIXED + MODE_URLS + MODE_TRY + MODE_NOURLS
 
-    public function setDBase(FDataBase $dbo = null, $tbname = false)
+    public function setDBase(K3_Db_Abstract $dbo = null, $tbname = false)
     {
         if (is_null($dbo)) {
             $dbo = F()->DBase;
@@ -228,7 +228,7 @@ class K3_Session extends K3_Environment_Element
         }
 
         // delete old session data
-        $this->dbObject->doDelete($this->dbTableName, array('lastused' => '< '.($this->env->clock->startTime - self::LIFETIME)), FDataBase::SQL_USEFUNCS);
+        $this->dbObject->doDelete($this->dbTableName, array('lastused' => '< '.($this->env->clock->startTime - self::LIFETIME)), K3_Db::SQL_USE_FUNCTIONS);
 
         return true;
     }

@@ -125,7 +125,6 @@ $base_modules_files = array(
     F_KERNEL_DIR.DIRECTORY_SEPARATOR.'k3_misc.php',          // kernel 3 classes and functions library
     F_KERNEL_DIR.DIRECTORY_SEPARATOR.'k3_cache.php',         // kernel 3 cacher class
     F_KERNEL_DIR.DIRECTORY_SEPARATOR.'k3_lang.php',          // kernel 3 LNG interface
-    F_KERNEL_DIR.DIRECTORY_SEPARATOR.'k3_dbase.php',         // kernel 3 database interface
 );
 // we'll do some trick with caching base modules in one file
 if ((strpos(F_KERNEL_DIR, 'phar://') === 0) || F_DEBUG) {
@@ -195,7 +194,6 @@ unset($kernel_codecache_dir, $base_modules_files, $base_modules_stats, $base_mod
  * @property K3_Session $Session
  * @property K3_Profiler $Profiler
  * @property FLNGData $LNG
- * @property FDataBase $DBase
  * @property K3_Registry $Registry
  *
  * @property FVISInterface $VIS
@@ -261,8 +259,6 @@ class F extends FEventDispatcher
         $this->pool['Response']   = $e->getResponse();
         $this->pool['Sess']       =
         $this->pool['Session']    = $e->getSession();
-        //$this->pool['DBase'] = new FDataBase();
-        $this->classes['DBase']    = 'FDataBase';
         $this->classes['Registry'] = 'K3_Registry';
         $this->classes['Profiler'] = 'K3_Profiler';
         $this->classes['Config']   = 'FConfig';

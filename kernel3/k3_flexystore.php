@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2011 - 2012 Andrey F. Kupreychik (Foxel)
+ * Copyright (C) 2011 - 2012, 2015 Andrey F. Kupreychik (Foxel)
  *
  * This file is part of QuickFox Kernel 3.
  * See https://github.com/foxel/Kernel3/ for more details.
@@ -51,7 +51,7 @@ class FFlexyStore extends FBaseClass
 
     protected $classes = array();
 
-    public function __construct($tableName, FDataBase $dbo = null, $textTbname = false)
+    public function __construct($tableName, K3_Db_Abstract $dbo = null, $textTbname = false)
     {
         if (is_null($dbo))
             $dbo = F()->DBase;
@@ -96,7 +96,7 @@ class FFlexyStore extends FBaseClass
             $insert = array();
             foreach ($class as $key => $type)
                 $insert[] = array('class_id' => $className, 'key' => $key, 'type' => $type);
-            $this->dbo->doInsert($tableName, $insert, false, FDataBase::SQL_MULINSERT);
+            $this->dbo->doInsert($tableName, $insert, false, K3_Db::SQL_INSERT_MULTI);
         }
 
         return $this;
@@ -133,7 +133,7 @@ class FFlexyStore extends FBaseClass
         return $this;
     }
 
-    public function joinToSelect(FDBSelect $select, $className, $filter = null)
+    public function joinToSelect(K3_Db_Select $select, $className, $filter = null)
     {
         if (!is_null($filter) && !is_array($filter))
             $filter = array($filter);
@@ -145,7 +145,7 @@ class FFlexyStore extends FBaseClass
                     continue;
 
                 $tbAlias = $propName.'_data';
-                $select->joinLeft($propType == 'text' ? $this->textTbname : $this->tbname, array('obj_id' => 'id', 'key' => $select->getDBO()->quote($propName)), $tbAlias, array($propName => $propType));
+                $select->joinLeft($propType == 'text' ? $this->textTbname : $this->tbname, array('obj_id' => 'id', 'key' => $select->getDB()->quote($propName)), $tbAlias, array($propName => $propType));
             }
 
         return $select;
@@ -178,17 +178,17 @@ class FFlexyStoreFactory
 
     private function __construct() {}
 
-    public function create($tableName, FDataBase $dbo = null, $textTbname = false)
+    public function create($tableName, K3_Db_Abstract $dbo = null, $textTbname = false)
     {
         return new FFlexyStore($tableName, $dbo, $textTbname);
     }
 
-    public function _Call($tableName, FDataBase $dbo = null, $textTbname = false)
+    public function _Call($tableName, K3_Db_Abstract $dbo = null, $textTbname = false)
     {
         return new FFlexyStore($tableName, $dbo, $textTbname);
     }
 
-    public function createCached($cachename, $tableName, FDataBase $dbo = null, $textTbname = false)
+    public function createCached($cachename, $tableName, K3_Db_Abstract $dbo = null, $textTbname = false)
     {
         $obj = FCache::get(self::CACHEPREFIX.$cachename);
         if (!($obj instanceof FFlexyStore))

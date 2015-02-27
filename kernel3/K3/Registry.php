@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2012 Andrey F. Kupreychik (Foxel)
+ * Copyright (C) 2012, 2015 Andrey F. Kupreychik (Foxel)
  *
  * This file is part of QuickFox Kernel 3.
  * See https://github.com/foxel/Kernel3/ for more details.
@@ -49,7 +49,7 @@ class K3_Registry
     protected $backFileName = null;
 
     /**
-     * @var FDataBase|null
+     * @var K3_Db_Abstract|null
      */
     protected $backDbObject = null;
 
@@ -130,7 +130,7 @@ class K3_Registry
         }
     }
 
-    public function setBackDB(FDataBase $dbo, $table = false)
+    public function setBackDB(K3_Db_Abstract $dbo, $table = false)
     {
         if (is_null($dbo)) {
             $dbo = F()->DBase;
@@ -208,7 +208,7 @@ class K3_Registry
             $res = $res && $this->backDbObject->doDelete($this->backDbTable, array('name' => $deleteKeys));
         }
         if (!empty($replaceData)) {
-            $res = $res && $this->backDbObject->doInsert($this->backDbTable, $replaceData, true, FDataBase::SQL_MULINSERT);
+            $res = $res && $this->backDbObject->doInsert($this->backDbTable, $replaceData, true, K3_Db::SQL_INSERT_MULTI);
         }
 
         return $res;

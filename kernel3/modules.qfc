@@ -25,6 +25,7 @@ FlexyStore => FFlexyStoreFactory|k3_flexystore.php
 MPC      => FMPCFactory|k3_mpc.php
 Mime     => K3_Mime
 # compatibility failback
+DBase     => FDataBase|deprecated/k3_dbase.php
 Str       => FStr|deprecated/k3_strings.php
 MetaFile  => FMetaFileFactory|deprecated/k3_metafile.php
 GPC       => FGPC|deprecated/k3_request.php
