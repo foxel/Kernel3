@@ -72,15 +72,15 @@ function define_once($name, $value, $case_insensitive = false)
 }
 
 /**#@+ kernel internal encoding (can be defined before outside the kernel to customize the system) */
-define_once('F_INTERNAL_ENCODING', 'utf-8');
+defined('F_INTERNAL_ENCODING') || define('F_INTERNAL_ENCODING', 'utf-8');
 /**#@+ site root directory (can be defined before outside the kernel) */
-define_once('F_SITE_ROOT', dirname($_SERVER['SCRIPT_FILENAME']));
+defined('F_SITE_ROOT') || define('F_SITE_ROOT', dirname($_SERVER['SCRIPT_FILENAME']));
 /**#@+ directory to store logs (can be defined before outside the kernel) */
-define_once('F_LOGS_ROOT', F_SITE_ROOT);
+defined('F_LOGS_ROOT') || define('F_LOGS_ROOT', F_SITE_ROOT);
 /**#@+ site data storing root directory (can be defined before outside the kernel) */
-define_once('F_DATA_ROOT', F_SITE_ROOT.DIRECTORY_SEPARATOR.'data');
+defined('F_DATA_ROOT') || define('F_DATA_ROOT', F_SITE_ROOT.DIRECTORY_SEPARATOR.'data');
 /**#@+ site code cache directory (can be defined before outside the kernel) */
-define_once('F_CODECACHE_DIR', F_SITE_ROOT);
+defined('F_CODECACHE_DIR') || define('F_CODECACHE_DIR', F_SITE_ROOT);
 /**#@+*/
 
 
