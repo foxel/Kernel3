@@ -57,6 +57,8 @@ class FDataBase extends K3_Db_MySQL implements I_K3_Deprecated
             throw new FException('Use K3_Db_*');
         }
 
+        parent::__construct();
+
         // deprecated
         $this->pool['tbPrefix'] =& $this->_tablePrefix;
         $this->pool['qResult']  =& $this->_queryResult;
@@ -114,15 +116,15 @@ class FDBSelect extends K3_Db_Select implements I_K3_Deprecated
      * @param string|FDBSelect $tableName
      * @param string|bool $tableAlias - false for auto
      * @param array|null $fields
-     * @param K3_Db_Abstract|null $dbo
+     * @param FDataBase|null $dbo
      */
-    public function __construct($tableName, $tableAlias = false, array $fields = null, K3_Db_Abstract $dbo = null)
+    public function __construct($tableName, $tableAlias = false, array $fields = null, FDataBase $dbo = null)
     {
         parent::__construct($dbo ?: F()->DBase, $tableName, $tableAlias, $fields);
     }
 
     /**
-     * @return K3_Db_Abstract
+     * @return FDataBase
      */
     public function getDBO()
     {
