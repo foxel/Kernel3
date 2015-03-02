@@ -416,11 +416,16 @@ class FLNGData // extends FEventDispatcher
         return preg_replace('#[\x80-\xFF]+#', '_', $inp);
     }
 
+    /**
+     * @param string $acc_str
+     * @return array
+     */
     public function getAcceptLang($acc_str = '')
     {
         static $cache = array();
-        if (!$acc_str)
+        if (!$acc_str && isset($_SERVER['HTTP_ACCEPT_LANGUAGE'])) {
             $acc_str = $_SERVER['HTTP_ACCEPT_LANGUAGE'];
+        }
         $hash = K3_Util_String::shortHash($acc_str);
         
         if (isset($cache[$hash]))

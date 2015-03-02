@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2010 - 2012, 2014 Andrey F. Kupreychik (Foxel)
+ * Copyright (C) 2010 - 2012, 2014 - 2015 Andrey F. Kupreychik (Foxel)
  *
  * This file is part of QuickFox Kernel 3.
  * See https://github.com/foxel/Kernel3/ for more details.
@@ -328,7 +328,7 @@ class FParser extends FEventDispatcher
 
                         if (!$tused || ($tmode & self::BBTAG_SUBDUP))
                         {
-                            $tparam = ($part[2]) ? (($part[3]) ? $part[3] : $part[2]) : '';
+                            $tparam = !empty($part[2]) ? (($part[3]) ? $part[3] : $part[2]) : '';
                             $this->TStackAdd($tagname, $tparam);
 
                             if ($tmode & self::BBTAG_NOSUB)
@@ -533,10 +533,11 @@ class FParser extends FEventDispatcher
 
         foreach ($struct as $part)
         {
-            if ($part[1] == 'CDATA' || $part[2] == '!--') // CDATA & comments
+            if (isset($part[1]) && $part[1] == 'CDATA') { // CDATA
                 $output.= $part[0];
-            elseif ($tag = strtolower($part[3])) // open tag or full tag
-            {
+            } elseif (isset($part[2]) && $part[2] == '!--') { // comments
+                $output.= $part[0];
+            } elseif (isset($part[3]) && $tag = strtolower($part[3])) { // open tag or full tag
                 $pstr = $part[4];
                 $flags = (isset($t_flags[$tag])) ? $t_flags[$tag] : 0;
                 $is_full = (bool) ($flags & self::XMLTAG_ACLOSE);
@@ -594,9 +595,8 @@ class FParser extends FEventDispatcher
                 }
 
                 $output.= '<'.$tag.$pstr.(($is_full) ? ' /' : '').'>';
-            }
-            elseif ($tag = strtolower($part[5]))
-            {
+
+            } elseif (isset($part[5]) && $tag = strtolower($part[5])) {
                 $tused = isset($used_tags[$tag]) ? $used_tags[$tag] : 0;
                 if ($tused)
                     while ($tdata = $this->TStackGet())
