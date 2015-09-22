@@ -456,7 +456,7 @@ class FVISInterface extends FEventDispatcher
             return $this;
 
         $cachename = self::VPREFIX.'ald-'.$hash;
-        if ($aldata = FCache::get($cachename))
+        if ($aldata = FCache::get($cachename, filemtime($directory)))
         {
             $this->auto_loads[$hash] = $aldata;
             F()->Profiler->logEvent($directory.' autoloads installed (from global cache)');
@@ -496,7 +496,7 @@ class FVISInterface extends FEventDispatcher
         $hash = K3_Util_File::pathHash($filename);
         $cachename = self::CPREFIX.$this->cPrefix.F()->LNG->ask().'.'.$hash;
 
-        if ($Cdata = FCache::get($cachename))
+        if ($Cdata = FCache::get($cachename, filemtime($filename)))
         {
             $this->CSS_data = $Cdata;
             F()->Profiler->logEvent($filename.' CSS file loaded (from global cache)');
@@ -528,7 +528,7 @@ class FVISInterface extends FEventDispatcher
         {
             $cachename = self::JPREFIX.$this->cPrefix.F()->LNG->ask().'.'.$hash;
 
-            if ($JSData = FCache::get($cachename))
+            if ($JSData = FCache::get($cachename, filemtime($filename)))
             {
                 $this->JS_data.= K3_String::EOL.$JSData;
 
@@ -568,7 +568,7 @@ class FVISInterface extends FEventDispatcher
         {
             $cachename = self::VPREFIX.$this->cPrefix.F()->LNG->ask().'.'.$hash;
 
-            if (list($Tdata, $VCSS, $VJS) = FCache::get($cachename))
+            if (list($Tdata, $VCSS, $VJS) = FCache::get($cachename, filemtime($filename)))
             {
                 $this->templates += $Tdata;
                 $this->VCSS_data .= K3_String::EOL.$VCSS;

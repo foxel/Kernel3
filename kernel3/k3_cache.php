@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2010 - 2012 Andrey F. Kupreychik (Foxel)
+ * Copyright (C) 2010 - 2012, 2015 Andrey F. Kupreychik (Foxel)
  *
  * This file is part of QuickFox Kernel 3.
  * See https://github.com/foxel/Kernel3/ for more details.
@@ -40,7 +40,6 @@ class FCache
     const TEMPPREF = 'TEMP.';
 
     static private $chdata = array();
-    static private $got_cache = array();
     static private $upd_cache = array();
     static private $cache_folder = '';
     static private $qTime = 0;
@@ -65,15 +64,19 @@ class FCache
         FMisc::addShutdownCallback(array(__CLASS__, 'close'));
     }
 
-    // cache control functiond
-    static public function get($name)
+    /** cache control functions **/
+
+    /**
+     * @param string $name
+     * @param int $ifModifiedSince
+     * @return mixed
+     */
+    static public function get($name, $ifModifiedSince = null)
     {
         $name = strtolower($name);
 
-        if (!in_array($name, self::$got_cache)) {
-
-            self::$chdata[$name] = self::CFS_Load($name);
-            self::$got_cache[] = $name;
+        if (!array_key_exists($name, self::$chdata)) {
+            self::$chdata[$name] = self::CFS_Load($name, $ifModifiedSince);
         }
 
         return self::$chdata[$name];
@@ -85,7 +88,6 @@ class FCache
 
         self::$chdata[$name] = $value;
 
-        self::$got_cache[] = $name;
         self::$upd_cache[] = $name;
     }
 
@@ -198,28 +200,34 @@ class FCache
         }
     }
 
-    static private function CFS_Load($name)
+    static private function CFS_Load($name, $ifModifiedSince = null)
     {
-        if (!$name)
+        if (!$name) {
             return false;
+        }
 
         $name = preg_replace('#[^0-9a-zA-Z_\-\.]#', '_', $name);
         $name = str_replace('.', '/', $name).'.chd';
 
         $filename = self::$cache_folder.'/'.$name;
 
-        if (!file_exists($filename))
+        if (!file_exists($filename)) {
             return null;
+        }
 
-        if (filemtime($filename) < (self::$qTime - self::LIFETIME))
+        if (!is_int($ifModifiedSince)) {
+            $ifModifiedSince = self::$qTime - self::LIFETIME;
+        }
+
+        if (filemtime($filename) < $ifModifiedSince) {
             return null;
+        }
 
         if ($data = file_get_contents($filename)) {
-            $data = unserialize($data);
-            return $data;
+            return unserialize($data);
         }
-        else
-            return null;
+
+        return null;
     }
 
     static private function CFS_Save($name, $data)
