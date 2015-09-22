@@ -1,9 +1,11 @@
+vendor
 kernel3/.k3.compiled.*
 tests/.k3.compiled.*
 tests/data
-tests/*.log
-tests/*.file
-tests/*.reg
+examples/data
+examples/*.log
+examples/*.file
+examples/*.reg
 *.php0
 *.diff
 *.swp
