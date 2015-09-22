@@ -28,7 +28,7 @@
 
 define('F_PHP_MIN_VERSION', '5.3.0');
 
-if (!defined('STARTED')) {
+if (!defined('BOOTSTRAPPED')) {
     die('Hacking attempt');
 }
 

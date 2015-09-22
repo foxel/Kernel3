@@ -61,7 +61,7 @@ class FCache
         self::$qTime = time();
         if (!is_dir(self::$cache_folder))
             FMisc::mkdirRecursive(self::$cache_folder);
-        FMisc::addShutdownCallback(array(__CLASS__, 'close'));
+        FMisc::addShutdownCallback(array(__CLASS__, 'flush'));
     }
 
     /** cache control functions **/
@@ -119,18 +119,19 @@ class FCache
             return false;
     }
 
-    static public function close()
+    static public function flush()
     {
         self::$upd_cache = array_unique(self::$upd_cache);
 
         foreach (self::$upd_cache as $name) {
-            if (is_null(self::$chdata[$name])) {
-                self::CFS_Drop($name);
-            } else {
+            if (isset(self::$chdata[$name])) {
                 self::CFS_Save($name, self::$chdata[$name]);
+            } else {
+                self::CFS_Drop($name);
             }
         }
 
+        self::$chdata = array();
         self::$upd_cache = array();
         return true;
     }
