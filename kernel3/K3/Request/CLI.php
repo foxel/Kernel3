@@ -38,7 +38,9 @@ class K3_Request_CLI extends K3_Request
         $this->pool['isAjax']   = false;
         $this->pool['isPost']   = !empty($_POST);
 
-        @parse_str(trim(file_get_contents('php://stdin')), $_POST);
+        if (!posix_isatty(STDIN)) {
+            @parse_str(trim(stream_get_contents(STDIN)), $_POST);
+        }
         $this->_POST = (array) $_POST;
 
         $args = $GLOBALS['argv'];
