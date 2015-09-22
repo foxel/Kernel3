@@ -190,14 +190,13 @@ class FFlexyStoreFactory
 
     public function createCached($cachename, $tableName, K3_Db_Abstract $dbo = null, $textTbname = false)
     {
-        $obj = FCache::get(self::CACHEPREFIX.$cachename);
-        if (!($obj instanceof FFlexyStore))
+        $obj = F()->Cache->get(self::CACHEPREFIX.$cachename);
+        if (!($obj instanceof FFlexyStore)) {
             $obj = new FFlexyStore($tableName, $dbo, $textTbname);
-        FCache::set(self::CACHEPREFIX.$cachename, $obj);
+        }
+        F()->Cache->set(self::CACHEPREFIX.$cachename, $obj);
         
         return $obj;
     }
 
 }
-
-?>

@@ -28,7 +28,7 @@
 
 define('F_PHP_MIN_VERSION', '5.3.0');
 
-if (!defined('BOOTSTRAPPED')) {
+if (!defined('STARTED')) {
     die('Hacking attempt');
 }
 
@@ -123,8 +123,6 @@ if (F_PROFILE && extension_loaded('xhprof')) {
 $base_modules_files = array(
     F_KERNEL_DIR.DIRECTORY_SEPARATOR.'K3/Autoloader.php',    // kernel 3 autoloader
     F_KERNEL_DIR.DIRECTORY_SEPARATOR.'k3_misc.php',          // kernel 3 classes and functions library
-    F_KERNEL_DIR.DIRECTORY_SEPARATOR.'k3_cache.php',         // kernel 3 cacher class
-    F_KERNEL_DIR.DIRECTORY_SEPARATOR.'k3_lang.php',          // kernel 3 LNG interface
 );
 // we'll do some trick with caching base modules in one file
 if ((strpos(F_KERNEL_DIR, 'phar://') === 0) || F_DEBUG) {
@@ -185,7 +183,7 @@ unset($kernel_codecache_dir, $base_modules_files, $base_modules_stats, $base_mod
  * used to control all the modules
  * @property K3_Autoloader $Autoloader
  * @property FTimer $Timer
- * @property FCache $Cache
+ * @property K3_Cache $Cache
  * @property FStr $Str
  * @property K3_Environment $appEnv
  * @property K3_Request $Request
@@ -252,20 +250,17 @@ class F extends FEventDispatcher
             }
         }
 
-        $this->pool['Cache']      = FCache::getInstance();
-        $this->pool['LNG']        = FLNGData::getInstance();
         $this->pool['appEnv']     = $e = $this->prepareDefaultEnvironment();
         $this->pool['Request']    = $e->getRequest();
         $this->pool['Response']   = $e->getResponse();
         $this->pool['Sess']       =
         $this->pool['Session']    = $e->getSession();
+        $this->classes['Cache']    = 'K3_Cache';
         $this->classes['Registry'] = 'K3_Registry';
         $this->classes['Profiler'] = 'K3_Profiler';
+        $this->classes['LNG']      = 'FLNGData';
         $this->classes['Config']   = 'FConfig';
         //$this->pool['DBObject'] = new StaticInstance('FDBObject');
-
-        $this->pool['LNG']->_Start(); // TODO: introduce F_Kernel_Module abstract class / interface
-
     }
 
     /**

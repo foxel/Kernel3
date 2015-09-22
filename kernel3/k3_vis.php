@@ -456,7 +456,7 @@ class FVISInterface extends FEventDispatcher
             return $this;
 
         $cachename = self::VPREFIX.'ald-'.$hash;
-        if ($aldata = FCache::get($cachename, filemtime($directory)))
+        if ($aldata = F()->Cache->get($cachename, filemtime($directory)))
         {
             $this->auto_loads[$hash] = $aldata;
             F()->Profiler->logEvent($directory.' autoloads installed (from global cache)');
@@ -480,7 +480,7 @@ class FVISInterface extends FEventDispatcher
                 closedir($dir);
 
                 ksort($aldata);
-                FCache::set($cachename, $aldata);
+                F()->Cache->set($cachename, $aldata);
                 $this->auto_loads[$hash] = $aldata;
                 F()->Profiler->logEvent($directory.' autoloads installed (from filesystem)');
             }
@@ -496,7 +496,7 @@ class FVISInterface extends FEventDispatcher
         $hash = K3_Util_File::pathHash($filename);
         $cachename = self::CPREFIX.$this->cPrefix.F()->LNG->ask().'.'.$hash;
 
-        if ($Cdata = FCache::get($cachename, filemtime($filename)))
+        if ($Cdata = F()->Cache->get($cachename, filemtime($filename)))
         {
             $this->CSS_data = $Cdata;
             F()->Profiler->logEvent($filename.' CSS file loaded (from global cache)');
@@ -507,7 +507,7 @@ class FVISInterface extends FEventDispatcher
             {
                 $Cdata = $this->prepareECSS($indata, $this->vis_consts);
 
-                FCache::set($cachename, $Cdata);
+                F()->Cache->set($cachename, $Cdata);
                 $this->CSS_data = $Cdata;
                 F()->Profiler->logEvent($filename.' CSS file loaded (from ECSS file)');
             }
@@ -528,7 +528,7 @@ class FVISInterface extends FEventDispatcher
         {
             $cachename = self::JPREFIX.$this->cPrefix.F()->LNG->ask().'.'.$hash;
 
-            if ($JSData = FCache::get($cachename, filemtime($filename)))
+            if ($JSData = F()->Cache->get($cachename, filemtime($filename)))
             {
                 $this->JS_data.= K3_String::EOL.$JSData;
 
@@ -547,7 +547,7 @@ class FVISInterface extends FEventDispatcher
                     $JSData = $this->prepareEJS($indata, $this->vis_consts);
                     $this->JS_data.= K3_String::EOL.$JSData;
 
-                    FCache::set($cachename, $JSData);
+                    F()->Cache->set($cachename, $JSData);
                     F()->Profiler->logEvent('"'.$filename.'" JScript loaded (from EJS file)');
                 }
                 else
@@ -568,7 +568,7 @@ class FVISInterface extends FEventDispatcher
         {
             $cachename = self::VPREFIX.$this->cPrefix.F()->LNG->ask().'.'.$hash;
 
-            if (list($Tdata, $VCSS, $VJS) = FCache::get($cachename, filemtime($filename)))
+            if (list($Tdata, $VCSS, $VJS) = F()->Cache->get($cachename, filemtime($filename)))
             {
                 $this->templates += $Tdata;
                 $this->VCSS_data .= K3_String::EOL.$VCSS;
@@ -605,7 +605,7 @@ class FVISInterface extends FEventDispatcher
                     $VJS = $this->prepareEJS($VJS, $this->vis_consts); // and here we actually parse EJS
                     $this->VJS_data  .= K3_String::EOL.$VJS;
 
-                    FCache::set($cachename, array($Tdata, $VCSS, $VJS) );
+                    F()->Cache->set($cachename, array($Tdata, $VCSS, $VJS) );
                     F()->Profiler->logEvent('"'.$filename.'" visuals loaded (from VIS file)');
                 }
                 else

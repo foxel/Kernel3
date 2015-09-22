@@ -4,11 +4,11 @@
  * Class FCacheTest
  * @author Andrey F. Kupreychik
  */
-class FCacheTest extends PHPUnit_Framework_TestCase
+class K3_CacheTest extends PHPUnit_Framework_TestCase
 {
     /** @var string */
     protected $_testValue;
-    /** @var FCache */
+    /** @var K3_Cache */
     protected $_instance;
 
     public function testSetAndGet()
@@ -21,7 +21,7 @@ class FCacheTest extends PHPUnit_Framework_TestCase
     public function testClear()
     {
         $this->_storeTestValue();
-        FCache::clear();
+        $this->_instance->clear();
 
         $this->assertNull($this->_instance->get('testValue'), 'NULL should be returned for empty cache');
     }

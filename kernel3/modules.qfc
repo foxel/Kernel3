@@ -18,6 +18,7 @@
  * along with Kernel 3. If not, see <http://www.gnu.org/licenses/>.
  */
 
+LNG      => FLNGData|k3_lang.php
 VIS      => FVISInterface|k3_vis.php
 Parser   => FParser|k3_parser.php
 Mail     => FMail|k3_mailer.php
@@ -33,5 +34,6 @@ HTTP      => FHTTPInterface|deprecated/k3_http.php
 Config    => FConfig|deprecated/k3_registry.php
 Timer     => FTimer|deprecated/k3_timer.php
 Captcha   => FCaptcha|deprecated/k3_captcha.php
+_Cache    => FCache|deprecated/k3_cache.php
 _Registry => FRegistry|deprecated/k3_registry.php
 _Session  => FSession|deprecated/k3_session.php

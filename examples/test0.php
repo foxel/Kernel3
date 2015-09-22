@@ -1,7 +1,7 @@
 <?php
 
 require_once 'init.php';
-require_once 'phar://../kernel3.phar.gz';
+require_once 'kernel3.php';
 
 F()->Response->write('Hello World');
 

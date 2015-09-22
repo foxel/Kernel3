@@ -67,12 +67,7 @@ class FLNGData // extends FEventDispatcher
         $this->pool = array(
             'language' => &$this->lang_name,
             'name' => &$this->lang_name,
-            );
-
-        function FLang($key, $params = false, $load = false)
-        {
-            return F()->LNG->lang($key, $params, $load);
-        }
+        );
     }
 
     public function __get($name)
@@ -108,7 +103,7 @@ class FLNGData // extends FEventDispatcher
             return true;
 
         $cachename = self::CACHEPREFIX.'ald-'.$hash;
-        if ($aldata = FCache::get($cachename))
+        if ($aldata = F()->Cache->get($cachename))
         {
             $this->auto_loads[$hash] = $aldata;
             F()->Profiler->logEvent($directory.' lang autoloads installed (from global cache)');
@@ -132,7 +127,7 @@ class FLNGData // extends FEventDispatcher
                 closedir($dir);
 
                 ksort($aldata);
-                FCache::set($cachename, $aldata);
+                F()->Cache->set($cachename, $aldata);
                 $this->auto_loads[$hash] = $aldata;
                 F()->Profiler->logEvent($directory.' lang autoloads installed (from filesystem)');
             }
@@ -159,7 +154,7 @@ class FLNGData // extends FEventDispatcher
         {
             $cachename = self::CACHEPREFIX.$hash;
 
-            if ($Ldata = FCache::get($cachename))
+            if ($Ldata = F()->Cache->get($cachename))
             {
                 $this->lang = $Ldata + $this->lang;
                 if (isset($Ldata['__LNG']))
@@ -174,7 +169,7 @@ class FLNGData // extends FEventDispatcher
             {
                 if (isset($Ldata['__LNG']))
                     $this->lang_name = strtoupper($Ldata['__LNG']);
-                FCache::set($cachename, $Ldata);
+                F()->Cache->set($cachename, $Ldata);
                 $this->lang = $Ldata + $this->lang;
                 F()->Profiler->logEvent('"'.$filename.'" language file loaded (from lang file)');
             }
@@ -494,13 +489,13 @@ class FLNGData // extends FEventDispatcher
         
         $cachename = self::CACHEPREFIX.'krnl_'.$lng;
 
-        if ($Ldata = FCache::get($cachename))
+        if ($Ldata = F()->Cache->get($cachename))
         {
             $this->klang = $Ldata;
         }
         elseif ($Ldata = FMisc::loadDatafile($file, FMisc::DF_MLINE, true))
         {
-            FCache::set($cachename, $Ldata);
+            F()->Cache->set($cachename, $Ldata);
             $this->klang = $Ldata;
         }
         else
@@ -539,3 +534,9 @@ class FLNGData // extends FEventDispatcher
     }
     
 }
+
+function FLang($key, $params = false, $load = false)
+{
+    return F()->LNG->lang($key, $params, $load);
+}
+

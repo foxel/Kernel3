@@ -1,6 +1,6 @@
 <?php
 
-define('BOOTSTRAPPED', 1);
+define('STARTED', 1);
 
 if (file_exists(__DIR__.'/kernel3.phar')) {
     require_once 'phar://'.__DIR__.'/kernel3.phar';
