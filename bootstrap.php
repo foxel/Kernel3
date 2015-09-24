@@ -1,6 +1,6 @@
 <?php
 
-define('STARTED', 1);
+defined('STARTED') || define('STARTED', true);
 
 if (file_exists(__DIR__.'/kernel3.phar')) {
     require_once 'phar://'.__DIR__.'/kernel3.phar';
