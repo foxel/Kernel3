@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2012 Andrey F. Kupreychik (Foxel)
+ * Copyright (C) 2012, 2016 Andrey F. Kupreychik (Foxel)
  *
  * This file is part of QuickFox Kernel 3.
  * See https://github.com/foxel/Kernel3/ for more details.
@@ -30,7 +30,7 @@ class K3_Environment_Client_HTTP extends K3_Environment_Client
 
         $this->_cookies =& $_COOKIE; // TODO: think if we need to get a copy instead
 
-        $this->pool['IP']        = $_SERVER['REMOTE_ADDR'];
+        $this->pool['IP']        = static::getClientIp();
         $this->pool['IPInteger'] = ip2long($this->pool['IP']);
     }
 
@@ -105,5 +105,47 @@ class K3_Environment_Client_HTTP extends K3_Environment_Client
         $sign = implode('|', $sign);
         $sign = md5($sign);
         return $sign;
+    }
+
+    /**
+     * @return string
+     */
+    public static function getClientIp()
+    {
+        $privateNetworkIpRange = array(
+            'A' => array(ip2long('10.0.0.0'), ip2long('10.255.255.255')),     // single class A network
+            'B' => array(ip2long('172.16.0.0'), ip2long('172.31.255.255')),   // 16 contiguous class B network
+            'C' => array(ip2long('192.168.0.0'), ip2long('192.168.255.255')), // 256 contiguous class C network
+        );
+
+        $headers = array('HTTP_CLIENT_IP', 'HTTP_X_FORWARDED_FOR', 'HTTP_TRUE_CLIENT_IP', 'HTTP_X_CLIENT_IP', 'REMOTE_ADDR');
+
+        foreach ($headers as $header) {
+            if (isset($_SERVER[$header])) {
+                $ips = explode(',', $_SERVER[$header]);
+
+                foreach ($ips as $ip) {
+                    $ip     = trim($ip);
+                    $longIp = ip2long($ip);
+
+                    if ($longIp === false) {
+                        continue;
+                    }
+
+                    $isPrivateIp = false;
+                    foreach ($privateNetworkIpRange AS $ipRange) {
+                        if ($longIp >= $ipRange[0] && $longIp <= $ipRange[1]) {
+                            $isPrivateIp = true;
+                        }
+                    }
+
+                    if (!$isPrivateIp) {
+                        return $ip;
+                    }
+                }
+            }
+        }
+
+        return $_SERVER['REMOTE_ADDR'];
     }
 }
