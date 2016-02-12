@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2010 - 2012, 2014 - 2015 Andrey F. Kupreychik (Foxel)
+ * Copyright (C) 2010 - 2012, 2014 - 2016 Andrey F. Kupreychik (Foxel)
  *
  * This file is part of QuickFox Kernel 3.
  * See https://github.com/foxel/Kernel3/ for more details.
@@ -316,9 +316,11 @@ class FVISInterface extends FEventDispatcher
     protected $CSS_loaded = false;
     protected $JS_loaded  = array();
 
-    protected $vis_consts = array();
+    protected $_constants = array();
+    protected $_globals = array();
+
     /** @var callable[] */
-    protected $func_parsers = array();
+    protected $_funcParsers = array();
 
     protected $auto_loads = array();
 
@@ -334,7 +336,7 @@ class FVISInterface extends FEventDispatcher
 
         $this->nodes[0] = new FVISNode('GLOBAL_HTMLPAGE', 0, $this);
         $this->named = array('PAGE' => 0, 'MAIN' => 0);
-        $this->func_parsers = array(
+        $this->_funcParsers = array(
             'FULLURL'   => array('K3_Util_Url', 'fullUrl', $this->env),
             'CAST'      => array('K3_Util_String', 'filter'),
             'HTMLQUOTE' => array('K3_Util_String', 'escapeXML'),
@@ -363,7 +365,7 @@ class FVISInterface extends FEventDispatcher
         $this->JS_data    = '';
         $this->CSS_loaded = false;
         $this->JS_loaded  = array();
-        $this->vis_consts = array(
+        $this->_constants = array(
             'FALSE'   => false,
             'TRUE'    => true,
             'NULL'    => null,
@@ -374,6 +376,7 @@ class FVISInterface extends FEventDispatcher
             'CAST_WORD' => K3_Util_String::FILTER_WORD,
             'CAST_PATH' => K3_Util_String::FILTER_PATH_UNIX, // unix always
         );
+        $this->_globals = array();
 
         if (!$keep_nodes)
         {
@@ -409,15 +412,45 @@ class FVISInterface extends FEventDispatcher
     }
 
     /**
-     * @param array $consts
-     * @param bool $no_replace
+     * @param array $constants
+     * @param bool $noReplace
      * @return FVISInterface
      */
-    public function setVConsts(array $consts, $no_replace = false)
+    public function setVConsts(array $constants, $noReplace = false)
     {
-        $this->vis_consts = ($no_replace)
-            ? $this->vis_consts + $consts
-            : $consts + $this->vis_consts;
+        $this->_constants = ($noReplace)
+            ? $this->_constants + $constants
+            : $constants + $this->_constants;
+
+        return $this;
+    }
+
+    /**
+     * @param string $name
+     * @param string $value
+     * @return FVISInterface
+     */
+    public function addGlobal($name, $value)
+    {
+        $name = strtoupper($name);
+
+        $this->_globals[$name] = K3_Util_Array::implodeRecursive(' ', $value);
+
+        return $this;
+    }
+
+    /**
+     * @param string[] $values
+     * @param string $prefix
+     * @return FVISInterface
+     */
+    public function addGlobalArray(array $values, $prefix = '')
+    {
+        foreach ($values as $key => $value) {
+            $key = strtoupper($prefix.$key);
+            $value = K3_Util_Array::implodeRecursive(' ', $value);
+            $this->_globals[$key] = $value;
+        }
 
         return $this;
     }
@@ -435,8 +468,9 @@ class FVISInterface extends FEventDispatcher
         {
             $name = strtoupper($name);
 
-            if (!isset($this->func_parsers[$name]))
-                $this->func_parsers[$name] = $callback;
+            if (!isset($this->_funcParsers[$name])) {
+                $this->_funcParsers[$name] = $callback;
+            }
         }
 
         return $this;
@@ -455,17 +489,17 @@ class FVISInterface extends FEventDispatcher
         if (isset($this->auto_loads[$hash]))
             return $this;
 
-        $cachename = self::VPREFIX.'ald-'.$hash;
-        if ($aldata = F()->Cache->get($cachename, filemtime($directory)))
+        $cacheName = self::VPREFIX.'ald-'.$hash;
+        if ($ALData = F()->Cache->get($cacheName, filemtime($directory)))
         {
-            $this->auto_loads[$hash] = $aldata;
-            F()->Profiler->logEvent($directory.' autoloads installed (from global cache)');
+            $this->auto_loads[$hash] = $ALData;
+            F()->Profiler->logEvent($directory.' autoload installed (from global cache)');
         }
         else
         {
             if ($dir = opendir($directory))
             {
-                $aldata = array(0 => $directory);
+                $ALData = array(0 => $directory);
                 $preg_pattern = '#'.preg_quote($fileSuffix, '#').'$#';
                 while ($entry = readdir($dir))
                 {
@@ -473,16 +507,16 @@ class FVISInterface extends FEventDispatcher
                     if (preg_match($preg_pattern, $entry) && is_file($filename) && $data = FMisc::loadDatafile($filename, FMisc::DF_BLOCK, true)) {
                         $keys = array_keys($data);
                         foreach ($keys as $key) {
-                            $aldata[$key] = $entry;
+                            $ALData[$key] = $entry;
                         }
                     }
                 }
                 closedir($dir);
 
-                ksort($aldata);
-                F()->Cache->set($cachename, $aldata);
-                $this->auto_loads[$hash] = $aldata;
-                F()->Profiler->logEvent($directory.' autoloads installed (from filesystem)');
+                ksort($ALData);
+                F()->Cache->set($cacheName, $ALData);
+                $this->auto_loads[$hash] = $ALData;
+                F()->Profiler->logEvent($directory.' autoload installed (from filesystem)');
             }
             else
                 trigger_error('VIS: error installing '.$directory.' auto loading directory', E_USER_WARNING );
@@ -491,28 +525,29 @@ class FVISInterface extends FEventDispatcher
         return $this;
     }
 
+    /**
+     * @param string $filename
+     * @return $this
+     */
     public function loadECSS($filename)
     {
         $hash = K3_Util_File::pathHash($filename);
-        $cachename = self::CPREFIX.$this->cPrefix.F()->LNG->ask().'.'.$hash;
+        $cacheName = self::CPREFIX.$this->cPrefix.F()->LNG->ask().'.'.$hash;
 
-        if ($Cdata = F()->Cache->get($cachename, filemtime($filename)))
+        if ($Cdata = F()->Cache->get($cacheName, filemtime($filename)))
         {
             $this->CSS_data = $Cdata;
             F()->Profiler->logEvent($filename.' CSS file loaded (from global cache)');
-        }
-        else
-        {
-            if ($indata = FMisc::loadDatafile($filename))
-            {
-                $Cdata = $this->prepareECSS($indata, $this->vis_consts);
+        } else {
+            if ($inData = FMisc::loadDatafile($filename)) {
+                $Cdata = $this->prepareECSS($inData, $this->_constants);
 
-                F()->Cache->set($cachename, $Cdata);
+                F()->Cache->set($cacheName, $Cdata);
                 $this->CSS_data = $Cdata;
                 F()->Profiler->logEvent($filename.' CSS file loaded (from ECSS file)');
-            }
-            else
+            } else {
                 trigger_error('VIS: error loading '.$filename.' ECSS file', E_USER_WARNING );
+            }
         }
 
         $this->CSS_loaded = $hash;
@@ -520,15 +555,19 @@ class FVISInterface extends FEventDispatcher
         return $this;
     }
 
+    /**
+     * @param string $filename
+     * @return $this
+     */
     public function loadEJS($filename)
     {
         $hash = K3_Util_File::pathHash($filename);
 
         if (!in_array($hash, $this->JS_loaded))
         {
-            $cachename = self::JPREFIX.$this->cPrefix.F()->LNG->ask().'.'.$hash;
+            $cacheName = self::JPREFIX.$this->cPrefix.F()->LNG->ask().'.'.$hash;
 
-            if ($JSData = F()->Cache->get($cachename, filemtime($filename)))
+            if ($JSData = F()->Cache->get($cacheName, filemtime($filename)))
             {
                 $this->JS_data.= K3_String::EOL.$JSData;
 
@@ -540,14 +579,14 @@ class FVISInterface extends FEventDispatcher
                 {
                     trigger_error('VIS: there is no '.$filename.' EJS file', E_USER_WARNING );
                 }
-                elseif ($indata = FMisc::loadDatafile($filename))
+                elseif ($inData = FMisc::loadDatafile($filename))
                 {
-                    $this->throwEventRef(self::EVENT_EJS_PRE_PARSE, $indata);
+                    $this->throwEventRef(self::EVENT_EJS_PRE_PARSE, $inData);
 
-                    $JSData = $this->prepareEJS($indata, $this->vis_consts);
+                    $JSData = $this->prepareEJS($inData, $this->_constants);
                     $this->JS_data.= K3_String::EOL.$JSData;
 
-                    F()->Cache->set($cachename, $JSData);
+                    F()->Cache->set($cacheName, $JSData);
                     F()->Profiler->logEvent('"'.$filename.'" JScript loaded (from EJS file)');
                 }
                 else
@@ -560,17 +599,21 @@ class FVISInterface extends FEventDispatcher
         return $this;
     }
 
+    /**
+     * @param string $filename
+     * @return $this
+     */
     public function loadTemplates($filename)
     {
         $hash = K3_Util_File::pathHash($filename);
 
         if (!in_array($hash, $this->VIS_loaded))
         {
-            $cachename = self::VPREFIX.$this->cPrefix.F()->LNG->ask().'.'.$hash;
+            $cacheName = self::VPREFIX.$this->cPrefix.F()->LNG->ask().'.'.$hash;
 
-            if (list($Tdata, $VCSS, $VJS) = F()->Cache->get($cachename, filemtime($filename)))
+            if (list($templates, $VCSS, $VJS) = F()->Cache->get($cacheName, filemtime($filename)))
             {
-                $this->templates += $Tdata;
+                $this->templates += $templates;
                 $this->VCSS_data .= K3_String::EOL.$VCSS;
                 $this->VJS_data  .= K3_String::EOL.$VJS;
 
@@ -586,26 +629,26 @@ class FVISInterface extends FEventDispatcher
                 {
                     $this->throwEventRef(self::EVENT_VIS_PRE_PARSE, $indata, $filename);
 
-                    $Tdata  = array();
-                    $VCSS   = '';
-                    $VJS    = '';
+                    $templates  = array();
+                    $VCSS       = '';
+                    $VJS        = '';
                     foreach ($indata as $name => $templ)
                     {
                         if ($name == 'CSS')
-                            $VCSS.= $this->prepareECSS($templ, $this->vis_consts);
+                            $VCSS.= $this->prepareECSS($templ, $this->_constants);
                         elseif ($name == 'JS')
                             $VJS.= $templ; // EJS can contain {V_ links
                                            // so we need to store it first and parse after VIS loading
                         else // normal VIS
-                            $Tdata[$name] = $this->prepareVIS($templ);
+                            $templates[$name] = $this->prepareVIS($templ);
                     }
 
-                    $this->templates += $Tdata;
+                    $this->templates += $templates;
                     $this->VCSS_data .= K3_String::EOL.$VCSS;
-                    $VJS = $this->prepareEJS($VJS, $this->vis_consts); // and here we actually parse EJS
+                    $VJS = $this->prepareEJS($VJS, $this->_constants); // and here we actually parse EJS
                     $this->VJS_data  .= K3_String::EOL.$VJS;
 
-                    F()->Cache->set($cachename, array($Tdata, $VCSS, $VJS) );
+                    F()->Cache->set($cacheName, array($templates, $VCSS, $VJS) );
                     F()->Profiler->logEvent('"'.$filename.'" visuals loaded (from VIS file)');
                 }
                 else
@@ -618,8 +661,16 @@ class FVISInterface extends FEventDispatcher
         return $this;
     }
 
-    // parsing functions
-    public function parse($node = 0, $force_reparse = false)
+    /*********************\
+     * parsing functions *
+    \*********************/
+
+    /**
+     * @param int $node
+     * @param bool $forceParse
+     * @return bool|mixed|null|string
+     */
+    public function parse($node = 0, $forceParse = false)
     {
         if (!is_int($node))
             $node = $this->findNodeId($node);
@@ -633,30 +684,46 @@ class FVISInterface extends FEventDispatcher
             return false;
         }
 
-        return $this->nodes[$node]->parse($force_reparse);
+        return $this->nodes[$node]->parse($forceParse);
     }
 
-    public function makeHTML($force_reparse = false)
+    /**
+     * @param bool $forceParse
+     * @return mixed|null|string
+     */
+    public function makeHTML($forceParse = false)
     {
         $vars = array(
             'CSS' => array(&$this->CSS_data, &$this->VCSS_data),
             'JS'  => array(&$this->JS_data,  &$this->VJS_data),
             );
 
-        return $this->nodes[$this->_rootNodeId]->parse($force_reparse, $vars);
+        return $this->nodes[$this->_rootNodeId]->parse($forceParse, $vars);
     }
 
+    /**
+     * @return bool|string
+     */
     public function makeCSS()
     {
         return ($this->CSS_loaded) ? trim($this->CSS_data) : false;
     }
 
+    /**
+     * @return bool|string
+     */
     public function makeJS()
     {
         return ($this->JS_loaded) ? trim($this->JS_data) : false;
     }
 
     // node tree construction functions
+    /**
+     * @param string $template
+     * @param array $data_arr
+     * @param string $globname
+     * @return bool|FVISNode
+     */
     public function createNode($template, array $data_arr = null, $globname = null)
     {
         $template = (string) $template;
@@ -848,7 +915,7 @@ class FVISInterface extends FEventDispatcher
 
     public function prepareVIS($text, $store_to = false)
     {
-        $consts = $this->vis_consts;
+        $consts = $this->_constants;
 
         $text = trim($text);
 
@@ -899,7 +966,7 @@ class FVISInterface extends FEventDispatcher
                         $jstext.= '";'.K3_String::EOL.'v.'.$writes_to.(($got_a) ? '' : '+').'= "';
                     }
                 }
-                elseif (isset($this->func_parsers[$tag])) //parsing the variable with func
+                elseif (isset($this->_funcParsers[$tag])) //parsing the variable with func
                 {
                     if (!isset($params[1]) || !count($params[1]))
                         continue;
@@ -1154,7 +1221,7 @@ class FVISInterface extends FEventDispatcher
                 $OUT = \'\';
                 '.$this->templates[$vis]['T'].' return $OUT;');
 
-        return call_user_func_array($this->templates[$vis]['F'], array(&$this, &$this->templates[$vis]['V'], &$data, &$this->vis_consts));
+        return call_user_func_array($this->templates[$vis]['F'], array(&$this, &$this->templates[$vis]['V'], &$data, &$this->_constants));
     }
 
     public function prepJSFunc($vis)
@@ -1455,11 +1522,11 @@ class FVISInterface extends FEventDispatcher
      */
     public function callParseFunction($parserName, $data)
     {
-        if (!isset($this->func_parsers[$parserName])) {
+        if (!isset($this->_funcParsers[$parserName])) {
             return $data;
         }
 
-        $parserDefinition = $this->func_parsers[$parserName];
+        $parserDefinition = $this->_funcParsers[$parserName];
 
         $args = array($data);
         if (is_array($parserDefinition) && count($parserDefinition) > 2) {
@@ -1477,11 +1544,11 @@ class FVISInterface extends FEventDispatcher
      */
     public function callParseFunctionArr($parserName, array $data)
     {
-        if (!isset($this->func_parsers[$parserName])) {
+        if (!isset($this->_funcParsers[$parserName])) {
             return '';
         }
 
-        $parserDefinition = $this->func_parsers[$parserName];
+        $parserDefinition = $this->_funcParsers[$parserName];
 
         if (is_array($parserDefinition) && count($parserDefinition) > 2) {
             $data = array_merge($data, array_splice($parserDefinition, 2));
@@ -1497,11 +1564,11 @@ class FVISInterface extends FEventDispatcher
      */
     protected function _parserIsPure($parserName)
     {
-        if (!isset($this->func_parsers[$parserName])) {
+        if (!isset($this->_funcParsers[$parserName])) {
             return false;
         }
 
-        $parserDefinition = $this->func_parsers[$parserName];
+        $parserDefinition = $this->_funcParsers[$parserName];
 
         if (is_array($parserDefinition)) {
             if (count($parserDefinition) > 2) {
