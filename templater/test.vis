@@ -1,0 +1,28 @@
+<<+ 'SONE_OBJECT_EDITFORM'>>
+{IF:IN_id>1}<a href="{FULLURL:IN_PATH}" class="btn btn-default"><i class="glyphicon glyphicon-remove"></i> {L_EDITOR_CANCEL}</a>{/IF}
+<<- 'SONE_OBJECT_EDITFORM'>>
+
+<<+ 'COMPLEX_EXAMPLE'>>
+{IF:IN_a>{FULLURL:IN_PAth|{L_football}}}sfsf{/IF}
+<<- 'COMPLEX_EXAMPLE'>>
+
+
+<<+ 'SONE_OBJECT_HTMLPAGE'>>
+{IF:IN_actionState="edit"}
+{!WRITE:formElements}
+{VIS:SONE_HTML_WIDGET_FORM_TEXTAREA|name="content"|class="htmleditor"|value=IN_CONTENT}
+{VIS:SONE_HTML_WIDGET_FORM_CHECKBOX|name="commentsAllowed"|label="разрешить комментарии"|checked=IN_commentsAllowed}
+{WRITE}
+{VIS:SONE_OBJECT_EDITFORM|formElements=formElements|_}
+{ELSE}
+{IF:IN_canEdit}<div class="pull-right">
+    <a class="btn btn-default" href="{FULLURL:IN_PATH}?edit"><i class="glyphicon glyphicon-pencil"></i> Править</a>
+    </div>{/IF}
+    <h2>{!IN_CAPTION}</h2>
+    <div class="htmlpage clearfix">{IN_CONTENT}</div>
+{IF:IN_commentsBlock}
+    <hr />
+{IN_commentsBlock}
+{/IF}
+{/IF}
+<<- 'SONE_OBJECT_HTMLPAGE'>>
