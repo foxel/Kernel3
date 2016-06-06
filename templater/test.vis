@@ -16,7 +16,7 @@
 {VIS:SONE_OBJECT_EDITFORM|formElements=formElements|_}
 {ELSE}
 {IF:IN_canEdit}<div class="pull-right">
-    <a class="btn btn-default" href="{FULLURL:IN_PATH}?edit"><i class="glyphicon glyphicon-pencil"></i> Править</a>
+    <a class="btn btn-default" href="{FULLURL:IN_PATH}?edit"><i class="glyphicon glyphicon-pencil" name="'"></i> 	Править</a>
     </div>{/IF}
     <h2>{!IN_CAPTION}</h2>
     <div class="htmlpage clearfix">{IN_CONTENT}</div>

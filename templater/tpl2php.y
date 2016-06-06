@@ -19,7 +19,7 @@ void yyerror(const char *s) {
 string trim_block_name(const string &str) {
     return str.substr(1, str.length() - 2);
 }
-string escape_nowdoc(string &str) {
+string escape_string(string &str) {
     string nowdocId = "FTEXT";
     while (str.find(nowdocId) != string::npos) {
         nowdocId = nowdocId + "T";
@@ -28,6 +28,7 @@ string escape_nowdoc(string &str) {
 }
 set<string> cur_vars;
 string className = "";
+string writes_to = "OUT";
 
 %}
 
@@ -71,7 +72,7 @@ BLOCK: BLOCK_HEADER BLOCK_FOOTER { $$ = $1 + $2; }
 }
 ;
 
-BLOCK_HEADER: HEADER_OPEN STRING HEADER_CLOSE { cur_vars.clear(); $$ = trim_block_name($2); }
+BLOCK_HEADER: HEADER_OPEN STRING HEADER_CLOSE { cur_vars.clear(); writes_to = "OUT"; $$ = trim_block_name($2); }
 ;
 
 BLOCK_FOOTER: FOOTER_OPEN STRING FOOTER_CLOSE { $$ = trim_block_name($2); }
@@ -81,16 +82,16 @@ BLOCK_EXPRS: BLOCK_EXPR
 | BLOCK_EXPRS BLOCK_EXPR { $$ = $1 + $2; }
 ;
 
-BLOCK_EXPR: RAW_STRINGS { $$ = "$OUT .= " + escape_nowdoc($1) + ";\n"; }
+BLOCK_EXPR: RAW_STRINGS { $$ = "$" + writes_to + " .= " + escape_string($1) + ";\n"; }
 | '{' IF ':' COMPARISIONS '}' IF_BODY '{' ENDIF '}' { $$ = "if (" + $4 + ") {" + $6 + "}"; }
 | '{' '!' IF ':' COMPARISIONS '}' IF_BODY '{' ENDIF '}' { $$ = "if (!(" + $5 + ")) {" + $7 + "}"; }
 | '{' FOR ':' FOR_ARGS '}' BLOCK_EXPRS '{' ENDFOR '}' { $$ = "for (" + $4 +") {" + $6 + "}"; }
 | '{' SET ':' ASSIGNMENTS '}' { $$ = $4 + ";"; }
-| '{' WRITE '}' { $$ = ""; }
-| '{' '!' WRITE '}' { $$ = ""; }
-| '{' WRITE ':' ARG '}' { $$ = ""; }
-| '{' '!' WRITE ':' ARG '}' { $$ = ""; }
-| VALUE_EXPR { $$ = "$OUT .= " + $1 + ";"; }
+| '{' WRITE '}' { writes_to = "OUT"; $$ = ""; }
+| '{' '!' WRITE '}' { writes_to = "OUT"; $$ = "$" + writes_to + " = '';"; }
+| '{' WRITE ':' WORD '}' { writes_to = $4; $$ = ""; }
+| '{' '!' WRITE ':' WORD '}' { writes_to = $5; $$ = "$" + writes_to + " = '';"; }
+| VALUE_EXPR { $$ = "$" + writes_to + " .= " + $1 + ";"; }
 ;
 
 RAW_STRINGS: RAW_STRING
