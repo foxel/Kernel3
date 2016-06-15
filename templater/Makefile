@@ -1,19 +1,16 @@
 all: tpl2php tpl2js
 
-tpl2php: tpl2php.tab.cpp tpl.yy.cpp
-	g++ tpl2php.tab.cpp tpl.yy.cpp -o tpl2php
+tpl2php: tpl.tab.cpp tpl.yy.cpp tpl2php.cpp
+	g++ tpl.tab.cpp tpl.yy.cpp tpl2php.cpp -o tpl2php
 
-tpl2js: tpl2js.tab.cpp tpl.yy.cpp
-	g++ tpl2js.tab.cpp tpl.yy.cpp -o tpl2js
+tpl2js: tpl.tab.cpp tpl.yy.cpp tpl2js.cpp
+	g++ tpl.tab.cpp tpl.yy.cpp tpl2js.cpp -o tpl2js
 
 tpl.yy.cpp: tpl.lex
 	flex -o tpl.yy.cpp tpl.lex
 
-tpl2php.tab.cpp: tpl2php.y
-	bison -o tpl2php.tab.cpp --defines=tpl.tab.h tpl2php.y
-
-tpl2js.tab.cpp: tpl2js.y
-	bison -o tpl2js.tab.cpp --defines=tpl.tab.h tpl2js.y
+tpl.tab.cpp: tpl.y
+	bison -o tpl.tab.cpp --defines=tpl.tab.h tpl.y
 
 clean:
-	rm -f *.cpp *.h
+	rm -f tpl2php tpl2js *.yy.cpp *.tab.cpp *.tab.h
