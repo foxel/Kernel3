@@ -12,12 +12,15 @@ string str_toupper(string str) {
 }
 void yyerror(const char *s);
 int code_depth = 0;
+int str_parent = 0;
+
 %}
 
 %option yylineno
 %option noyywrap
 
 %x FILE_COMMENT
+%x FILE_REQUIRE
 %x BLOCK_HEADER
 %x BLOCK_FOOTER
 %x BLOCK_BODY
@@ -28,12 +31,17 @@ int code_depth = 0;
 
 [<][<][+]       { BEGIN(BLOCK_HEADER); return HEADER_OPEN; }
 [<]!--          BEGIN(FILE_COMMENT);
+[@]require      { BEGIN(FILE_REQUIRE); return REQUIRE; }
 [ \r\n\t]       ;
 .               yyerror("Invalid character");
 
 <FILE_COMMENT>-->   BEGIN(INITIAL);
 <FILE_COMMENT>.     ;
 
+<FILE_REQUIRE>[^\r\n "]*    { yylval = yytext; return STRING; }
+<FILE_REQUIRE>[\r\n]*       BEGIN(INITIAL);
+<FILE_REQUIRE>["]           { yylval = ""; str_parent=FILE_REQUIRE; BEGIN(STR); }
+<FILE_REQUIRE>[\t ]*        ;
 
 <BLOCK_HEADER>['][a-zA-Z_][a-zA-Z0-9_]*[']  { yylval = str_toupper(yytext);
                   return STRING;
@@ -71,7 +79,7 @@ int code_depth = 0;
 <CODE_PART>L_[a-zA-Z][a-zA-Z0-9_]*      { yylval = str_toupper(yytext); return LANG_WORD; }
 <CODE_PART>[a-zA-Z][a-zA-Z0-9_]*        { yylval = str_toupper(yytext); return WORD; }
 <CODE_PART>[-]?[0-9]+([.][0-9]+)?       { yylval = yytext; return NUMBER; }
-<CODE_PART>["]              { yylval = ""; BEGIN(STR); }
+<CODE_PART>["]              { yylval = ""; str_parent=CODE_PART; BEGIN(STR); }
 <CODE_PART>[ ]              ;
 <CODE_PART>[{]              { code_depth++; return *yytext; }
 <CODE_PART>[}]              { code_depth--; if (code_depth == 0) BEGIN(BLOCK_BODY); return *yytext; }
@@ -81,7 +89,7 @@ int code_depth = 0;
 <STR>\\["]      yylval += '"';
 <STR>\\         yyerror("Invalid escape sequence");
 <STR>\n         yyerror("Newline in string literal");
-<STR>["]        { BEGIN(CODE_PART); return STRING; }
+<STR>["]        { BEGIN(str_parent); return STRING; }
 
 
 %%

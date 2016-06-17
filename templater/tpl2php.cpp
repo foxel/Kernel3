@@ -56,15 +56,19 @@ class tpl2php_translator : public tpl_translator {
         }
 
         string block(string block_header, string block_footer) {
-            //if (block_header != block_footer) yyerror("Block close tag name missmatch");
+            if (block_header != block_footer) yyerror("Block close tag name missmatch");
 
             string s = "function " + block_header + "(FVISInterface $_vis, $_in, $_c) { return ''; }";
             cur_vars.clear();
             return s;
         }
 
+        string require(string require) {
+            return "const EXTENDS=\"" + require + "\";";
+        }
+
         string block(string block_header, string block_footer, string body) {
-            //if (block_header != block_footer) yyerror("Block close tag name missmatch");
+            if (block_header != block_footer) yyerror("Block close tag name missmatch");
 
             string s = "function " + block_header + "(FVISInterface $_vis, $_in, $_c) {\n";
             if (cur_vars.count("UNIQID")) { // template uses "UNIQID"

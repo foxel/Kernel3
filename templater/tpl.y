@@ -10,6 +10,7 @@ extern void yyerror(const char *s);
 
 %}
 
+%token REQUIRE
 %token HEADER_OPEN HEADER_CLOSE FOOTER_OPEN FOOTER_CLOSE
 %token IF ELSEIF ELSE ENDIF FOR ENDFOR SET WRITE VIS
 %token LANG_WORD WORD CMP_OP RAW_STRING STRING NUMBER
@@ -26,12 +27,13 @@ BLOCKS: BLOCK { $$ = translator->blocks($1); }
 
 BLOCK: BLOCK_HEADER BLOCK_FOOTER { $$ = translator->block($1, $2); }
 | BLOCK_HEADER BLOCK_EXPRS BLOCK_FOOTER { $$ = translator->block($1, $3, $2); }
+| REQUIRE STRING { $$ = translator->require($2); }
 ;
 
 BLOCK_HEADER: HEADER_OPEN STRING HEADER_CLOSE { $$ = translator->block_header($2); }
 ;
 
-BLOCK_FOOTER: FOOTER_OPEN STRING FOOTER_CLOSE { $$ = translator->block_footer($1); }
+BLOCK_FOOTER: FOOTER_OPEN STRING FOOTER_CLOSE { $$ = translator->block_footer($2); }
 ;
 
 BLOCK_EXPRS: BLOCK_EXPR { $$ = translator->block_exprs($1); }

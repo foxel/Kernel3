@@ -14,6 +14,8 @@ class tpl_translator {
 
         virtual string blocks(string block) = 0;
 
+        virtual string require(string require) = 0;
+
         virtual string block(string block_header, string block_footer) = 0;
 
         virtual string block(string block_header, string block_footer, string body) = 0;

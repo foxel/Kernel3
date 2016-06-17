@@ -57,8 +57,12 @@ class tpl2js_translator : public tpl_translator {
             return block;
         }
 
+        string require(string require) {
+            return "\"REQUIRES\": \"" + require + "\"";
+        }
+
         string block(string block_header, string block_footer) {
-            //if (block_header != block_footer) yyerror("Block close tag name missmatch");
+            if (block_header != block_footer) yyerror("Block close tag name missmatch");
 
             string s = "\"" + block_header + "\": function ($_vis, $_in, $_c) { return ''; }";
             cur_vars.clear();
@@ -66,7 +70,7 @@ class tpl2js_translator : public tpl_translator {
         }
 
         string block(string block_header, string block_footer, string body) {
-            //if (block_header != block_footer) yyerror("Block close tag name missmatch");
+            if (block_header != block_footer) yyerror("Block close tag name missmatch");
 
             string s = "\"" + block_header + "\": function ($_vis, $_in, $_c) {\n";
             s = s + "var $vars = {};\n";
