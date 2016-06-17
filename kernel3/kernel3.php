@@ -356,10 +356,10 @@ class F extends FEventDispatcher
      * Handles exceptions and writes logs
      *
      * @access private
-     * @param Exception $e
+     * @param Exception|Throwable $e
      * @ignore
      */
-    public function handleException(Exception $e)
+    public function handleException($e)
     {
         $logfile = F_LOGS_ROOT.DIRECTORY_SEPARATOR.'fatal.log';
         $eName   = get_class($e);

@@ -77,7 +77,7 @@ class K3_Db_MySQL extends K3_Db_Abstract
         }
 
         $query = 'CREATE ';
-        if ($flags & self::SQL_CRREPLACE) {
+        if ($flags & K3_Db::SQL_REPLACE) {
             $query .= 'OR REPLACE ';
         }
         $query .= 'VIEW `'.$name.'` AS ('.$select.')';

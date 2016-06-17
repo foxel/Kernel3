@@ -364,6 +364,7 @@ class K3_String extends FBaseClass
 
         if ($result && $checkDNS)
         {
+            /** @noinspection PhpUnusedLocalVariableInspection */
             list($user, $domain) = explode('@', $string);
             $result = checkdnsrr($domain, 'MX');
         }

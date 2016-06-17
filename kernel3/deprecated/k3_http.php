@@ -183,7 +183,7 @@ final class FHTTPInterface implements I_K3_Deprecated
         }
 
         FMisc::obFree();
-        return F()->appEnv->response->sendBuffer($recode_to, $params, $flags);
+        F()->appEnv->response->sendBuffer($recode_to, $params, $flags);
     }
 
     public function sendBinary($data = '', $c_type = '', $force_cache = 0, $send_filename = '')
@@ -204,7 +204,7 @@ final class FHTTPInterface implements I_K3_Deprecated
         }
 
         FMisc::obFree();
-        return F()->appEnv->response->sendBuffer(false, $params, $flags);
+        F()->appEnv->response->sendBuffer(false, $params, $flags);
     }
 
     // sets cookies domain (checks if current client request is sent on that domain or it's sub)

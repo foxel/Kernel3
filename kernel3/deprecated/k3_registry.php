@@ -53,12 +53,12 @@ class FRegistry implements I_K3_Deprecated
 
     static public function set($name, $value, $storeToBack = false)
     {
-        return F()->Registry->set($name, $value, $storeToBack);
+        F()->Registry->set($name, $value, $storeToBack);
     }
 
     static public function drop($name, $dropInBack)
     {
-        return F()->Registry->drop($name, $dropInBack);
+        F()->Registry->drop($name, $dropInBack);
     }
 
     static public function setBackDB(FDataBase $dbo, $table = false)
@@ -95,7 +95,7 @@ class FRegistryInstance extends StaticInstance implements I_K3_Deprecated
 
     public function __construct() 
     {
-        $this->c = 'FRegistry';
+        parent::__construct('FRegistry');
     }
 
     public function __get($name)
