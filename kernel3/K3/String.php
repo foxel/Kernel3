@@ -193,9 +193,11 @@ class K3_String extends FBaseClass
             $targetEncoding = $this->_encoding;
         }
 
+        /* line breaking embedded to mb_encode_mimeheader breaks some code
         if ($out = mb_encode_mimeheader($this->_string, $targetEncoding, $quotedPrintable ? 'Q' : 'B')) {
             return $out;
         }
+        */
 
         $string = $this->recode($targetEncoding)->getString();
 
