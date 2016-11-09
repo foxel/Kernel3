@@ -37,7 +37,7 @@ class K3_Environment_Server_HTTP extends K3_Environment_Server
 
         $isSecure = (!empty($_SERVER['HTTPS']) && ($_SERVER['HTTPS'] != 'off'));
 
-        $this->pool['port']   = isset($_SERVER['SERVER_PORT']) ? (int) $_SERVER['SERVER_PORT'] : 80;
+        $this->pool['port']   = (!empty($_SERVER['SERVER_PORT'])) ? (int) $_SERVER['SERVER_PORT'] : 80;
 
         $this->pool['rootUrl']  = ($isSecure ? 'https://' : 'http://').
             $this->pool['domain'].

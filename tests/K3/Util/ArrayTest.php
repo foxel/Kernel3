@@ -6,6 +6,9 @@
  */
 Class K3_Util_ArrayTest extends PHPUnit_Framework_TestCase
 {
+    /**
+     * @covers K3_Util_Array::implodeRecursive
+     */
     public function testImplodeRecursivePlain()
     {
         $this->assertEquals(
@@ -15,6 +18,9 @@ Class K3_Util_ArrayTest extends PHPUnit_Framework_TestCase
         );
     }
 
+    /**
+     * @covers K3_Util_Array::implodeRecursive
+     */
     public function testImplodeRecursive1Level()
     {
         $this->assertEquals(
@@ -24,6 +30,9 @@ Class K3_Util_ArrayTest extends PHPUnit_Framework_TestCase
         );
     }
 
+    /**
+     * @covers K3_Util_Array::implodeRecursive
+     */
     public function testImplodeRecursive2Level()
     {
         $this->assertEquals(
