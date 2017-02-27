@@ -332,7 +332,7 @@ class FVISInterface extends FEventDispatcher
 
     public function __construct(K3_Environment $env = null)
     {
-        $this->env = is_null($env) ? $env : F()->appEnv;
+        $this->env = !is_null($env) ? $env : F()->appEnv;
 
         $this->nodes[0] = new FVISNode('GLOBAL_HTMLPAGE', 0, $this);
         $this->named = array('PAGE' => 0, 'MAIN' => 0);

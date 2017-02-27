@@ -14,7 +14,7 @@
   <title>Kernel 3 test :: {!IN_PAGE_TITLE}{IF:IN_PAGE_SUBTITLE} :: {!IN_PAGE_SUBTITLE}{/IF}</title>
   {IN_META}
 
-  <link rel="shortcut icon" href="ico.ico" />
+  <link rel="shortcut icon" href="{FULLURL:"ico.ico"}" />
 
   <style type="text/css">
   /* CSS starts here <![CDATA[ */
